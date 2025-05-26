@@ -1,12 +1,13 @@
 
 export interface Campaign {
-  id: number;
+  id: string;
   name: string;
-  status: 'active' | 'draft' | 'completed';
-  qrCodes: number;
-  scans: number;
-  createdDate: string;
-  template: string;
+  status: 'active' | 'draft' | 'completed' | 'generating';
+  qrCodes: QRData[];
+  template: any;
+  createdAt: Date;
+  scans?: number;
+  createdDate?: string;
 }
 
 export interface QRData {

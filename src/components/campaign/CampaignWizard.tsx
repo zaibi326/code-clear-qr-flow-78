@@ -9,7 +9,7 @@ import QRAssignment from './QRAssignment';
 import CampaignPreview from './CampaignPreview';
 import CampaignGeneration from './CampaignGeneration';
 import { Template } from '@/types/template';
-import { Campaign, QRData } from '@/pages/CampaignCreator';
+import { Campaign, QRData } from '@/types/campaign';
 
 interface CampaignWizardProps {
   onCampaignCreate: (campaign: Campaign) => void;

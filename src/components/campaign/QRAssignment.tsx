@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileText, X, Plus } from 'lucide-react';
 import { Template } from '@/types/template';
-import { QRData } from '@/pages/CampaignCreator';
+import { QRData } from '@/types/campaign';
 
 interface QRAssignmentProps {
   template: Template;
@@ -19,7 +19,14 @@ interface QRAssignmentProps {
 const QRAssignment = ({ template, onQRAssignment, initialQRCodes, initialCampaignName }: QRAssignmentProps) => {
   const [campaignName, setCampaignName] = useState(initialCampaignName);
   const [qrCodes, setQrCodes] = useState<QRData[]>(initialQRCodes.length > 0 ? initialQRCodes : [
-    { id: 'qr-1', content: 'https://example.com' }
+    { 
+      id: 'qr-1', 
+      content: 'https://example.com',
+      url: 'https://example.com',
+      scans: 0,
+      createdAt: new Date().toISOString(),
+      campaignId: ''
+    }
   ]);
   const [csvData, setCsvData] = useState<any[]>([]);
 
@@ -39,6 +46,10 @@ const QRAssignment = ({ template, onQRAssignment, initialQRCodes, initialCampaig
         const newQRCodes: QRData[] = data.map((row, index) => ({
           id: `csv-qr-${index}`,
           content: row[0] || `https://example.com/${index}`,
+          url: row[0] || `https://example.com/${index}`,
+          scans: 0,
+          createdAt: new Date().toISOString(),
+          campaignId: '',
           customData: headers.reduce((acc, header, idx) => {
             acc[header] = row[idx];
             return acc;
@@ -60,14 +71,18 @@ const QRAssignment = ({ template, onQRAssignment, initialQRCodes, initialCampaig
   const addQRCode = () => {
     const newQR: QRData = {
       id: `qr-${qrCodes.length + 1}`,
-      content: 'https://example.com'
+      content: 'https://example.com',
+      url: 'https://example.com',
+      scans: 0,
+      createdAt: new Date().toISOString(),
+      campaignId: ''
     };
     setQrCodes([...qrCodes, newQR]);
   };
 
   const updateQRCode = (id: string, content: string) => {
     setQrCodes(qrCodes.map(qr => 
-      qr.id === id ? { ...qr, content } : qr
+      qr.id === id ? { ...qr, content, url: content } : qr
     ));
   };
 
@@ -160,7 +175,7 @@ const QRAssignment = ({ template, onQRAssignment, initialQRCodes, initialCampaig
                 </CardHeader>
                 <CardContent>
                   <Input
-                    value={qr.content}
+                    value={qr.content || ''}
                     onChange={(e) => updateQRCode(qr.id, e.target.value)}
                     placeholder="Enter URL or content"
                   />

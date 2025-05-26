@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileImage, QrCode, Users, Calendar } from 'lucide-react';
 import { Template } from '@/types/template';
-import { QRData } from '@/pages/CampaignCreator';
+import { QRData } from '@/types/campaign';
 
 interface CampaignPreviewProps {
   template: Template;
@@ -118,7 +118,7 @@ const CampaignPreview = ({ template, qrCodes, campaignName }: CampaignPreviewPro
                       <QrCode className="w-4 h-4 text-gray-500" />
                     </div>
                     <div className="text-xs text-gray-600 break-all">
-                      {qr.content.length > 40 ? `${qr.content.substring(0, 40)}...` : qr.content}
+                      {qr.content && qr.content.length > 40 ? `${qr.content.substring(0, 40)}...` : qr.content || qr.url}
                     </div>
                     {qr.customData && Object.keys(qr.customData).length > 0 && (
                       <div className="mt-2">
