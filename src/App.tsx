@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import TemplateManager from "./pages/TemplateManager";
 import CampaignCreator from "./pages/CampaignCreator";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
