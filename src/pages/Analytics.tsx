@@ -7,6 +7,7 @@ import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
 import { AnalyticsStats } from '@/components/analytics/AnalyticsStats';
 import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
 import { QRCodeTable } from '@/components/analytics/QRCodeTable';
+import { UserInteractionLog } from '@/components/analytics/UserInteractionLog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
@@ -26,9 +27,10 @@ const Analytics = () => {
               <AnalyticsFilters />
               
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid grid-cols-2 mb-6 w-[400px]">
+                <TabsList className="grid grid-cols-3 mb-6 w-[500px]">
                   <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
                   <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
+                  <TabsTrigger value="interactions">User Interactions</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="overview" className="space-y-6">
@@ -44,6 +46,10 @@ const Analytics = () => {
                 
                 <TabsContent value="advanced">
                   <AdvancedAnalytics />
+                </TabsContent>
+                
+                <TabsContent value="interactions">
+                  <UserInteractionLog />
                 </TabsContent>
               </Tabs>
             </main>
