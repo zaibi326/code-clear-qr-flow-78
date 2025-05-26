@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, Bell, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Search, Bell, User, LogOut, Settings as SettingsIcon, QrCode } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -43,6 +43,16 @@ export function DashboardTopbar() {
               className="lg:hidden shrink-0" 
               aria-label="Toggle sidebar navigation"
             />
+            
+            {/* ClearQR.io Logo */}
+            <Link to="/" className="flex items-center space-x-2 group shrink-0">
+              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg group-hover:scale-105 transition-transform duration-200">
+                <QrCode className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hidden sm:inline">
+                ClearQR.io
+              </span>
+            </Link>
             
             {/* Search - hidden on very small screens, shown on sm+ */}
             <div className="relative max-w-md hidden sm:block flex-1 lg:flex-initial lg:w-80">
