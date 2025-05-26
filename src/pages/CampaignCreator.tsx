@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
@@ -19,6 +18,25 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
+
+// Export the types for other components to import
+export interface Campaign {
+  id: number;
+  name: string;
+  status: 'active' | 'draft' | 'completed';
+  qrCodes: number;
+  scans: number;
+  createdDate: string;
+  template: string;
+}
+
+export interface QRData {
+  id: string;
+  url: string;
+  scans: number;
+  createdAt: string;
+  campaignId: string;
+}
 
 const CampaignCreator = () => {
   const [activeTab, setActiveTab] = useState('manage');
