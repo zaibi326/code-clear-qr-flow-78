@@ -76,24 +76,24 @@ const Hero = () => {
               <p className="text-sm text-gray-500 mb-6 font-medium">Trusted by businesses you know:</p>
               <div className="flex items-center justify-start gap-8 flex-wrap">
                 <img 
-                  src="/placeholder.svg" 
+                  src="/lovable-uploads/d8e70b0c-93f4-41de-9ad0-6644bb9b6578.png" 
                   alt="Nestle" 
-                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-300 grayscale hover:grayscale-0 hover:scale-105 cursor-pointer"
                 />
                 <img 
-                  src="/placeholder.svg" 
-                  alt="Deloitte Digital" 
-                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                  src="/lovable-uploads/f6107815-f1b2-4985-9e43-bacd100606b2.png" 
+                  alt="Pepsi" 
+                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-300 grayscale hover:grayscale-0 hover:scale-105 cursor-pointer"
                 />
                 <img 
-                  src="/placeholder.svg" 
-                  alt="Toyota" 
-                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                  src="/lovable-uploads/c55dda3b-09a6-4f41-b0fe-351becec9f58.png" 
+                  alt="Kit Kat" 
+                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-300 grayscale hover:grayscale-0 hover:scale-105 cursor-pointer"
                 />
                 <img 
-                  src="/placeholder.svg" 
+                  src="/lovable-uploads/7044a335-27b6-407a-8043-23c1c5995404.png" 
                   alt="Amazon" 
-                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-300 grayscale hover:grayscale-0 hover:scale-105 cursor-pointer"
                 />
               </div>
             </div>
