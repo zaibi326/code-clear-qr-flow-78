@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Eye, EyeOff } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -52,29 +52,16 @@ const Login = () => {
       return;
     }
 
-    setIsLoading(true);
+    console.log('Login attempt:', formData);
     
     try {
-      console.log('Login attempt:', formData);
+      const success = await login(formData.email, formData.password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Login successful!', {
-        description: 'Welcome back to ClearQR.io'
-      });
-      
-      setTimeout(() => {
+      if (success) {
         navigate('/dashboard');
-      }, 1500);
-      
+      }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed', {
-        description: 'Invalid email or password. Please try again.'
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
