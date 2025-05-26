@@ -6,17 +6,7 @@ import { Input } from '@/components/ui/input';
 import { FileText, Plus, Eye, Download, Trash2, Search, Grid, List, Copy, Edit } from 'lucide-react';
 import { Template } from '@/types/template';
 
-interface TemplateItem {
-  id: number;
-  name: string;
-  type: string;
-  uploadDate: string;
-  status: string;
-  usageCount: number;
-}
-
 interface TemplateManageTabProps {
-  mockTemplates: TemplateItem[];
   templates: Template[];
   onTemplateEdit: (template: Template) => void;
   onTemplateDelete: (templateId: string) => void;
@@ -24,7 +14,6 @@ interface TemplateManageTabProps {
 }
 
 export const TemplateManageTab = ({ 
-  mockTemplates, 
   templates, 
   onTemplateEdit, 
   onTemplateDelete, 
@@ -43,8 +32,9 @@ export const TemplateManageTab = ({
   });
 
   const handlePreview = (template: Template) => {
-    // Open preview in a new window or modal
-    window.open(template.preview, '_blank');
+    if (template.preview) {
+      window.open(template.preview, '_blank');
+    }
   };
 
   const handleDownload = (template: Template) => {
@@ -57,6 +47,12 @@ export const TemplateManageTab = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    } else {
+      // For templates without files, create a download link for the preview
+      const link = document.createElement('a');
+      link.href = template.preview;
+      link.download = `${template.name}.png`;
+      link.click();
     }
   };
 

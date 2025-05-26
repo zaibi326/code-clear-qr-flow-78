@@ -87,14 +87,13 @@ const TemplateManager = () => {
     }
   };
 
-  const mockTemplates = templates.map(template => ({
-    id: parseInt(template.id.split('-')[1]) || 1,
-    name: template.name,
-    type: template.file?.type === 'application/pdf' ? 'pdf' : 'image',
-    uploadDate: template.createdAt.toLocaleDateString(),
-    status: 'active',
-    usageCount: Math.floor(Math.random() * 50)
-  }));
+  const handleTemplateUse = (template: Template) => {
+    console.log('Using template:', template.name);
+    toast({
+      title: "Template ready",
+      description: `${template.name} is ready to use in campaigns.`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -116,7 +115,6 @@ const TemplateManager = () => {
               )}
               {activeTab === 'manage' && (
                 <TemplateManageTab 
-                  mockTemplates={mockTemplates}
                   templates={templates}
                   onTemplateEdit={handleTemplateEdit}
                   onTemplateDelete={handleTemplateDelete}
@@ -126,7 +124,7 @@ const TemplateManager = () => {
               {activeTab === 'library' && (
                 <TemplateLibraryTab 
                   templates={templates}
-                  onTemplateSelect={handleTemplateEdit}
+                  onTemplateSelect={handleTemplateUse}
                 />
               )}
             </main>

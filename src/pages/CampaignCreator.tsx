@@ -7,9 +7,30 @@ import { CampaignCreatorTabs } from '@/components/campaign/CampaignCreatorTabs';
 import { CreateCampaignTab } from '@/components/campaign/CreateCampaignTab';
 import { ManageCampaignsTab } from '@/components/campaign/ManageCampaignsTab';
 import { CampaignAnalyticsTab } from '@/components/campaign/CampaignAnalyticsTab';
+import CampaignWizard from '@/components/campaign/CampaignWizard';
+import { Campaign } from '@/types/campaign';
+import { useToast } from '@/hooks/use-toast';
 
 const CampaignCreator = () => {
   const [activeTab, setActiveTab] = useState('manage');
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [showWizard, setShowWizard] = useState(false);
+  const { toast } = useToast();
+
+  const handleCampaignCreate = (campaign: Campaign) => {
+    setCampaigns(prev => [campaign, ...prev]);
+    setShowWizard(false);
+    setActiveTab('manage');
+    toast({
+      title: "Campaign created",
+      description: `${campaign.name} has been successfully created.`,
+    });
+  };
+
+  const handleStartNewCampaign = () => {
+    setShowWizard(true);
+    setActiveTab('create');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -26,9 +47,24 @@ const CampaignCreator = () => {
 
               <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-              {activeTab === 'create' && <CreateCampaignTab />}
-              {activeTab === 'manage' && <ManageCampaignsTab />}
-              {activeTab === 'analytics' && <CampaignAnalyticsTab />}
+              {activeTab === 'create' && !showWizard && (
+                <CreateCampaignTab onStartCampaign={handleStartNewCampaign} />
+              )}
+              
+              {activeTab === 'create' && showWizard && (
+                <CampaignWizard onCampaignCreate={handleCampaignCreate} />
+              )}
+              
+              {activeTab === 'manage' && (
+                <ManageCampaignsTab 
+                  campaigns={campaigns}
+                  onCreateNew={handleStartNewCampaign}
+                />
+              )}
+              
+              {activeTab === 'analytics' && (
+                <CampaignAnalyticsTab campaigns={campaigns} />
+              )}
             </main>
           </SidebarInset>
         </div>
