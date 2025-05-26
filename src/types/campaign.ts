@@ -15,4 +15,6 @@ export interface QRData {
   scans: number;
   createdAt: string;
   campaignId: string;
+  content?: string;
+  customData?: Record<string, string>;
 }
