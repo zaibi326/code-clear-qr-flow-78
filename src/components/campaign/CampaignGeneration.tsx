@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
+  Rocket, 
   CheckCircle, 
   Download, 
-  FileText, 
-  Loader2,
-  Rocket,
-  AlertCircle 
+  FileImage, 
+  QrCode,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 interface CampaignGenerationProps {
@@ -21,18 +22,49 @@ interface CampaignGenerationProps {
 
 const CampaignGeneration = ({ onGenerate, campaignName, qrCount }: CampaignGenerationProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+  const [generatedFiles, setGeneratedFiles] = useState<any[]>([]);
 
-  const handleGenerate = async () => {
+  const estimatedTime = Math.ceil(qrCount / 10); // ~10 QR codes per second
+
+  const simulateGeneration = async () => {
     setIsGenerating(true);
+    setProgress(0);
     
-    // Simulate generation process
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setProgress(i);
+    const steps = [
+      { step: 'Preparing templates...', duration: 1000, progress: 20 },
+      { step: 'Generating QR codes...', duration: qrCount * 100, progress: 60 },
+      { step: 'Creating PDF materials...', duration: qrCount * 50, progress: 80 },
+      { step: 'Finalizing campaign...', duration: 500, progress: 100 }
+    ];
+
+    for (const { step, duration, progress: stepProgress } of steps) {
+      setCurrentStep(step);
+      
+      // Simulate gradual progress within each step
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          const increment = (stepProgress - prev) / 10;
+          return Math.min(prev + increment, stepProgress);
+        });
+      }, duration / 10);
+
+      await new Promise(resolve => setTimeout(resolve, duration));
+      clearInterval(interval);
+      setProgress(stepProgress);
     }
-    
+
+    // Simulate generated files
+    const files = Array.from({ length: Math.min(qrCount, 5) }, (_, i) => ({
+      id: `file-${i}`,
+      name: `${campaignName}-batch-${i + 1}.pdf`,
+      size: '2.4 MB',
+      items: Math.min(qrCount - (i * Math.ceil(qrCount / 5)), Math.ceil(qrCount / 5))
+    }));
+
+    setGeneratedFiles(files);
     setIsGenerating(false);
     setIsComplete(true);
     onGenerate();
@@ -40,47 +72,90 @@ const CampaignGeneration = ({ onGenerate, campaignName, qrCount }: CampaignGener
 
   if (isComplete) {
     return (
-      <div className="text-center">
-        <div className="mb-6">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+      <div>
+        <div className="mb-6 text-center">
+          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Campaign Generated Successfully!</h2>
-          <p className="text-gray-600">Your QR campaign is ready for download</p>
+          <p className="text-gray-600">Your {qrCount} marketing materials are ready for download</p>
         </div>
 
-        <Card className="max-w-md mx-auto mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">{campaignName}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">QR Codes Generated:</span>
-                <span className="font-medium">{qrCount}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Download Options */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Download Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {generatedFiles.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center">
+                      <FileImage className="w-5 h-5 text-blue-600 mr-3" />
+                      <div>
+                        <div className="font-medium">{file.name}</div>
+                        <div className="text-sm text-gray-500">{file.items} items • {file.size}</div>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+                
+                <div className="pt-3 border-t">
+                  <Button className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download All Files (ZIP)
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Format:</span>
-                <span className="font-medium">PDF</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Status:</span>
-                <Badge variant="default" className="bg-green-500">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Complete
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="flex gap-4 justify-center">
-          <Button size="lg" className="bg-green-600 hover:bg-green-700">
-            <Download className="w-5 h-5 mr-2" />
-            Download Campaign
-          </Button>
-          <Button variant="outline" size="lg">
-            <FileText className="w-5 h-5 mr-2" />
-            View Details
-          </Button>
+          {/* Campaign Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaign Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <QrCode className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">{qrCount}</div>
+                    <div className="text-sm text-gray-600">QR Codes Generated</div>
+                  </div>
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <FileImage className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">{generatedFiles.length}</div>
+                    <div className="text-sm text-gray-600">PDF Files Created</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Campaign Name:</span>
+                    <span className="font-medium">{campaignName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Generated At:</span>
+                    <span className="font-medium">{new Date().toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Size:</span>
+                    <span className="font-medium">~{(qrCount * 2.5 / 1024).toFixed(1)} GB</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t">
+                  <Button variant="outline" className="w-full">
+                    Create New Campaign
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -88,76 +163,166 @@ const CampaignGeneration = ({ onGenerate, campaignName, qrCount }: CampaignGener
 
   if (isGenerating) {
     return (
-      <div className="text-center">
-        <div className="mb-6">
-          <Loader2 className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-spin" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Generating Campaign...</h2>
-          <p className="text-gray-600">Please wait while we create your QR codes</p>
+      <div>
+        <div className="mb-6 text-center">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Rocket className="w-8 h-8 text-blue-600 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Generating Campaign</h2>
+          <p className="text-gray-600">Creating {qrCount} marketing materials...</p>
         </div>
 
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
+        <Card className="mb-6">
+          <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span>Progress:</span>
-                <span className="font-medium">{progress}%</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{currentStep}</span>
+                <Badge variant="outline">
+                  {Math.round(progress)}% Complete
+                </Badge>
               </div>
               <Progress value={progress} className="h-3" />
-              <div className="text-xs text-gray-500 text-center">
-                Processing {qrCount} QR codes...
+              <div className="text-center text-sm text-gray-500">
+                Estimated time remaining: {Math.max(0, estimatedTime - Math.round(progress * estimatedTime / 100))} seconds
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Generation Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-center">
+                <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <div className="text-sm text-gray-600">QR Codes</div>
+                <div className="font-medium">
+                  {Math.round(progress * qrCount / 100)} / {qrCount}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-center">
+                <FileImage className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <div className="text-sm text-gray-600">PDF Files</div>
+                <div className="font-medium">
+                  {Math.round(progress * generatedFiles.length / 100)} / {Math.ceil(qrCount / 20)}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-center">
+                <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <div className="text-sm text-gray-600">Processing</div>
+                <div className="font-medium">{Math.round(progress)}%</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="text-center">
-      <div className="mb-6">
-        <Rocket className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+    <div>
+      <div className="mb-6 text-center">
+        <Rocket className="w-16 h-16 text-blue-600 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Ready to Generate</h2>
-        <p className="text-gray-600">Your campaign is configured and ready to be created</p>
+        <p className="text-gray-600">Generate {qrCount} unique marketing materials for your campaign</p>
       </div>
 
-      <Card className="max-w-md mx-auto mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">{campaignName}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">QR Codes to Generate:</span>
-              <span className="font-medium">{qrCount}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Generation Preview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>What Will Be Generated</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center">
+                  <QrCode className="w-5 h-5 text-blue-600 mr-3" />
+                  <span className="font-medium">Unique QR Codes</span>
+                </div>
+                <Badge>{qrCount}</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center">
+                  <FileImage className="w-5 h-5 text-green-600 mr-3" />
+                  <span className="font-medium">PDF Marketing Materials</span>
+                </div>
+                <Badge>{qrCount}</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                <div className="flex items-center">
+                  <Download className="w-5 h-5 text-purple-600 mr-3" />
+                  <span className="font-medium">Downloadable Files</span>
+                </div>
+                <Badge>{Math.ceil(qrCount / 20)} ZIP files</Badge>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Output Format:</span>
-              <span className="font-medium">PDF with embedded QR codes</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Estimated Time:</span>
-              <span className="font-medium">~{Math.ceil(qrCount / 10)} minutes</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-          <AlertCircle className="w-4 h-4 mr-2" />
-          Generation may take a few minutes for large campaigns
-        </div>
+        {/* Generation Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Generation Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Campaign Name:</span>
+                <span className="font-medium">{campaignName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Materials:</span>
+                <span className="font-medium">{qrCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Estimated Time:</span>
+                <span className="font-medium">{estimatedTime} seconds</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Output Format:</span>
+                <span className="font-medium">PDF + PNG</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">File Size:</span>
+                <span className="font-medium">~{(qrCount * 2.5).toFixed(1)} MB</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Button 
+                onClick={simulateGeneration}
+                className="w-full"
+                size="lg"
+              >
+                <Rocket className="w-5 h-5 mr-2" />
+                Generate Campaign
+              </Button>
+            </div>
+
+            {qrCount > 500 && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center text-yellow-800">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Large campaign detected. Generation may take up to {Math.ceil(qrCount / 100)} minutes.</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-
-      <Button 
-        onClick={handleGenerate}
-        size="lg"
-        className="bg-blue-600 hover:bg-blue-700"
-      >
-        <Rocket className="w-5 h-5 mr-2" />
-        Generate Campaign
-      </Button>
     </div>
   );
 };
