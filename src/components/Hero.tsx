@@ -74,10 +74,26 @@ const Hero = () => {
             <div className="pt-8">
               <p className="text-sm text-gray-500 mb-4">Trusted by industry leaders</p>
               <div className="flex items-center justify-center lg:justify-start space-x-8 opacity-60">
-                <div className="text-2xl font-bold text-gray-400">Microsoft</div>
-                <div className="text-2xl font-bold text-gray-400">Shopify</div>
-                <div className="text-2xl font-bold text-gray-400">Adobe</div>
-                <div className="text-2xl font-bold text-gray-400">Salesforce</div>
+                <img 
+                  src="/lovable-uploads/0af51d00-d352-417f-93bb-fd6aaca07809.png" 
+                  alt="Amazon" 
+                  className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                />
+                <img 
+                  src="/lovable-uploads/83cd2073-42ea-432d-a04a-43858780a99c.png" 
+                  alt="KitKat" 
+                  className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                />
+                <img 
+                  src="/lovable-uploads/8650ab3b-cc18-4ba8-af81-8b83f2ab88a1.png" 
+                  alt="Pepsi" 
+                  className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                />
+                <img 
+                  src="/lovable-uploads/886c0218-76ad-42c0-a3a3-848ee33127dc.png" 
+                  alt="Toyota" 
+                  className="h-8 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                />
               </div>
             </div>
           </div>
