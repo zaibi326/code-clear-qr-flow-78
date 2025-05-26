@@ -71,14 +71,30 @@ const Hero = () => {
               </Button>
             </div>
 
-            {/* Enhanced Trust Indicators */}
+            {/* Enhanced Trust Indicators with Company Logos */}
             <div className="pt-8">
-              <p className="text-sm text-gray-500 mb-4 font-medium">Trusted by leading companies:</p>
-              <div className="flex items-center space-x-8 opacity-60">
-                <div className="text-lg font-bold text-gray-400">Microsoft</div>
-                <div className="text-lg font-bold text-gray-400">Shopify</div>
-                <div className="text-lg font-bold text-gray-400">Airbnb</div>
-                <div className="text-lg font-bold text-gray-400">Stripe</div>
+              <p className="text-sm text-gray-500 mb-6 font-medium">Trusted by businesses you know:</p>
+              <div className="flex items-center justify-start gap-8 flex-wrap">
+                <img 
+                  src="/placeholder.svg" 
+                  alt="Nestle" 
+                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                />
+                <img 
+                  src="/placeholder.svg" 
+                  alt="Deloitte Digital" 
+                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                />
+                <img 
+                  src="/placeholder.svg" 
+                  alt="Toyota" 
+                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                />
+                <img 
+                  src="/placeholder.svg" 
+                  alt="Amazon" 
+                  className="h-8 w-auto opacity-60 hover:opacity-80 transition-opacity grayscale hover:grayscale-0"
+                />
               </div>
             </div>
           </div>
