@@ -5,6 +5,8 @@ import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { ScanActivityChart } from '@/components/dashboard/ScanActivityChart';
+import { ProjectSelector } from '@/components/dashboard/ProjectSelector';
+import { MultiProjectComparison } from '@/components/dashboard/MultiProjectComparison';
 
 const Dashboard = () => {
   return (
@@ -19,8 +21,16 @@ const Dashboard = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
                 <p className="text-gray-600">Welcome back! Here's what's happening with your QR campaigns.</p>
               </div>
+              
+              <ProjectSelector />
               <DashboardStats />
-              <ScanActivityChart />
+              
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <ScanActivityChart />
+                <div className="space-y-6">
+                  <MultiProjectComparison />
+                </div>
+              </div>
             </main>
           </SidebarInset>
         </div>

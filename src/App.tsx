@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import TemplateManager from "./pages/TemplateManager";
 import CampaignCreator from "./pages/CampaignCreator";
 import DataManager from "./pages/DataManager";
+import BulkDataSelector from "./pages/BulkDataSelector";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Support from "./pages/Support";

@@ -1,170 +1,149 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { QrCode, ArrowRight, Play, CheckCircle, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Play, QrCode, BarChart3, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
-      {/* Enhanced Background decoration */}
-      <div className="absolute inset-0 bg-grid-gray-100/40 bg-[size:20px_20px] opacity-30"></div>
-      <div className="absolute top-10 right-10 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-10 left-10 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-300/10 to-purple-300/10 rounded-full blur-2xl"></div>
-      
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+    <section className="relative pt-20 pb-28 lg:pt-32 lg:pb-40 bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Content */}
-          <div className="space-y-8 animate-fade-in">
-            {/* Enhanced Badge */}
-            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 px-6 py-3 rounded-full text-sm font-semibold border border-blue-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-              <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>Trusted by 10,000+ businesses worldwide</span>
-              <Zap className="w-4 h-4 text-purple-500" />
+          <div className="text-center lg:text-left space-y-8">
+            {/* Badge */}
+            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm text-blue-700 px-4 py-2 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span>Trusted by 10,000+ Marketers</span>
             </div>
 
             {/* Main Headline */}
             <div className="space-y-6">
-              <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                Create{' '}
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Smart QR Campaigns
-                </span>{' '}
-                That Convert
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                Transform Your
+                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Marketing Materials
+                </span>
+                Into Trackable QR Campaigns
               </h1>
-              <p className="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl">
-                The complete QR code marketing platform. Design, generate, track, and optimize campaigns that drive real business results.
+              
+              <p className="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                Create, manage, and track QR code campaigns with our drag-and-drop editor. 
+                Transform static materials into dynamic, data-driven marketing assets.
               </p>
             </div>
 
-            {/* Enhanced Feature Points */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { icon: CheckCircle, text: "Drag & Drop Editor" },
-                { icon: CheckCircle, text: "Bulk CSV Upload" },
-                { icon: CheckCircle, text: "Real-time Analytics" },
-                { icon: CheckCircle, text: "PDF Export & Mailers" }
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/90 transition-all duration-300 group">
-                  <feature.icon className="h-5 w-5 text-green-500 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                  <span className="text-gray-700 font-semibold">{feature.text}</span>
-                </div>
-              ))}
+            {/* Feature highlights */}
+            <div className="flex flex-wrap gap-6 justify-center lg:justify-start text-sm text-gray-600">
+              <div className="flex items-center space-x-2">
+                <QrCode className="h-5 w-5 text-blue-600" />
+                <span>Custom QR Generation</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5 text-purple-600" />
+                <span>Real-time Analytics</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-green-600" />
+                <span>Bulk Campaigns</span>
+              </div>
             </div>
 
-            {/* Enhanced CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link to="/register">
-                <Button 
-                  size="lg" 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg group shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-                >
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 group">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 px-8 py-4 text-lg group transition-all duration-300 bg-white/80 backdrop-blur-sm"
-              >
-                <Play className="mr-2 h-5 w-5" />
+              
+              <Button variant="outline" className="px-8 py-4 text-lg border-2 border-gray-300 hover:border-gray-400 bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-200 group">
+                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 Watch Demo
               </Button>
             </div>
 
-            {/* Enhanced Trust Indicators */}
+            {/* Trust indicators */}
             <div className="pt-8">
-              <p className="text-sm text-gray-500 mb-6 font-medium">Trusted by industry leaders:</p>
-              <div className="flex items-center justify-start gap-8 flex-wrap">
-                <img 
-                  src="/lovable-uploads/5a18dce6-2917-4c31-af16-17e4c3ac2cf1.png" 
-                  alt="Toyota" 
-                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite]"
-                />
-                <img 
-                  src="/lovable-uploads/c925acce-4c43-44ea-a8b4-f18e82befd41.png" 
-                  alt="Pepsi" 
-                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite_1s]"
-                />
-                <img 
-                  src="/lovable-uploads/c55dda3b-09a6-4f41-b0fe-351becec9f58.png" 
-                  alt="Kit Kat" 
-                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite_2s]"
-                />
-                <img 
-                  src="/lovable-uploads/7044a335-27b6-407a-8043-23c1c5995404.png" 
-                  alt="Amazon" 
-                  className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite_3s]"
-                />
+              <p className="text-sm text-gray-500 mb-4">Trusted by industry leaders</p>
+              <div className="flex items-center justify-center lg:justify-start space-x-8 opacity-60">
+                <div className="text-2xl font-bold text-gray-400">Microsoft</div>
+                <div className="text-2xl font-bold text-gray-400">Shopify</div>
+                <div className="text-2xl font-bold text-gray-400">Adobe</div>
+                <div className="text-2xl font-bold text-gray-400">Salesforce</div>
               </div>
             </div>
           </div>
 
-          {/* Enhanced Right Content - Interactive Dashboard Preview */}
-          <div className="relative animate-fade-in delay-300">
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 transform rotate-1 hover:rotate-0 transition-all duration-500 border border-white/50">
-              {/* Mock Dashboard Header */}
-              <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                    <QrCode className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="font-semibold text-gray-700">Campaign Dashboard</span>
-                </div>
-                <div className="flex space-x-1">
+          {/* Right Content - Dashboard Preview */}
+          <div className="relative">
+            <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
+              {/* Mock browser header */}
+              <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                  <div className="ml-4 bg-white px-4 py-1 rounded text-sm text-gray-600">
+                    clearqr.io/dashboard
+                  </div>
                 </div>
               </div>
-
-              {/* Mock Stats Cards */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-blue-600">2,847</div>
-                  <div className="text-sm text-blue-500">Total Scans</div>
+              
+              {/* Mock dashboard content */}
+              <div className="p-6 space-y-6">
+                {/* Stats cards */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">1,247</div>
+                    <div className="text-sm text-gray-600">Total Scans</div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">18</div>
+                    <div className="text-sm text-gray-600">Active Campaigns</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">8.4%</div>
+                    <div className="text-sm text-gray-600">Conversion Rate</div>
+                  </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-purple-600">94.2%</div>
-                  <div className="text-sm text-purple-500">Success Rate</div>
-                </div>
-              </div>
-
-              {/* Mock QR Code */}
-              <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl p-6 text-center">
-                <div className="grid grid-cols-8 gap-1 mb-4 max-w-32 mx-auto">
-                  {Array.from({ length: 64 }).map((_, i) => (
+                
+                {/* Mock chart */}
+                <div className="bg-gray-50 h-32 rounded-lg flex items-end justify-center space-x-2 p-4">
+                  {Array.from({ length: 7 }).map((_, i) => (
                     <div
                       key={i}
-                      className={`aspect-square rounded-sm transition-all duration-1000 delay-${i * 20} ${
-                        Math.random() > 0.5 
-                          ? 'bg-gradient-to-br from-blue-600 to-purple-600 animate-pulse' 
-                          : 'bg-white'
-                      }`}
-                    />
+                      className="bg-gradient-to-t from-blue-600 to-purple-600 rounded-t"
+                      style={{ 
+                        height: `${Math.random() * 80 + 20}%`, 
+                        width: '12px' 
+                      }}
+                    ></div>
                   ))}
                 </div>
-                <p className="text-sm font-semibold text-gray-700">Live Campaign QR</p>
-                <p className="text-xs text-blue-600 font-medium">clearqr.io/campaign-123</p>
               </div>
             </div>
-            
-            {/* Enhanced Floating Stats */}
-            <div className="absolute -top-6 -right-6 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-4 border border-gray-100 animate-bounce hover:animate-none transition-all duration-300">
-              <div className="text-2xl font-bold text-green-600">+187%</div>
-              <div className="text-sm text-gray-500">Engagement ↗</div>
-            </div>
-            
-            <div className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-4 border border-gray-100 animate-bounce delay-500 hover:animate-none transition-all duration-300">
-              <div className="text-2xl font-bold text-blue-600">24/7</div>
-              <div className="text-sm text-gray-500">Live Tracking</div>
+
+            {/* Floating QR code */}
+            <div className="absolute -bottom-4 -left-4 bg-white p-4 rounded-xl shadow-lg border border-gray-200 animate-bounce">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                <QrCode className="h-8 w-8 text-blue-600" />
+              </div>
             </div>
 
-            <div className="absolute top-1/3 -right-8 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-3 border border-gray-100 animate-bounce delay-1000 hover:animate-none transition-all duration-300">
-              <div className="text-lg font-bold text-purple-600">CSV</div>
-              <div className="text-xs text-gray-500">Bulk Upload</div>
+            {/* Floating analytics */}
+            <div className="absolute -top-4 -right-4 bg-white p-3 rounded-xl shadow-lg border border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">Live Tracking</span>
+              </div>
             </div>
           </div>
         </div>
