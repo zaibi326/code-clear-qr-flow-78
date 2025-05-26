@@ -76,12 +76,12 @@ const Hero = () => {
               <p className="text-sm text-gray-500 mb-6 font-medium">Trusted by businesses you know:</p>
               <div className="flex items-center justify-start gap-8 flex-wrap">
                 <img 
-                  src="/lovable-uploads/d8e70b0c-93f4-41de-9ad0-6644bb9b6578.png" 
-                  alt="Nestle" 
+                  src="/lovable-uploads/5a18dce6-2917-4c31-af16-17e4c3ac2cf1.png" 
+                  alt="Toyota" 
                   className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite]"
                 />
                 <img 
-                  src="/lovable-uploads/f6107815-f1b2-4985-9e43-bacd100606b2.png" 
+                  src="/lovable-uploads/c925acce-4c43-44ea-a8b4-f18e82befd41.png" 
                   alt="Pepsi" 
                   className="h-10 w-auto opacity-60 hover:opacity-100 transition-all duration-500 grayscale hover:grayscale-0 hover:scale-110 cursor-pointer animate-[float_6s_ease-in-out_infinite_1s]"
                 />
