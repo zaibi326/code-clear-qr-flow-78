@@ -8,6 +8,7 @@ import { AnalyticsStats } from '@/components/analytics/AnalyticsStats';
 import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
 import { QRCodeTable } from '@/components/analytics/QRCodeTable';
 import { UserInteractionLog } from '@/components/analytics/UserInteractionLog';
+import { CampaignInsights } from '@/components/analytics/CampaignInsights';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
@@ -27,8 +28,9 @@ const Analytics = () => {
               <AnalyticsFilters />
               
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid grid-cols-3 mb-6 w-[500px]">
+                <TabsList className="grid grid-cols-4 mb-6 w-[600px]">
                   <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
+                  <TabsTrigger value="insights">Campaign Insights</TabsTrigger>
                   <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
                   <TabsTrigger value="interactions">User Interactions</TabsTrigger>
                 </TabsList>
@@ -42,6 +44,10 @@ const Analytics = () => {
                   </div>
                   
                   <QRCodeTable />
+                </TabsContent>
+
+                <TabsContent value="insights">
+                  <CampaignInsights />
                 </TabsContent>
                 
                 <TabsContent value="advanced">

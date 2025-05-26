@@ -3,9 +3,9 @@ import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { SupportTicketSystem } from '@/components/support/SupportTicketSystem';
+import { AdvancedQRGenerator } from '@/components/qr/AdvancedQRGenerator';
 
-const Support = () => {
+const QuickGenerate = () => {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <SidebarProvider>
@@ -15,11 +15,11 @@ const Support = () => {
             <DashboardTopbar />
             <main className="flex-1 p-6 space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Support Center</h1>
-                <p className="text-gray-600">Get help with your QR code campaigns and account management</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick QR Generator</h1>
+                <p className="text-gray-600">Generate custom QR codes instantly with advanced styling options</p>
               </div>
               
-              <SupportTicketSystem />
+              <AdvancedQRGenerator />
             </main>
           </SidebarInset>
         </div>
@@ -28,4 +28,4 @@ const Support = () => {
   );
 };
 
-export default Support;
+export default QuickGenerate;
