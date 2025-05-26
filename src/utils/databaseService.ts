@@ -1,4 +1,3 @@
-
 import { 
   DatabaseUser, 
   DatabaseTemplate, 
@@ -288,7 +287,7 @@ export class DatabaseService {
         user: userData[0],
         templates,
         campaigns,
-        qr_codes,
+        qr_codes: qrCodes,
         exported_at: new Date().toISOString()
       };
     } catch (error) {
