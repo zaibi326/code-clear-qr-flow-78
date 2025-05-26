@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { QrCode, Download, Copy, Share2, Palette, Settings } from 'lucide-react';
+import { QrCode, Download, Copy, Share2, Settings } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import QRCodeLib from 'qrcode';
 
 interface QRCodeConfig {
   content: string;
@@ -21,6 +23,8 @@ interface QRCodeConfig {
 }
 
 export function AdvancedQRGenerator() {
+  const { toast } = useToast();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [config, setConfig] = useState<QRCodeConfig>({
     content: 'https://clearqr.io',
     type: 'url',
@@ -50,35 +54,188 @@ export function AdvancedQRGenerator() {
     { value: 'H', label: 'High (~30%)', description: 'Maximum durability' }
   ];
 
-  const generateQRCode = () => {
+  const generateQRCode = async () => {
+    if (!config.content.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter content for the QR code",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
-    // Simulate QR code generation
-    setTimeout(() => {
-      setGeneratedQR(`data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`);
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error('Canvas not found');
+
+      await QRCodeLib.toCanvas(canvas, config.content, {
+        width: config.size,
+        margin: Math.floor(config.borderSize / 4),
+        color: {
+          dark: config.foregroundColor,
+          light: config.backgroundColor,
+        },
+        errorCorrectionLevel: config.errorCorrection,
+      });
+
+      const dataURL = canvas.toDataURL('image/png');
+      setGeneratedQR(dataURL);
+      
+      toast({
+        title: "Success",
+        description: "QR code generated successfully!"
+      });
+    } catch (error) {
+      console.error('QR generation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code. Please check your content.",
+        variant: "destructive"
+      });
+    } finally {
       setIsGenerating(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
-    if (config.content) {
+    if (config.content.trim()) {
       generateQRCode();
     }
   }, [config]);
 
   const handleDownload = () => {
-    console.log('Downloading QR code...');
+    if (!generatedQR) {
+      toast({
+        title: "Error",
+        description: "No QR code to download",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.download = `qr-code-${Date.now()}.png`;
+    link.href = generatedQR;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: "QR code downloaded successfully!"
+    });
   };
 
-  const handleCopy = () => {
-    console.log('Copying QR code to clipboard...');
+  const handleCopy = async () => {
+    if (!generatedQR) {
+      toast({
+        title: "Error",
+        description: "No QR code to copy",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(generatedQR);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      
+      toast({
+        title: "Success",
+        description: "QR code copied to clipboard!"
+      });
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy QR code to clipboard",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleShare = () => {
-    console.log('Sharing QR code...');
+  const handleShare = async () => {
+    if (!generatedQR) {
+      toast({
+        title: "Error",
+        description: "No QR code to share",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        const response = await fetch(generatedQR);
+        const blob = await response.blob();
+        const file = new File([blob], `qr-code-${Date.now()}.png`, { type: 'image/png' });
+        
+        await navigator.share({
+          title: 'QR Code',
+          text: 'Check out this QR code from ClearQR.io',
+          files: [file]
+        });
+        
+        toast({
+          title: "Success",
+          description: "QR code shared successfully!"
+        });
+      } catch (error) {
+        console.error('Share error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to share QR code",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      try {
+        await navigator.clipboard.writeText(generatedQR);
+        toast({
+          title: "Copied",
+          description: "QR code URL copied to clipboard!"
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Sharing not supported in this browser",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const formatContentForType = (content: string, type: string) => {
+    switch (type) {
+      case 'email':
+        return content.includes('mailto:') ? content : `mailto:${content}`;
+      case 'phone':
+        return content.includes('tel:') ? content : `tel:${content}`;
+      case 'url':
+        if (!content.includes('://')) {
+          return `https://${content}`;
+        }
+        return content;
+      default:
+        return content;
+    }
+  };
+
+  const handleContentChange = (value: string) => {
+    const formattedContent = formatContentForType(value, config.type);
+    setConfig(prev => ({ ...prev, content: formattedContent }));
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Hidden canvas for QR generation */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      
       {/* Configuration Panel */}
       <div className="space-y-6">
         <Card>
@@ -121,7 +278,7 @@ export function AdvancedQRGenerator() {
                   <Input
                     id="content"
                     value={config.content}
-                    onChange={(e) => setConfig(prev => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Enter your content here..."
                   />
                 </div>
@@ -234,34 +391,33 @@ export function AdvancedQRGenerator() {
                   >
                     <QrCode className="h-16 w-16 text-gray-400" />
                   </div>
+                ) : generatedQR ? (
+                  <img 
+                    src={generatedQR} 
+                    alt="Generated QR Code"
+                    className="border rounded-lg"
+                    style={{ width: config.size, height: config.size }}
+                  />
                 ) : (
                   <div 
-                    className="border rounded-lg bg-white"
-                    style={{ 
-                      width: config.size, 
-                      height: config.size,
-                      backgroundColor: config.backgroundColor,
-                      padding: config.borderSize 
-                    }}
+                    className="bg-gray-100 border rounded-lg flex items-center justify-center"
+                    style={{ width: config.size, height: config.size }}
                   >
-                    <div 
-                      className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700 rounded"
-                      style={{ backgroundColor: config.foregroundColor }}
-                    />
+                    <QrCode className="h-16 w-16 text-gray-400" />
                   </div>
                 )}
               </div>
 
               <div className="flex items-center justify-center gap-2">
-                <Button onClick={handleDownload} size="sm">
+                <Button onClick={handleDownload} size="sm" disabled={!generatedQR}>
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>
-                <Button onClick={handleCopy} variant="outline" size="sm">
+                <Button onClick={handleCopy} variant="outline" size="sm" disabled={!generatedQR}>
                   <Copy className="h-4 w-4 mr-2" />
                   Copy
                 </Button>
-                <Button onClick={handleShare} variant="outline" size="sm">
+                <Button onClick={handleShare} variant="outline" size="sm" disabled={!generatedQR}>
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
@@ -291,8 +447,8 @@ export function AdvancedQRGenerator() {
                 <span>{config.errorCorrection} Level</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Estimated Capacity:</span>
-                <span>~2,953 chars</span>
+                <span className="text-gray-600">Content Length:</span>
+                <span>{config.content.length} chars</span>
               </div>
             </div>
           </CardContent>
