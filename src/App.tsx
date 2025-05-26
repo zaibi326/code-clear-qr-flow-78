@@ -35,6 +35,7 @@ const App = () => (
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/campaigns" element={<CampaignCreator />} />
           <Route path="/data-manager" element={<DataManager />} />
+          <Route path="/bulk-data-selector" element={<BulkDataSelector />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/support" element={<Support />} />

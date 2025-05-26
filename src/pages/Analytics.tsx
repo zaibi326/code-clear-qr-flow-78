@@ -4,10 +4,10 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
-import { ScanActivityChart } from '@/components/analytics/ScanActivityChart';
-import { CampaignPerformanceChart } from '@/components/analytics/CampaignPerformanceChart';
-import { QRCodeTable } from '@/components/analytics/QRCodeTable';
 import { AnalyticsStats } from '@/components/analytics/AnalyticsStats';
+import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
+import { QRCodeTable } from '@/components/analytics/QRCodeTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
   return (
@@ -24,14 +24,28 @@ const Analytics = () => {
               </div>
               
               <AnalyticsFilters />
-              <AnalyticsStats />
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ScanActivityChart />
-                <CampaignPerformanceChart />
-              </div>
-              
-              <QRCodeTable />
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid grid-cols-2 mb-6 w-[400px]">
+                  <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
+                  <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="space-y-6">
+                  <AnalyticsStats />
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <ScanActivityChart />
+                    <CampaignPerformanceChart />
+                  </div>
+                  
+                  <QRCodeTable />
+                </TabsContent>
+                
+                <TabsContent value="advanced">
+                  <AdvancedAnalytics />
+                </TabsContent>
+              </Tabs>
             </main>
           </SidebarInset>
         </div>
@@ -39,5 +53,9 @@ const Analytics = () => {
     </div>
   );
 };
+
+// Import these components to prevent build errors
+import { ScanActivityChart } from '@/components/analytics/ScanActivityChart';
+import { CampaignPerformanceChart } from '@/components/analytics/CampaignPerformanceChart';
 
 export default Analytics;
