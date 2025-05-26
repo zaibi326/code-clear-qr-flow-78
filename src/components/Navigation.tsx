@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { QrCode, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,12 +14,14 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
-              <QrCode className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ClearQR.io
-            </span>
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
+                <QrCode className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                ClearQR.io
+              </span>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -39,12 +42,16 @@ const Navigation = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
-              Login
-            </Button>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
-              Sign Up
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
+                Login
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                Sign Up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -70,12 +77,16 @@ const Navigation = () => {
                 About Us
               </a>
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                <Button variant="ghost" className="justify-start">
-                  Login
-                </Button>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 justify-start">
-                  Sign Up
-                </Button>
+                <Link to="/login">
+                  <Button variant="ghost" className="justify-start w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 justify-start w-full">
+                    Sign Up
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
