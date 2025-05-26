@@ -14,7 +14,7 @@ import {
   SidebarFooter,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { QrCode, BarChart3, Megaphone, FileTemplate, Settings, Home } from 'lucide-react';
+import { QrCode, BarChart3, Megaphone, FileText, Settings, Home } from 'lucide-react';
 
 const menuItems = [
   {
@@ -30,7 +30,7 @@ const menuItems = [
   {
     title: "Templates",
     url: "/dashboard/templates",
-    icon: FileTemplate,
+    icon: FileText,
   },
   {
     title: "Analytics",
