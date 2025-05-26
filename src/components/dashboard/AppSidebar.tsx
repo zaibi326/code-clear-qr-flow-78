@@ -24,17 +24,17 @@ const menuItems = [
   },
   {
     title: "Campaigns",
-    url: "/dashboard/campaigns",
+    url: "/campaigns",
     icon: Megaphone,
   },
   {
     title: "Templates",
-    url: "/dashboard/templates",
+    url: "/templates",
     icon: FileText,
   },
   {
     title: "Analytics",
-    url: "/dashboard/analytics",
+    url: "/analytics",
     icon: BarChart3,
   },
   {
