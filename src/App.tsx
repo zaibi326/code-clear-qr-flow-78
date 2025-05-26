@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import TemplateManager from "./pages/TemplateManager";
+import CampaignCreator from "./pages/CampaignCreator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/templates" element={<TemplateManager />} />
+          <Route path="/campaigns" element={<CampaignCreator />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
