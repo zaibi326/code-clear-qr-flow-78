@@ -11,15 +11,19 @@ const Support = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <SidebarInset>
+          <SidebarInset className="flex-1 overflow-hidden">
             <DashboardTopbar />
-            <main className="flex-1 p-6">
-              <div className="max-w-4xl mx-auto">
-                <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Support & Help</h1>
-                  <p className="text-gray-600">Get help with your account and submit support tickets</p>
+            <main className="flex-1 overflow-auto">
+              <div className="container-responsive py-6 sm:py-8">
+                <div className="max-w-4xl mx-auto">
+                  <header className="mb-6 sm:mb-8">
+                    <h1 className="text-balance mb-2 sm:mb-3">Support & Help</h1>
+                    <p className="text-base sm:text-lg text-gray-600 text-balance">
+                      Get help with your account and submit support tickets
+                    </p>
+                  </header>
+                  <SupportTabs />
                 </div>
-                <SupportTabs />
               </div>
             </main>
           </SidebarInset>

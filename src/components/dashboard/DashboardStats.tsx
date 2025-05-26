@@ -40,28 +40,42 @@ const statsData = [
 
 export function DashboardStats() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid-responsive-stats">
       {statsData.map((stat, index) => (
-        <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
+        <Card 
+          key={index} 
+          className="card-elevated group hover:scale-[1.02] transition-all duration-200"
+          role="article"
+          aria-labelledby={`stat-title-${index}`}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle 
+              id={`stat-title-${index}`}
+              className="text-sm font-medium text-gray-600 leading-tight"
+            >
               {stat.title}
             </CardTitle>
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <stat.icon className="h-4 w-4 text-blue-600" />
+            <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <stat.icon 
+                className="h-4 w-4 text-blue-600" 
+                aria-hidden="true"
+              />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
+          <CardContent className="space-y-2">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
               {stat.value}
             </div>
-            <div className="flex items-center space-x-2">
-              <span className={`text-xs font-medium ${
-                stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-              }`}>
+            <div className="flex items-center gap-2 text-xs sm:text-sm">
+              <span 
+                className={`font-medium ${
+                  stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                }`}
+                aria-label={`${stat.changeType === 'positive' ? 'Increase' : 'Decrease'} of ${stat.change}`}
+              >
                 {stat.change}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-gray-500">
                 {stat.description}
               </span>
             </div>
