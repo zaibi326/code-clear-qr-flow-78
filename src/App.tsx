@@ -11,6 +11,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import TemplateManager from "./pages/TemplateManager";
 import CampaignCreator from "./pages/CampaignCreator";
+import DataManager from "./pages/DataManager";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Support from "./pages/Support";
@@ -32,7 +33,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/campaigns" element={<CampaignCreator />} />
+          <Route path="/data-manager" element={<DataManager />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/support" element={<Support />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
