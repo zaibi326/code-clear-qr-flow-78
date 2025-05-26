@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, Bell, User, Menu } from 'lucide-react';
+import { Search, Bell, User, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +17,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function DashboardTopbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/75 border-b border-gray-200">
       <div className="responsive-padding py-3 sm:py-4">
@@ -74,31 +93,49 @@ export function DashboardTopbar() {
                 >
                   <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                     <AvatarImage src="/placeholder.svg" alt="Profile picture" />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
+                    <AvatarFallback className="bg-blue-100 text-blue-600">
+                      {user ? getInitials(user.name) : <User className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-900 leading-tight">John Doe</p>
-                    <p className="text-xs text-gray-500 leading-tight">john@example.com</p>
+                    <p className="text-sm font-medium text-gray-900 leading-tight">
+                      {user?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 leading-tight">
+                      {user?.email || 'user@example.com'}
+                    </p>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">John Doe</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user?.name || 'User'}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      john@example.com
+                      {user?.email || 'user@example.com'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center">
+                    <SettingsIcon className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/support" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Support
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

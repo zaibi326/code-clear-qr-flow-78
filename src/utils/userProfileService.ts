@@ -1,4 +1,3 @@
-
 import { DatabaseUser } from '@/types/database';
 
 export interface UserProfileUpdate {
@@ -36,17 +35,28 @@ export class UserProfileService {
 
   async loadUserProfile(userId: string): Promise<DatabaseUser | null> {
     try {
-      // In a real app, this would fetch from the database
-      // For now, return mock data
+      // Get user data from localStorage to sync with auth service
+      const userStr = localStorage.getItem('user');
+      let baseUserData = null;
+      
+      if (userStr) {
+        try {
+          baseUserData = JSON.parse(userStr);
+        } catch (e) {
+          console.warn('Failed to parse user data from localStorage');
+        }
+      }
+
+      // Create mock profile based on auth service data
       const mockProfile: DatabaseUser = {
         id: userId,
-        email: 'user@example.com',
-        name: 'John Doe',
-        company: 'Acme Corp',
+        email: baseUserData?.email || 'user@example.com',
+        name: baseUserData?.name || 'Demo User',
+        company: baseUserData?.company || '',
         phone: '+1-555-0123',
-        plan: 'pro',
+        plan: baseUserData?.plan || 'free',
         subscription_status: 'active',
-        created_at: new Date('2024-01-01'),
+        created_at: baseUserData?.createdAt ? new Date(baseUserData.createdAt) : new Date('2024-01-01'),
         updated_at: new Date(),
         timezone: 'America/New_York',
         language: 'en',
@@ -100,9 +110,26 @@ export class UserProfileService {
         updated_at: new Date()
       };
 
-      // In a real app, this would save to the database
-      console.log('Profile updated:', this.userProfile);
+      // Sync with localStorage if auth data needs updating
+      if (updates.name || updates.email || updates.company) {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            const updatedUserData = {
+              ...userData,
+              ...(updates.name && { name: updates.name }),
+              ...(updates.email && { email: updates.email }),
+              ...(updates.company && { company: updates.company })
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUserData));
+          } catch (e) {
+            console.warn('Failed to update user data in localStorage');
+          }
+        }
+      }
 
+      console.log('Profile updated:', this.userProfile);
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Failed to update profile' };
@@ -191,12 +218,8 @@ export class UserProfileService {
 
   async deleteAccount(): Promise<{ success: boolean; error?: string }> {
     try {
-      // In a real app, this would soft delete or anonymize user data
       console.log('Account deletion requested for user:', this.userProfile?.id);
-      
-      // Clear local profile
       this.userProfile = null;
-      
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Failed to delete account' };

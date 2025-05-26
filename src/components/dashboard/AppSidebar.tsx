@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LayoutDashboard, FileText, Zap, Database, BarChart3, Settings, HelpCircle, QrCode, Users } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const menuItems = [
   {
@@ -60,6 +61,16 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <Sidebar>
@@ -98,11 +109,17 @@ export function AppSidebar() {
         <div className="flex items-center space-x-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src="/placeholder.svg" alt="User" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback className="bg-blue-100 text-blue-600">
+              {user ? getInitials(user.name) : 'U'}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-            <p className="text-xs text-gray-500 truncate">john@example.com</p>
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user?.name || 'User'}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {user?.email || 'user@example.com'}
+            </p>
           </div>
         </div>
       </SidebarFooter>

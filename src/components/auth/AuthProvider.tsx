@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService, User, AuthState } from '@/utils/authService';
+import { userProfileService } from '@/utils/userProfileService';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType extends AuthState {
@@ -31,8 +32,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.checkAuthStatus();
+      const currentAuthState = authService.getAuthState();
+      
+      // Load user profile if authenticated
+      if (isAuth && currentAuthState.user) {
+        await userProfileService.loadUserProfile(currentAuthState.user.id);
+      }
+      
       setAuthState({
-        ...authService.getAuthState(),
+        ...currentAuthState,
         isLoading: false
       });
     };
@@ -44,11 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const result = await authService.login({ email, password });
     
-    if (result.success) {
+    if (result.success && result.user) {
+      // Load user profile after successful login
+      await userProfileService.loadUserProfile(result.user.id);
+      
       setAuthState(authService.getAuthState());
       toast({
         title: "Welcome back!",
-        description: "You have successfully logged in.",
+        description: `Hello ${result.user.name}! You have successfully logged in.`,
       });
       return true;
     } else {
@@ -67,11 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const result = await authService.register({ name, email, password, company });
     
-    if (result.success) {
+    if (result.success && result.user) {
+      // Load user profile after successful registration
+      await userProfileService.loadUserProfile(result.user.id);
+      
       setAuthState(authService.getAuthState());
       toast({
         title: "Account created!",
-        description: "Welcome to ClearQR.io",
+        description: `Welcome to ClearQR.io, ${result.user.name}!`,
       });
       return true;
     } else {
@@ -86,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async (): Promise<void> => {
+    const currentUser = authState.user;
     await authService.logout();
     setAuthState({
       user: null,
@@ -94,14 +109,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     toast({
       title: "Logged out",
-      description: "You have been successfully logged out.",
+      description: `Goodbye ${currentUser?.name || 'User'}! You have been successfully logged out.`,
     });
   };
 
   const updateProfile = async (updates: Partial<User>): Promise<boolean> => {
     const result = await authService.updateProfile(updates);
     
-    if (result.success) {
+    if (result.success && result.user) {
+      // Update user profile service as well
+      await userProfileService.updateProfile({
+        name: result.user.name,
+        email: result.user.email,
+        company: result.user.company
+      });
+      
       setAuthState(authService.getAuthState());
       toast({
         title: "Profile updated",

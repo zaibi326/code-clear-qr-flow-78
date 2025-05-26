@@ -4,20 +4,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckCircle } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/components/auth/AuthProvider';
 import FormField from './FormField';
 import PasswordInput from './PasswordInput';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const { register, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    company: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false
@@ -26,6 +27,7 @@ const RegistrationForm = () => {
     firstName: '',
     lastName: '',
     email: '',
+    company: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: ''
@@ -36,6 +38,7 @@ const RegistrationForm = () => {
       firstName: '',
       lastName: '',
       email: '',
+      company: '',
       password: '',
       confirmPassword: '',
       agreeToTerms: ''
@@ -95,32 +98,21 @@ const RegistrationForm = () => {
       return;
     }
 
-    setIsLoading(true);
+    const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
     
     try {
-      console.log('Creating account with data:', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-      });
+      const success = await register(
+        fullName,
+        formData.email,
+        formData.password,
+        formData.company || undefined
+      );
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Account created successfully!', {
-        description: 'Welcome to ClearQR.io! You can now sign in to your account.'
-      });
-      
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
-      
+      if (success) {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error('Registration failed', {
-        description: 'There was an error creating your account. Please try again.'
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -178,6 +170,17 @@ const RegistrationForm = () => {
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
                 : 'focus:border-blue-500 focus:ring-blue-500'
             }`}
+          />
+        </FormField>
+
+        <FormField label="Company (Optional)" htmlFor="company" error={errors.company}>
+          <Input
+            id="company"
+            type="text"
+            placeholder="Acme Corp"
+            value={formData.company}
+            onChange={(e) => handleInputChange('company', e.target.value)}
+            className="transition-all duration-200 focus:border-blue-500 focus:ring-blue-500"
           />
         </FormField>
 
