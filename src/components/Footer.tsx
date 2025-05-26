@@ -1,36 +1,37 @@
 
 import React from 'react';
 import { QrCode, Twitter, Linkedin, Github, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const footerLinks = {
     Product: [
-      'Features',
-      'Pricing',
-      'API Documentation',
-      'Integrations',
-      'Changelog'
+      { name: 'Features', href: '#features' },
+      { name: 'Pricing', href: '#pricing' },
+      { name: 'API Documentation', href: '/support' },
+      { name: 'Integrations', href: '/support' },
+      { name: 'Changelog', href: '/support' }
     ],
     Solutions: [
-      'Marketing',
-      'Events',
-      'Restaurants',
-      'Retail',
-      'Healthcare'
+      { name: 'Marketing', href: '#features' },
+      { name: 'Events', href: '#features' },
+      { name: 'Restaurants', href: '#features' },
+      { name: 'Retail', href: '#features' },
+      { name: 'Healthcare', href: '#features' }
     ],
     Resources: [
-      'Blog',
-      'Help Center',
-      'Case Studies',
-      'QR Code Generator',
-      'Best Practices'
+      { name: 'Blog', href: '/support' },
+      { name: 'Help Center', href: '/support' },
+      { name: 'Case Studies', href: '/support' },
+      { name: 'QR Code Generator', href: '/quick-generate' },
+      { name: 'Best Practices', href: '/support' }
     ],
     Company: [
-      'About Us',
-      'Careers',
-      'Contact',
-      'Privacy Policy',
-      'Terms of Service'
+      { name: 'About Us', href: '#about' },
+      { name: 'Careers', href: '/support' },
+      { name: 'Contact', href: '/support' },
+      { name: 'Privacy Policy', href: '/support' },
+      { name: 'Terms of Service', href: '/support' }
     ]
   };
 
@@ -41,12 +42,12 @@ const Footer = () => {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-6">
+            <Link to="/" className="flex items-center space-x-2 mb-6">
               <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
                 <QrCode className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold">ClearQR.io</span>
-            </div>
+            </Link>
             
             <p className="text-gray-400 mb-6 max-w-md">
               The most powerful QR code platform for businesses. Create, customize, 
@@ -54,16 +55,16 @@ const Footer = () => {
             </p>
             
             <div className="flex space-x-4">
-              <a href="#" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="#" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
                 <Github className="h-5 w-5" />
               </a>
-              <a href="#" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
+              <a href="mailto:support@clearqr.io" className="bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition-colors">
                 <Mail className="h-5 w-5" />
               </a>
             </div>
@@ -75,13 +76,22 @@ const Footer = () => {
               <h3 className="font-semibold text-lg mb-4">{category}</h3>
               <ul className="space-y-3">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a 
-                      href="#" 
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      {link}
-                    </a>
+                  <li key={link.name}>
+                    {link.href.startsWith('#') ? (
+                      <a 
+                        href={link.href} 
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {link.name}
+                      </a>
+                    ) : (
+                      <Link 
+                        to={link.href} 
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {link.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -114,9 +124,9 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
           <p>&copy; 2024 ClearQR.io. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Cookies</a>
+            <Link to="/support" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/support" className="hover:text-white transition-colors">Terms</Link>
+            <Link to="/support" className="hover:text-white transition-colors">Cookies</Link>
           </div>
         </div>
       </div>

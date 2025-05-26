@@ -5,6 +5,11 @@ import { ArrowRight, Play, QrCode, BarChart3, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
+  const handleWatchDemo = () => {
+    // Create a modal or redirect to demo video
+    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+  };
+
   return (
     <section className="relative pt-20 pb-28 lg:pt-32 lg:pb-40 bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
       {/* Background decorations */}
@@ -64,7 +69,11 @@ const Hero = () => {
                 </Button>
               </Link>
               
-              <Button variant="outline" className="px-8 py-4 text-lg border-2 border-gray-300 hover:border-gray-400 bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-200 group">
+              <Button 
+                variant="outline" 
+                className="px-8 py-4 text-lg border-2 border-gray-300 hover:border-gray-400 bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-200 group"
+                onClick={handleWatchDemo}
+              >
                 <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 Watch Demo
               </Button>
