@@ -6,10 +6,27 @@ export const supabaseService = {
   // User Profile operations
   async createUserProfile(profile: Omit<DatabaseUser, 'id'> & { id: string }): Promise<DatabaseUser> {
     const profileData = {
-      ...profile,
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      company: profile.company || '',
+      phone: profile.phone || null,
+      avatar_url: profile.avatar_url || null,
+      plan: profile.plan || 'free',
+      subscription_status: profile.subscription_status || 'trial',
+      language: profile.language || 'en',
+      timezone: profile.timezone || 'UTC',
+      preferences: profile.preferences || {},
+      usage_stats: profile.usage_stats || {
+        qr_codes_created: 0,
+        campaigns_created: 0,
+        total_scans: 0,
+        storage_used: 0
+      },
       created_at: profile.created_at.toISOString(),
       updated_at: profile.updated_at.toISOString(),
-      trial_ends_at: profile.trial_ends_at?.toISOString()
+      trial_ends_at: profile.trial_ends_at?.toISOString() || null,
+      last_login_at: profile.last_login_at?.toISOString() || null
     };
 
     const { data, error } = await supabase
@@ -24,17 +41,21 @@ export const supabaseService = {
       ...data,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
     } as DatabaseUser;
   },
 
   async updateUserProfile(userId: string, updates: Partial<DatabaseUser>): Promise<DatabaseUser> {
-    const updateData = {
+    const updateData: any = {
       ...updates,
-      updated_at: new Date().toISOString(),
-      ...(updates.created_at && { created_at: updates.created_at.toISOString() }),
-      ...(updates.trial_ends_at && { trial_ends_at: updates.trial_ends_at.toISOString() })
+      updated_at: new Date().toISOString()
     };
+
+    // Convert Date objects to ISO strings for database storage
+    if (updates.created_at) updateData.created_at = updates.created_at.toISOString();
+    if (updates.trial_ends_at) updateData.trial_ends_at = updates.trial_ends_at.toISOString();
+    if (updates.last_login_at) updateData.last_login_at = updates.last_login_at.toISOString();
 
     const { data, error } = await supabase
       .from('profiles')
@@ -49,7 +70,8 @@ export const supabaseService = {
       ...data,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
     } as DatabaseUser;
   },
 
@@ -69,17 +91,18 @@ export const supabaseService = {
       ...data,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
     } as DatabaseUser;
   },
 
   // QR Code operations
-  async createQRCode(qrCode: Omit<DatabaseQRCode, 'id'>): Promise<DatabaseQRCode> {
+  async createQRCode(qrCode: Omit<DatabaseQRCode, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseQRCode> {
     const qrCodeData = {
       ...qrCode,
-      created_at: qrCode.created_at.toISOString(),
-      updated_at: qrCode.updated_at.toISOString(),
-      expires_at: qrCode.expires_at?.toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      expires_at: qrCode.expires_at?.toISOString() || null
     };
 
     const { data, error } = await supabase
@@ -150,11 +173,11 @@ export const supabaseService = {
   },
 
   // Template operations
-  async createTemplate(template: Omit<DatabaseTemplate, 'id'>): Promise<DatabaseTemplate> {
+  async createTemplate(template: Omit<DatabaseTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseTemplate> {
     const templateData = {
       ...template,
-      created_at: template.created_at.toISOString(),
-      updated_at: template.updated_at.toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase

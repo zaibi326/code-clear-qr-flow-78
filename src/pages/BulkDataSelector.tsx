@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
+import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { BulkDataSelector as BulkDataSelectorComponent } from '@/components/data/BulkDataSelector';
 import { Template } from '@/types/template';

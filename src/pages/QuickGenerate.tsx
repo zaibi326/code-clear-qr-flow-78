@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/dashboard/AppSidebar';
+import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRGeneratorStepper } from '@/components/qr/QRGeneratorStepper';
 import { useSearchParams } from 'react-router-dom';

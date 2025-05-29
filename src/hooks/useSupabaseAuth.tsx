@@ -103,14 +103,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        // Create user profile
+        // Create user profile with all required fields
         await supabaseService.createUserProfile({
           id: data.user.id,
           email,
           name: fullName,
           company: company || '',
+          phone: null,
+          avatar_url: null,
+          plan: 'free',
+          subscription_status: 'trial',
+          language: 'en',
+          timezone: 'UTC',
+          preferences: {},
+          usage_stats: {
+            qr_codes_created: 0,
+            campaigns_created: 0,
+            total_scans: 0,
+            storage_used: 0
+          },
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
+          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+          last_login_at: null
         });
         return true;
       }

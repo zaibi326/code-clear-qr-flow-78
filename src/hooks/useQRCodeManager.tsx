@@ -13,7 +13,6 @@ export const useQRCodeManager = () => {
   useEffect(() => {
     if (user) {
       loadQRCodes();
-      subscribeToQRCodeUpdates();
     }
   }, [user]);
 
@@ -36,19 +35,14 @@ export const useQRCodeManager = () => {
     if (!user) return null;
 
     try {
-      const qrCodeId = await supabaseService.createQRCode({
+      const qrCode = await supabaseService.createQRCode({
         ...qrCodeData,
         user_id: user.id
       });
       
-      if (qrCodeId) {
-        toast.success('QR code created successfully');
-        await loadQRCodes(); // Refresh the list
-        return qrCodeId;
-      } else {
-        toast.error('Failed to create QR code');
-        return null;
-      }
+      toast.success('QR code created successfully');
+      await loadQRCodes(); // Refresh the list
+      return qrCode;
     } catch (error) {
       console.error('Error creating QR code:', error);
       toast.error('Failed to create QR code');
@@ -58,54 +52,28 @@ export const useQRCodeManager = () => {
 
   const updateQRCode = async (id: string, updates: Partial<DatabaseQRCode>) => {
     try {
-      const success = await supabaseService.updateQRCode(id, updates);
-      if (success) {
-        toast.success('QR code updated successfully');
-        await loadQRCodes();
-        return true;
-      } else {
-        toast.error('Failed to update QR code');
-        return false;
-      }
+      const updatedQRCode = await supabaseService.updateQRCode(id, updates);
+      toast.success('QR code updated successfully');
+      await loadQRCodes();
+      return updatedQRCode;
     } catch (error) {
       console.error('Error updating QR code:', error);
       toast.error('Failed to update QR code');
-      return false;
+      return null;
     }
   };
 
   const deleteQRCode = async (id: string) => {
     try {
-      const success = await supabaseService.deleteQRCode(id);
-      if (success) {
-        toast.success('QR code deleted successfully');
-        setQRCodes(prev => prev.filter(qr => qr.id !== id));
-        return true;
-      } else {
-        toast.error('Failed to delete QR code');
-        return false;
-      }
+      await supabaseService.deleteQRCode(id);
+      toast.success('QR code deleted successfully');
+      setQRCodes(prev => prev.filter(qr => qr.id !== id));
+      return true;
     } catch (error) {
       console.error('Error deleting QR code:', error);
       toast.error('Failed to delete QR code');
       return false;
     }
-  };
-
-  const subscribeToQRCodeUpdates = () => {
-    if (!user) return;
-
-    const subscription = supabaseService.subscribeToUserQRCodes(
-      user.id,
-      (payload) => {
-        console.log('QR code update:', payload);
-        loadQRCodes(); // Refresh when changes occur
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
   };
 
   return {
