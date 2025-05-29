@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,9 +102,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        // Create user profile with all required fields
+        // Create user profile with all required fields (excluding id since it's handled by the service)
         await supabaseService.createUserProfile({
-          id: data.user.id,
           email,
           name: fullName,
           company: company || '',
@@ -137,7 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           updated_at: new Date(),
           trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
           last_login_at: null
-        });
+        }, data.user.id);
         return true;
       }
 

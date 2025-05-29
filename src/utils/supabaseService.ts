@@ -1,14 +1,13 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseUser, DatabaseQRCode, DatabaseScanEvent } from '@/types/database';
 
 export const supabaseService = {
   // User Profile Operations
-  async createUserProfile(userData: Omit<DatabaseUser, 'id'>): Promise<DatabaseUser> {
+  async createUserProfile(userData: Omit<DatabaseUser, 'id'>, userId: string): Promise<DatabaseUser> {
     const { data, error } = await supabase
       .from('profiles')
       .insert({
-        id: userData.id,
+        id: userId,
         email: userData.email,
         name: userData.name,
         company: userData.company || '',
@@ -51,6 +50,7 @@ export const supabaseService = {
 
     return {
       ...data,
+      id: userId,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
       trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
