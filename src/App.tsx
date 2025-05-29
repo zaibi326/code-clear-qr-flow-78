@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AuthProvider } from "@/hooks/useSupabaseAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -44,6 +44,46 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/qr-codes" element={
+              <ProtectedRoute>
+                <QuickGenerate />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/templates" element={
+              <ProtectedRoute>
+                <TemplateManager />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/projects" element={
+              <ProtectedRoute>
+                <DataManager />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/campaigns" element={
+              <ProtectedRoute>
+                <CampaignCreator />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/integrations" element={
+              <ProtectedRoute>
+                <Integrations />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/activity" element={
+              <ProtectedRoute>
+                <Monitoring />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/help" element={
+              <ProtectedRoute>
+                <Support />
               </ProtectedRoute>
             } />
             <Route path="/quick-generate" element={
