@@ -13,6 +13,7 @@ const QuickGenerate = () => {
   useEffect(() => {
     const type = searchParams.get('type');
     if (type) {
+      console.log(`QR type from URL: ${type}`);
       setSelectedType(type);
     }
   }, [searchParams]);
@@ -44,27 +45,27 @@ const QuickGenerate = () => {
 
   const getPageDescription = () => {
     const descriptions: Record<string, string> = {
-      'url': 'Create QR codes that link to websites, videos, forms, or any URL',
-      'multi-link': 'Build a link page with multiple destinations accessible through one QR code',
-      'pdf': 'Generate QR codes that link directly to PDF documents',
-      'location': 'Create location-based QR codes that open Google Maps',
-      'restaurant-menu': 'Design QR codes for digital restaurant menus',
-      'form': 'Create QR codes that link to custom forms for data collection',
-      'smart-rules': 'Build intelligent QR codes with conditional redirects',
-      'social-media': 'Generate QR codes linking to your social media profiles',
-      'landing-page': 'Create QR codes for mobile-optimized landing pages',
-      'mobile-app': 'Generate app download or deep-link QR codes',
-      'coupon-code': 'Create QR codes that display coupon information',
-      'geolocation-redirect': 'Build location-aware QR codes with country-specific redirects',
-      'facebook-page': 'Generate QR codes linking to Facebook page likes',
-      'business-page': 'Create QR codes showcasing business information',
-      'image': 'Generate QR codes that display images',
-      'mp3': 'Create QR codes that play audio files',
-      'email': 'Generate QR codes for email composition',
-      'call': 'Create QR codes that initiate phone calls',
-      'sms': 'Generate QR codes for SMS messaging'
+      'url': 'Create QR codes that link to websites, videos, forms, or any URL. Perfect for driving traffic and sharing links instantly.',
+      'multi-link': 'Build a link page with multiple destinations accessible through one QR code. Ideal for social media and marketing campaigns.',
+      'pdf': 'Generate QR codes that link directly to PDF documents. Great for sharing brochures, menus, and documentation.',
+      'location': 'Create location-based QR codes that open Google Maps with your specified address or coordinates.',
+      'restaurant-menu': 'Design QR codes for digital restaurant menus. Enable contactless dining experiences for your customers.',
+      'form': 'Create QR codes that link to custom forms for data collection, surveys, and feedback gathering.',
+      'smart-rules': 'Build intelligent QR codes with conditional redirects based on device, location, or time.',
+      'social-media': 'Generate QR codes linking to your social media profiles for increased engagement and followers.',
+      'landing-page': 'Create QR codes for mobile-optimized landing pages to showcase products or services.',
+      'mobile-app': 'Generate app download or deep-link QR codes for iOS and Android applications.',
+      'coupon-code': 'Create QR codes that display coupon information and promotional offers.',
+      'geolocation-redirect': 'Build location-aware QR codes with country-specific redirects for global campaigns.',
+      'facebook-page': 'Generate QR codes linking directly to your Facebook page for easy likes and follows.',
+      'business-page': 'Create QR codes showcasing comprehensive business information and contact details.',
+      'image': 'Generate QR codes that display images when scanned. Perfect for galleries and visual content.',
+      'mp3': 'Create QR codes that play audio files when scanned. Great for music, podcasts, and audio content.',
+      'email': 'Generate QR codes for email composition with pre-filled recipient and subject lines.',
+      'call': 'Create QR codes that initiate phone calls when scanned. Perfect for contact cards and business cards.',
+      'sms': 'Generate QR codes for SMS messaging with pre-filled phone numbers and messages.'
     };
-    return descriptions[selectedType] || 'Generate custom QR codes instantly with advanced styling options';
+    return descriptions[selectedType] || 'Generate custom QR codes instantly with advanced styling options and analytics tracking.';
   };
 
   return (
@@ -77,7 +78,7 @@ const QuickGenerate = () => {
             <main className="flex-1 p-6 space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{getPageTitle()}</h1>
-                <p className="text-gray-600">{getPageDescription()}</p>
+                <p className="text-gray-600 text-lg leading-relaxed">{getPageDescription()}</p>
               </div>
               
               <AdvancedQRGenerator initialType={selectedType} />

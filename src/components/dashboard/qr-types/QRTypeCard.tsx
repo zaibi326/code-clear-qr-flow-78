@@ -24,11 +24,20 @@ export function QRTypeCard({ qrType, showBadge = true }: QRTypeCardProps) {
   const navigate = useNavigate();
 
   const handleStartFreeTrial = (typeId: string) => {
+    console.log(`Navigating to QR generator for type: ${typeId}`);
+    navigate(`/quick-generate?type=${typeId}`);
+  };
+
+  const handleCardClick = (typeId: string) => {
+    console.log(`Card clicked for type: ${typeId}`);
     navigate(`/quick-generate?type=${typeId}`);
   };
 
   return (
-    <div className="relative p-6 border rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-300 bg-white">
+    <div 
+      className="relative p-6 border rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-300 bg-white"
+      onClick={() => handleCardClick(qrType.id)}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-lg ${qrType.color} text-white group-hover:scale-110 transition-transform duration-300`}>
           <qrType.icon className="h-6 w-6" />
@@ -57,7 +66,10 @@ export function QRTypeCard({ qrType, showBadge = true }: QRTypeCardProps) {
       </p>
 
       <Button 
-        onClick={() => handleStartFreeTrial(qrType.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleStartFreeTrial(qrType.id);
+        }}
         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 group"
       >
         <Crown className="mr-2 h-4 w-4" />

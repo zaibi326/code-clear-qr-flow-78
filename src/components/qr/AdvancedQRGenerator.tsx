@@ -21,28 +21,38 @@ export function AdvancedQRGenerator({ initialType = 'url' }: AdvancedQRGenerator
 
   useEffect(() => {
     if (initialType) {
-      const typeMap: Record<string, string> = {
-        'url': 'url',
-        'multi-link': 'url',
-        'pdf': 'url',
-        'location': 'url',
-        'email': 'email',
-        'call': 'phone',
-        'sms': 'phone',
-        'form': 'url',
-        'social-media': 'url',
-        'landing-page': 'url',
-        'mobile-app': 'url',
-        'restaurant-menu': 'url',
-        'business-page': 'url',
-        'facebook-page': 'url',
-        'coupon-code': 'url',
-        'image': 'url',
-        'mp3': 'url'
+      console.log(`Setting initial QR type: ${initialType}`);
+      
+      // Map QR types to their base configuration
+      const typeMap: Record<string, { type: string; defaultContent: string }> = {
+        'url': { type: 'url', defaultContent: 'https://example.com' },
+        'multi-link': { type: 'url', defaultContent: 'https://linktr.ee/yourname' },
+        'pdf': { type: 'url', defaultContent: 'https://example.com/document.pdf' },
+        'location': { type: 'url', defaultContent: 'https://maps.google.com/?q=New+York+NY' },
+        'email': { type: 'email', defaultContent: 'contact@example.com' },
+        'call': { type: 'phone', defaultContent: '+1234567890' },
+        'sms': { type: 'phone', defaultContent: '+1234567890' },
+        'form': { type: 'url', defaultContent: 'https://forms.google.com/your-form' },
+        'social-media': { type: 'url', defaultContent: 'https://instagram.com/yourprofile' },
+        'landing-page': { type: 'url', defaultContent: 'https://yourlandingpage.com' },
+        'mobile-app': { type: 'url', defaultContent: 'https://apps.apple.com/app/yourapp' },
+        'restaurant-menu': { type: 'url', defaultContent: 'https://yourrestaurant.com/menu' },
+        'business-page': { type: 'url', defaultContent: 'https://yourbusiness.com' },
+        'facebook-page': { type: 'url', defaultContent: 'https://facebook.com/yourpage' },
+        'coupon-code': { type: 'url', defaultContent: 'https://yourstore.com/coupon/SAVE20' },
+        'image': { type: 'url', defaultContent: 'https://example.com/image.jpg' },
+        'mp3': { type: 'url', defaultContent: 'https://example.com/audio.mp3' },
+        'smart-rules': { type: 'url', defaultContent: 'https://smartrules.example.com' },
+        'geolocation-redirect': { type: 'url', defaultContent: 'https://geo-redirect.example.com' }
       };
       
-      const qrType = typeMap[initialType] || 'url';
-      setConfig(prev => ({ ...prev, type: qrType as any }));
+      const mappedType = typeMap[initialType] || { type: 'url', defaultContent: 'https://example.com' };
+      
+      setConfig(prev => ({ 
+        ...prev, 
+        type: mappedType.type as any,
+        content: mappedType.defaultContent
+      }));
     }
   }, [initialType, setConfig]);
 
