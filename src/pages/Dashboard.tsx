@@ -3,15 +3,10 @@ import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
-import { ScanActivityChart } from '@/components/dashboard/ScanActivityChart';
-import { ProjectSelector } from '@/components/dashboard/ProjectSelector';
-import { MultiProjectComparison } from '@/components/dashboard/MultiProjectComparison';
-import { QRCodeTypeSelector } from '@/components/dashboard/QRCodeTypeSelector';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { QRGeneratorStepper } from '@/components/qr/QRGeneratorStepper';
 
 const Dashboard = () => {
-  console.log('Dashboard: Rendering dashboard page');
+  console.log('Dashboard: Rendering dashboard page with QR generator');
   
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -20,25 +15,13 @@ const Dashboard = () => {
           <AppSidebar />
           <SidebarInset>
             <DashboardTopbar />
-            <main className="flex-1 p-6 space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-                <p className="text-gray-600">Welcome back! Here's what's happening with your QR campaigns.</p>
+            <main className="flex-1 p-6">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Create QR Code</h1>
+                <p className="text-gray-600">Generate custom QR codes with advanced styling options and analytics tracking.</p>
               </div>
               
-              <QRCodeTypeSelector />
-              <ProjectSelector />
-              <DashboardStats />
-              
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div className="xl:col-span-2">
-                  <ScanActivityChart />
-                </div>
-                <div className="space-y-6">
-                  <MultiProjectComparison />
-                  <NotificationCenter />
-                </div>
-              </div>
+              <QRGeneratorStepper />
             </main>
           </SidebarInset>
         </div>
