@@ -4,6 +4,7 @@ import { useQRGenerator } from '@/hooks/useQRGenerator';
 import { QRConfigurationPanel } from './QRConfigurationPanel';
 import { QRPreviewPanel } from './QRPreviewPanel';
 import { QRCodeDetails } from './QRCodeDetails';
+import { QRSamplePreview } from './QRSamplePreview';
 
 interface AdvancedQRGeneratorProps {
   initialType?: string;
@@ -56,28 +57,62 @@ export function AdvancedQRGenerator({ initialType = 'url' }: AdvancedQRGenerator
     }
   }, [initialType, setConfig]);
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Hidden canvas for QR generation */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-      
-      {/* Configuration Panel */}
-      <div className="space-y-6">
-        <QRConfigurationPanel 
-          config={config}
-          onConfigChange={setConfig}
-          onContentChange={handleContentChange}
-        />
-      </div>
+  const getTypeTitle = () => {
+    const typeNames: Record<string, string> = {
+      'url': 'Website URL',
+      'multi-link': 'Multi-link Page',
+      'pdf': 'PDF Document',
+      'location': 'Location',
+      'email': 'Email',
+      'call': 'Phone Call',
+      'sms': 'SMS Message',
+      'form': 'Form',
+      'social-media': 'Social Media',
+      'landing-page': 'Landing Page',
+      'mobile-app': 'Mobile App',
+      'restaurant-menu': 'Restaurant Menu',
+      'business-page': 'Business Page',
+      'facebook-page': 'Facebook Page',
+      'coupon-code': 'Coupon Code',
+      'image': 'Image',
+      'mp3': 'Audio File',
+      'smart-rules': 'Smart Rules',
+      'geolocation-redirect': 'Geolocation Redirect'
+    };
+    return typeNames[initialType] || 'Content';
+  };
 
-      {/* Preview Panel */}
-      <div className="space-y-6">
-        <QRPreviewPanel 
-          config={config}
-          generatedQR={generatedQR}
-          isGenerating={isGenerating}
-        />
-        <QRCodeDetails config={config} />
+  return (
+    <div className="space-y-6">
+      {/* Sample Preview Section */}
+      <QRSamplePreview 
+        type={initialType}
+        sampleContent={config.content}
+        title={getTypeTitle()}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Hidden canvas for QR generation */}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+        
+        {/* Configuration Panel */}
+        <div className="space-y-6">
+          <QRConfigurationPanel 
+            config={config}
+            onConfigChange={setConfig}
+            onContentChange={handleContentChange}
+          />
+        </div>
+
+        {/* Preview Panel */}
+        <div className="space-y-6">
+          <QRPreviewPanel 
+            config={config}
+            generatedQR={generatedQR}
+            isGenerating={isGenerating}
+          />
+          <QRCodeDetails config={config} />
+        </div>
       </div>
     </div>
   );
