@@ -1,17 +1,109 @@
 
 export const generateQRContent = (qrTypeId: string, setupData: any): string => {
+  console.log(`Generating QR content for type: ${qrTypeId}`, setupData);
+  
   switch (qrTypeId) {
+    // Dynamic QR Codes
     case 'url':
-    case 'multi-link':
-    case 'pdf':
       return setupData.url || 'https://example.com';
+      
+    case 'multi-link':
+      return setupData.url || 'https://linktr.ee/example';
+      
+    case 'pdf':
+      return setupData.url || 'https://example.com/document.pdf';
+      
+    case 'restaurant-menu':
+      return setupData.menuUrl || setupData.url || 'https://example.com/menu';
+      
+    case 'form':
+      return setupData.formUrl || setupData.url || 'https://forms.google.com/example';
+      
+    case 'smart-rules':
+      return setupData.primaryUrl || setupData.url || 'https://example.com/smart';
+      
+    case 'social-media':
+      return setupData.socialUrl || setupData.url || 'https://linktr.ee/social';
+      
+    case 'landing-page':
+      return setupData.pageUrl || setupData.url || 'https://example.com/landing';
+      
+    case 'mobile-app':
+      // For mobile apps, create a smart link that detects platform
+      const appUrl = setupData.appUrl || setupData.url;
+      const iosUrl = setupData.iosUrl || 'https://apps.apple.com/app/example';
+      const androidUrl = setupData.androidUrl || 'https://play.google.com/store/apps/details?id=com.example';
+      return appUrl || iosUrl; // Default to iOS URL if no universal link
+      
+    case 'location':
+      const lat = setupData.latitude || '40.7128';
+      const lng = setupData.longitude || '-74.0060';
+      const label = setupData.locationName || 'Location';
+      return `https://maps.google.com/?q=${lat},${lng}+(${encodeURIComponent(label)})`;
+      
+    case 'coupon-code':
+      return setupData.couponUrl || setupData.url || 'https://example.com/coupon';
+      
+    case 'geolocation-redirect':
+      return setupData.defaultUrl || setupData.url || 'https://example.com';
+      
+    case 'facebook-page':
+      const fbPage = setupData.facebookPage || setupData.url || 'https://facebook.com/example';
+      return fbPage.startsWith('http') ? fbPage : `https://facebook.com/${fbPage}`;
+      
+    case 'business-page':
+      return setupData.businessUrl || setupData.url || 'https://example.com/business';
+      
+    case 'image':
+      return setupData.imageUrl || setupData.url || 'https://example.com/image.jpg';
+      
+    case 'mp3':
+      return setupData.audioUrl || setupData.url || 'https://example.com/audio.mp3';
+      
+    // Static QR Codes
     case 'email-static':
-      return `mailto:${setupData.email}${setupData.subject ? `?subject=${setupData.subject}` : ''}`;
+      const email = setupData.email || 'contact@example.com';
+      const subject = setupData.subject ? `?subject=${encodeURIComponent(setupData.subject)}` : '';
+      const body = setupData.body ? `${subject ? '&' : '?'}body=${encodeURIComponent(setupData.body)}` : '';
+      return `mailto:${email}${subject}${body}`;
+      
     case 'call-static':
-      return `tel:${setupData.phone}`;
+      const phone = setupData.phone || '+1234567890';
+      return `tel:${phone.replace(/\s+/g, '')}`;
+      
     case 'sms-static':
-      return `sms:${setupData.phone}${setupData.message ? `?body=${setupData.message}` : ''}`;
+      const smsPhone = setupData.phone || '+1234567890';
+      const message = setupData.message ? `?body=${encodeURIComponent(setupData.message)}` : '';
+      return `sms:${smsPhone.replace(/\s+/g, '')}${message}`;
+      
     default:
-      return setupData.content || 'Default content';
+      console.warn(`Unknown QR type: ${qrTypeId}, using default content`);
+      return setupData.content || setupData.url || 'https://example.com';
   }
+};
+
+export const getQRTypeDescription = (qrTypeId: string): string => {
+  const descriptions: Record<string, string> = {
+    'url': 'Opens a website URL when scanned',
+    'multi-link': 'Shows a page with multiple links (like Linktree)',
+    'pdf': 'Opens a PDF document for viewing or download',
+    'restaurant-menu': 'Displays a restaurant or bar menu',
+    'form': 'Opens a form for data collection',
+    'smart-rules': 'Redirects to different destinations based on conditions',
+    'social-media': 'Shows your social media profiles',
+    'landing-page': 'Opens a custom mobile-optimized landing page',
+    'mobile-app': 'Redirects to app store or opens app if installed',
+    'location': 'Opens location in Google Maps',
+    'coupon-code': 'Shows a coupon or discount code',
+    'geolocation-redirect': 'Shows different content based on user location',
+    'facebook-page': 'Opens your Facebook page',
+    'business-page': 'Shows your business information',
+    'image': 'Displays an image',
+    'mp3': 'Plays an audio file',
+    'email-static': 'Opens email app to send an email',
+    'call-static': 'Initiates a phone call',
+    'sms-static': 'Opens SMS app to send a text message'
+  };
+  
+  return descriptions[qrTypeId] || 'Performs the configured action when scanned';
 };
