@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { QrCode, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 interface QRSamplePreviewProps {
   type: string;
@@ -11,32 +11,6 @@ interface QRSamplePreviewProps {
 }
 
 export function QRSamplePreview({ type, sampleContent, title }: QRSamplePreviewProps) {
-  const getSampleQRCode = () => {
-    // Generate a simple QR code pattern for preview
-    return (
-      <div className="w-32 h-32 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center relative">
-        <div className="w-28 h-28 bg-black relative">
-          {/* Simple QR code pattern */}
-          <div className="absolute inset-2 bg-white"></div>
-          <div className="absolute top-2 left-2 w-6 h-6 bg-black"></div>
-          <div className="absolute top-2 right-2 w-6 h-6 bg-black"></div>
-          <div className="absolute bottom-2 left-2 w-6 h-6 bg-black"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-black"></div>
-          
-          {/* Random pattern dots */}
-          <div className="absolute top-4 left-8 w-1 h-1 bg-black"></div>
-          <div className="absolute top-6 left-6 w-1 h-1 bg-black"></div>
-          <div className="absolute top-8 left-10 w-1 h-1 bg-black"></div>
-          <div className="absolute top-10 left-4 w-1 h-1 bg-black"></div>
-          <div className="absolute top-12 left-12 w-1 h-1 bg-black"></div>
-          <div className="absolute top-14 left-8 w-1 h-1 bg-black"></div>
-          <div className="absolute top-16 left-14 w-1 h-1 bg-black"></div>
-          <div className="absolute top-18 left-6 w-1 h-1 bg-black"></div>
-        </div>
-      </div>
-    );
-  };
-
   const getPreviewContent = () => {
     switch (type) {
       case 'url':
@@ -124,7 +98,9 @@ export function QRSamplePreview({ type, sampleContent, title }: QRSamplePreviewP
       default:
         return (
           <div className="bg-gray-50 border rounded-lg p-4 min-h-[200px] flex flex-col items-center justify-center">
-            <QrCode className="h-12 w-12 text-gray-400 mb-3" />
+            <div className="w-8 h-8 bg-blue-500 rounded-full mb-3 flex items-center justify-center">
+              <Eye className="h-4 w-4 text-white" />
+            </div>
             <h3 className="font-semibold text-gray-900 mb-2">Content Preview</h3>
             <p className="text-sm text-gray-600 text-center">
               Preview will appear here once content is added
@@ -137,23 +113,11 @@ export function QRSamplePreview({ type, sampleContent, title }: QRSamplePreviewP
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* QR Code Preview */}
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Badge variant="outline" className="mb-2">QR Code Preview</Badge>
-            </div>
-            {getSampleQRCode()}
-            <p className="text-xs text-gray-500 mt-2">Sample QR Code</p>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Badge variant="outline" className="mb-2">Live Preview</Badge>
           </div>
-
-          {/* Content Preview */}
-          <div>
-            <div className="flex items-center justify-center mb-4">
-              <Badge variant="outline" className="mb-2">Live Preview</Badge>
-            </div>
-            {getPreviewContent()}
-          </div>
+          {getPreviewContent()}
         </div>
       </CardContent>
     </Card>
