@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { QrCode, Download, Copy, Share2, Crown, Sparkles } from 'lucide-react';
+import { QrCode, Download, Copy, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeConfig } from '@/hooks/useQRGenerator';
 
@@ -122,44 +122,8 @@ export function QRPreviewPanel({ config, generatedQR, isGenerating }: QRPreviewP
     }
   };
 
-  const handleStartFreeTrial = () => {
-    toast({
-      title: "Start Free Trial",
-      description: "Redirecting to registration..."
-    });
-    // You can add navigation to registration page here
-  };
-
   return (
     <div className="space-y-6">
-      {/* Premium Banner */}
-      <Card className="border-2 border-gradient-to-r from-blue-200 to-purple-200 bg-gradient-to-br from-blue-50 to-purple-50">
-        <CardContent className="p-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <Crown className="h-6 w-6 text-yellow-500" />
-              <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1">
-                Premium Feature
-              </Badge>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">
-              Unlock Advanced QR Code Features
-            </h3>
-            <p className="text-gray-600">
-              Get unlimited QR codes, advanced analytics, custom branding, and more with our premium plans.
-            </p>
-            <Button 
-              onClick={handleStartFreeTrial}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
-            >
-              <Crown className="mr-2 h-5 w-5" />
-              Start Free Trial
-              <Sparkles className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* QR Code Preview */}
       <Card>
         <CardHeader>
