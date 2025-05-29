@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, Bell, User, LogOut, Settings as SettingsIcon, QrCode } from 'lucide-react';
+import { Search, Bell, User, LogOut, Settings as SettingsIcon, QrCode, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -25,6 +25,10 @@ export function DashboardTopbar() {
     navigate('/login');
   };
 
+  const handleBackToMain = () => {
+    navigate('/');
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -39,6 +43,17 @@ export function DashboardTopbar() {
       <div className="responsive-padding py-3 sm:py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            {/* Back Arrow Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBackToMain}
+              className="shrink-0 hover:bg-gray-100"
+              aria-label="Back to main page"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+
             <SidebarTrigger 
               className="lg:hidden shrink-0" 
               aria-label="Toggle sidebar navigation"
