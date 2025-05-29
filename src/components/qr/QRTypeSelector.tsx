@@ -26,16 +26,6 @@ export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProp
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold text-gray-900">
-          Select QR Code Type
-        </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Choose the type of QR code you want to create. Dynamic QR codes can be modified after creation, while static QR codes are permanent.
-        </p>
-      </div>
-
       {/* Dynamic QR Codes */}
       <Card>
         <CardHeader>
