@@ -57,7 +57,6 @@ export function AdvancedQRGenerator({ initialType = 'url' }: AdvancedQRGenerator
           config={config}
           onConfigChange={setConfig}
           onContentChange={handleContentChange}
-          selectedQRType={initialType}
         />
       </div>
 
