@@ -1,11 +1,15 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQRGenerator } from '@/hooks/useQRGenerator';
 import { QRConfigurationPanel } from './QRConfigurationPanel';
 import { QRPreviewPanel } from './QRPreviewPanel';
 import { QRCodeDetails } from './QRCodeDetails';
 
-export function AdvancedQRGenerator() {
+interface AdvancedQRGeneratorProps {
+  initialType?: string;
+}
+
+export function AdvancedQRGenerator({ initialType = 'url' }: AdvancedQRGeneratorProps) {
   const {
     config,
     setConfig,
@@ -14,6 +18,33 @@ export function AdvancedQRGenerator() {
     canvasRef,
     handleContentChange
   } = useQRGenerator();
+
+  useEffect(() => {
+    if (initialType) {
+      const typeMap: Record<string, string> = {
+        'url': 'url',
+        'multi-link': 'url',
+        'pdf': 'url',
+        'location': 'url',
+        'email': 'email',
+        'call': 'phone',
+        'sms': 'phone',
+        'form': 'url',
+        'social-media': 'url',
+        'landing-page': 'url',
+        'mobile-app': 'url',
+        'restaurant-menu': 'url',
+        'business-page': 'url',
+        'facebook-page': 'url',
+        'coupon-code': 'url',
+        'image': 'url',
+        'mp3': 'url'
+      };
+      
+      const qrType = typeMap[initialType] || 'url';
+      setConfig(prev => ({ ...prev, type: qrType as any }));
+    }
+  }, [initialType, setConfig]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -26,6 +57,7 @@ export function AdvancedQRGenerator() {
           config={config}
           onConfigChange={setConfig}
           onContentChange={handleContentChange}
+          selectedQRType={initialType}
         />
       </div>
 

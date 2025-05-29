@@ -7,7 +7,7 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { ScanActivityChart } from '@/components/dashboard/ScanActivityChart';
 import { ProjectSelector } from '@/components/dashboard/ProjectSelector';
 import { MultiProjectComparison } from '@/components/dashboard/MultiProjectComparison';
-import { QuickActions } from '@/components/dashboard/QuickActions';
+import { QRCodeTypeSelector } from '@/components/dashboard/QRCodeTypeSelector';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 const Dashboard = () => {
@@ -24,7 +24,7 @@ const Dashboard = () => {
                 <p className="text-gray-600">Welcome back! Here's what's happening with your QR campaigns.</p>
               </div>
               
-              <QuickActions />
+              <QRCodeTypeSelector />
               <ProjectSelector />
               <DashboardStats />
               
