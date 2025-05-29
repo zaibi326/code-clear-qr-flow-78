@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { QrCode, Download, Copy, Share2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { QrCode, Download, Copy, Share2, Crown, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeConfig } from '@/hooks/useQRGenerator';
 
@@ -121,57 +122,152 @@ export function QRPreviewPanel({ config, generatedQR, isGenerating }: QRPreviewP
     }
   };
 
+  const handleStartFreeTrial = () => {
+    toast({
+      title: "Start Free Trial",
+      description: "Redirecting to registration..."
+    });
+    // You can add navigation to registration page here
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <QrCode className="h-5 w-5" />
-          QR Code Preview
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center space-y-4">
-          <div className="relative inline-block">
-            {isGenerating ? (
-              <div 
-                className="bg-gray-100 border rounded-lg flex items-center justify-center animate-pulse"
-                style={{ width: config.size, height: config.size }}
+    <div className="space-y-6">
+      {/* Premium Banner */}
+      <Card className="border-2 border-gradient-to-r from-blue-200 to-purple-200 bg-gradient-to-br from-blue-50 to-purple-50">
+        <CardContent className="p-6">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <Crown className="h-6 w-6 text-yellow-500" />
+              <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1">
+                Premium Feature
+              </Badge>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              Unlock Advanced QR Code Features
+            </h3>
+            <p className="text-gray-600">
+              Get unlimited QR codes, advanced analytics, custom branding, and more with our premium plans.
+            </p>
+            <Button 
+              onClick={handleStartFreeTrial}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <Crown className="mr-2 h-5 w-5" />
+              Start Free Trial
+              <Sparkles className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* QR Code Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            QR Code Preview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center space-y-6">
+            <div className="relative inline-block">
+              {isGenerating ? (
+                <div 
+                  className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center animate-pulse"
+                  style={{ width: config.size, height: config.size }}
+                >
+                  <QrCode className="h-16 w-16 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">Generating...</p>
+                </div>
+              ) : generatedQR ? (
+                <div className="relative group">
+                  <img 
+                    src={generatedQR} 
+                    alt="Generated QR Code"
+                    className="border-2 border-gray-200 rounded-lg shadow-lg group-hover:shadow-xl transition-shadow duration-300"
+                    style={{ width: config.size, height: config.size }}
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all duration-300 flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Badge className="bg-white text-gray-800 shadow-lg">
+                        Ready to Download
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center"
+                  style={{ width: config.size, height: config.size }}
+                >
+                  <QrCode className="h-16 w-16 text-gray-400 mb-3" />
+                  <p className="text-sm text-gray-500 text-center px-4">
+                    Enter content to generate your QR code
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Button 
+                onClick={handleDownload} 
+                size="sm" 
+                disabled={!generatedQR}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <QrCode className="h-16 w-16 text-gray-400" />
-              </div>
-            ) : generatedQR ? (
-              <img 
-                src={generatedQR} 
-                alt="Generated QR Code"
-                className="border rounded-lg"
-                style={{ width: config.size, height: config.size }}
-              />
-            ) : (
-              <div 
-                className="bg-gray-100 border rounded-lg flex items-center justify-center"
-                style={{ width: config.size, height: config.size }}
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button 
+                onClick={handleCopy} 
+                variant="outline" 
+                size="sm" 
+                disabled={!generatedQR}
+                className="border-gray-300 hover:bg-gray-50"
               >
-                <QrCode className="h-16 w-16 text-gray-400" />
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
+              <Button 
+                onClick={handleShare} 
+                variant="outline" 
+                size="sm" 
+                disabled={!generatedQR}
+                className="border-gray-300 hover:bg-gray-50"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </div>
+
+            {/* QR Code Stats */}
+            {generatedQR && (
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <h4 className="font-semibold text-gray-900">QR Code Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Type:</span>
+                    <span className="ml-2 font-medium capitalize">{config.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Size:</span>
+                    <span className="ml-2 font-medium">{config.size}x{config.size}px</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Format:</span>
+                    <span className="ml-2 font-medium">PNG</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Quality:</span>
+                    <span className="ml-2 font-medium">{config.errorCorrection} Level</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          <div className="flex items-center justify-center gap-2">
-            <Button onClick={handleDownload} size="sm" disabled={!generatedQR}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button onClick={handleCopy} variant="outline" size="sm" disabled={!generatedQR}>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </Button>
-            <Button onClick={handleShare} variant="outline" size="sm" disabled={!generatedQR}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

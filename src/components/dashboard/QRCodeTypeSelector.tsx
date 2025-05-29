@@ -22,13 +22,13 @@ import {
   MessageSquare,
   ArrowRight,
   Sparkles,
-  Star
+  Star,
+  Crown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function QRCodeTypeSelector() {
   const navigate = useNavigate();
-  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   const frequentlyUsed = [
     {
@@ -173,18 +173,13 @@ export function QRCodeTypeSelector() {
     }
   ];
 
-  const handleTypeSelect = (typeId: string) => {
-    setSelectedType(typeId);
+  const handleStartFreeTrial = (typeId: string) => {
     // Navigate to quick generate with the selected type
     navigate(`/quick-generate?type=${typeId}`);
   };
 
   const QRTypeCard = ({ qrType, showBadge = true }: { qrType: any, showBadge?: boolean }) => (
-    <div
-      key={qrType.id}
-      className="relative p-6 border rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-300 bg-white"
-      onClick={() => handleTypeSelect(qrType.id)}
-    >
+    <div className="relative p-6 border rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-300 bg-white">
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-lg ${qrType.color} text-white group-hover:scale-110 transition-transform duration-300`}>
           <qrType.icon className="h-6 w-6" />
@@ -208,14 +203,18 @@ export function QRCodeTypeSelector() {
         {qrType.title}
       </h3>
       
-      <p className="text-sm text-gray-600 leading-relaxed mb-4">
+      <p className="text-sm text-gray-600 leading-relaxed mb-6">
         {qrType.description}
       </p>
 
-      <div className="flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <span>Create QR Code</span>
+      <Button 
+        onClick={() => handleStartFreeTrial(qrType.id)}
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 group"
+      >
+        <Crown className="mr-2 h-4 w-4" />
+        Start Free Trial
         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-      </div>
+      </Button>
     </div>
   );
 
