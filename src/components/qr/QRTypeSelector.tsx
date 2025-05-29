@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Zap, Lock } from 'lucide-react';
@@ -12,6 +12,18 @@ interface QRTypeSelectorProps {
 }
 
 export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProps) {
+  // Auto-select the initial type if provided
+  useEffect(() => {
+    if (initialType) {
+      const allTypes = [...dynamicQRTypes, ...staticQRTypes];
+      const foundType = allTypes.find(type => type.id === initialType);
+      if (foundType) {
+        console.log(`Auto-selecting QR type: ${foundType.title}`);
+        onTypeSelect(foundType);
+      }
+    }
+  }, [initialType, onTypeSelect]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
