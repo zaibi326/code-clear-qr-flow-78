@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -11,7 +12,7 @@ import {
   BarChart3,
   QrCode,
   Database,
-  FileTemplate,
+  FileText,
   Megaphone,
   HelpCircle,
   TestTube,
@@ -48,7 +49,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isCollapsed, setIsCollapsed }) 
     },
     {
       path: '/dashboard/templates',
-      icon: FileTemplate,
+      icon: FileText,
       label: 'Templates',
     },
     {

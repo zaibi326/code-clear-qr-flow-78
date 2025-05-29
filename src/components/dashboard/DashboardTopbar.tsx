@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Bell, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 
 interface DashboardTopbarProps {
-  toggleSidebar: () => void;
+  toggleSidebar?: () => void;
 }
 
 export const DashboardTopbar = ({ toggleSidebar }: DashboardTopbarProps) => {
@@ -31,7 +32,7 @@ export const DashboardTopbar = ({ toggleSidebar }: DashboardTopbarProps) => {
         </Button>
         <Avatar>
           <AvatarImage src={profile?.avatar_url || ""} />
-          <AvatarFallback>{profile?.full_name?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
+          <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
         </Avatar>
         <Button variant="outline" size="sm" onClick={() => signOut()}>
           Logout

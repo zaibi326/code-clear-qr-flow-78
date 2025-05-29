@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import FormField from './FormField';
 import PasswordInput from './PasswordInput';
