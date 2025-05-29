@@ -12,11 +12,13 @@ const QuickGenerate = () => {
 
   useEffect(() => {
     const type = searchParams.get('type');
+    console.log('QuickGenerate: URL type parameter:', type);
     if (type) {
-      console.log(`QR type from URL: ${type}`);
       setSelectedType(type);
     }
   }, [searchParams]);
+
+  console.log('QuickGenerate: Rendering with selectedType:', selectedType);
 
   return (
     <div className="min-h-screen bg-gray-50/50">

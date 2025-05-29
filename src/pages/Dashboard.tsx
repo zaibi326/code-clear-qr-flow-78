@@ -11,6 +11,8 @@ import { QRCodeTypeSelector } from '@/components/dashboard/QRCodeTypeSelector';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 const Dashboard = () => {
+  console.log('Dashboard: Rendering dashboard page');
+  
   return (
     <div className="min-h-screen bg-gray-50/50">
       <SidebarProvider>

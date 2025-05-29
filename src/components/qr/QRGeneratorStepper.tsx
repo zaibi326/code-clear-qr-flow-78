@@ -1,15 +1,14 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { QRTypeSelector } from './QRTypeSelector';
 import { QRSetupPanel } from './QRSetupPanel';
 import { QRCustomizePanel } from './QRCustomizePanel';
 import { QRFinalPanel } from './QRFinalPanel';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Check } from 'lucide-react';
 
-export type QRCodeType = {
+export interface QRCodeType {
   id: string;
   title: string;
   description: string;
@@ -17,7 +16,7 @@ export type QRCodeType = {
   color: string;
   category: 'dynamic' | 'static';
   badge?: string;
-};
+}
 
 interface QRGeneratorStepperProps {
   initialType?: string;
@@ -26,100 +25,104 @@ interface QRGeneratorStepperProps {
 export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
-  const [setupData, setSetupData] = useState<any>(null);
-  const [customizeData, setCustomizeData] = useState<any>(null);
+
+  console.log('QRGeneratorStepper: initialType received:', initialType);
+  console.log('QRGeneratorStepper: currentStep:', currentStep);
+  console.log('QRGeneratorStepper: selectedType:', selectedType);
+
+  useEffect(() => {
+    if (initialType && !selectedType) {
+      console.log('QRGeneratorStepper: Auto-advancing to step 2 due to initialType');
+      setCurrentStep(2);
+    }
+  }, [initialType, selectedType]);
 
   const steps = [
-    { number: 1, title: 'Select type', completed: currentStep > 1 },
-    { number: 2, title: 'Setup', completed: currentStep > 2 },
-    { number: 3, title: 'Customize', completed: currentStep > 3 },
-    { number: 4, title: 'Done', completed: currentStep > 4 },
+    { number: 1, title: 'Select type', description: 'Choose your QR code type' },
+    { number: 2, title: 'Setup', description: 'Configure your content' },
+    { number: 3, title: 'Customize', description: 'Design your QR code' },
+    { number: 4, title: 'Done', description: 'Download and share' }
   ];
 
   const handleTypeSelect = (type: QRCodeType) => {
+    console.log('QRGeneratorStepper: Type selected:', type);
     setSelectedType(type);
     setCurrentStep(2);
   };
 
-  const handleSetupComplete = (data: any) => {
-    setSetupData(data);
-    setCurrentStep(3);
+  const nextStep = () => {
+    if (currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+    }
   };
 
-  const handleCustomizeComplete = (data: any) => {
-    setCustomizeData(data);
-    setCurrentStep(4);
-  };
-
-  const handleBackToStep = (step: number) => {
-    setCurrentStep(step);
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center space-x-4 mb-8">
-        {steps.map((step, index) => (
-          <div key={step.number} className="flex items-center">
-            <div 
-              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
-                step.completed 
-                  ? 'bg-blue-600 border-blue-600 text-white' 
-                  : currentStep === step.number
-                  ? 'border-blue-600 text-blue-600 bg-white'
-                  : 'border-gray-300 text-gray-400 bg-white'
-              }`}
-            >
-              {step.completed ? (
-                <Check className="w-5 h-5" />
-              ) : (
-                <span className="text-sm font-semibold">{step.number}</span>
-              )}
-            </div>
-            <span className={`ml-2 text-sm font-medium ${
-              currentStep >= step.number ? 'text-gray-900' : 'text-gray-400'
-            }`}>
-              {step.title}
-            </span>
-            {index < steps.length - 1 && (
-              <ChevronRight className="w-4 h-4 text-gray-300 mx-4" />
-            )}
+      {/* Progress Steps */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.number} className="flex items-center">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                    currentStep >= step.number 
+                      ? 'bg-blue-600 border-blue-600 text-white' 
+                      : 'border-gray-300 text-gray-400'
+                  }`}>
+                    {currentStep > step.number ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <span className="font-semibold">{step.number}</span>
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <div className={`font-semibold ${currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'}`}>
+                      {step.title}
+                    </div>
+                    <div className="text-sm text-gray-500">{step.description}</div>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-4 ${
+                    currentStep > step.number ? 'bg-blue-600' : 'bg-gray-300'
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Step Content */}
-      <div className="min-h-[600px]">
+      <div>
         {currentStep === 1 && (
-          <QRTypeSelector 
-            onTypeSelect={handleTypeSelect}
-            initialType={initialType}
-          />
+          <QRTypeSelector onTypeSelect={handleTypeSelect} initialType={initialType} />
         )}
-        
         {currentStep === 2 && selectedType && (
           <QRSetupPanel 
-            qrType={selectedType}
-            onComplete={handleSetupComplete}
-            onBack={() => handleBackToStep(1)}
+            qrType={selectedType} 
+            onNext={nextStep} 
+            onBack={prevStep}
           />
         )}
-        
-        {currentStep === 3 && selectedType && setupData && (
+        {currentStep === 3 && selectedType && (
           <QRCustomizePanel 
-            qrType={selectedType}
-            setupData={setupData}
-            onComplete={handleCustomizeComplete}
-            onBack={() => handleBackToStep(2)}
+            qrType={selectedType} 
+            onNext={nextStep} 
+            onBack={prevStep}
           />
         )}
-        
-        {currentStep === 4 && selectedType && setupData && customizeData && (
+        {currentStep === 4 && selectedType && (
           <QRFinalPanel 
-            qrType={selectedType}
-            setupData={setupData}
-            customizeData={customizeData}
-            onBack={() => handleBackToStep(3)}
+            qrType={selectedType} 
+            onBack={prevStep}
           />
         )}
       </div>

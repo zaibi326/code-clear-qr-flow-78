@@ -42,6 +42,11 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="/quick-generate" element={
+              <ProtectedRoute>
+                <QuickGenerate />
+              </ProtectedRoute>
+            } />
             <Route path="/templates" element={
               <ProtectedRoute>
                 <TemplateManager />
@@ -77,11 +82,6 @@ const App = () => (
                 <Support />
               </ProtectedRoute>
             } />
-            <Route path="/quick-generate" element={
-              <ProtectedRoute>
-                <QuickGenerate />
-              </ProtectedRoute>
-            } />
             <Route path="/testing" element={
               <ProtectedRoute>
                 <Testing />
@@ -92,7 +92,6 @@ const App = () => (
                 <Monitoring />
               </ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
