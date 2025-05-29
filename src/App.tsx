@@ -21,6 +21,8 @@ import Support from "./pages/Support";
 import QuickGenerate from "./pages/QuickGenerate";
 import Testing from "./pages/Testing";
 import Monitoring from "./pages/Monitoring";
+import ApiDocumentation from "./pages/ApiDocumentation";
+import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/api-documentation" element={<ApiDocumentation />} />
+            <Route path="/integrations" element={<Integrations />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />

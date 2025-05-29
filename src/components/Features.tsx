@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { BarChart3, Palette, Zap, Shield, Globe, Users, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Features = () => {
   const features = [
@@ -10,7 +11,8 @@ const Features = () => {
       description: 'Get deep insights with real-time tracking, location data, device information, and comprehensive reporting dashboards.',
       gradient: 'from-blue-500 to-blue-600',
       bgGradient: 'from-blue-50 to-blue-100',
-      iconBg: 'from-blue-500 to-blue-600'
+      iconBg: 'from-blue-500 to-blue-600',
+      learnMoreHref: '/analytics'
     },
     {
       icon: Palette,
@@ -18,7 +20,8 @@ const Features = () => {
       description: 'Design stunning QR codes with your brand colors, logos, custom frames, and perfect visual integration.',
       gradient: 'from-purple-500 to-purple-600',
       bgGradient: 'from-purple-50 to-purple-100',
-      iconBg: 'from-purple-500 to-purple-600'
+      iconBg: 'from-purple-500 to-purple-600',
+      learnMoreHref: '/quick-generate'
     },
     {
       icon: Zap,
@@ -26,7 +29,8 @@ const Features = () => {
       description: 'Create thousands of unique QR codes instantly with CSV import, API integration, and automated workflows.',
       gradient: 'from-green-500 to-green-600',
       bgGradient: 'from-green-50 to-green-100',
-      iconBg: 'from-green-500 to-green-600'
+      iconBg: 'from-green-500 to-green-600',
+      learnMoreHref: '/campaigns'
     },
     {
       icon: Shield,
@@ -34,7 +38,8 @@ const Features = () => {
       description: 'Bank-level security with SSL encryption, password protection, access controls, and compliance features.',
       gradient: 'from-red-500 to-red-600',
       bgGradient: 'from-red-50 to-red-100',
-      iconBg: 'from-red-500 to-red-600'
+      iconBg: 'from-red-500 to-red-600',
+      learnMoreHref: '/settings'
     },
     {
       icon: Globe,
@@ -42,7 +47,8 @@ const Features = () => {
       description: 'Update destinations anytime without reprinting. Perfect for evolving campaigns and A/B testing.',
       gradient: 'from-indigo-500 to-indigo-600',
       bgGradient: 'from-indigo-50 to-indigo-100',
-      iconBg: 'from-indigo-500 to-indigo-600'
+      iconBg: 'from-indigo-500 to-indigo-600',
+      learnMoreHref: '/dashboard'
     },
     {
       icon: Users,
@@ -50,7 +56,8 @@ const Features = () => {
       description: 'Seamless teamwork with role-based permissions, shared workspaces, and collaborative campaign management.',
       gradient: 'from-orange-500 to-orange-600',
       bgGradient: 'from-orange-50 to-orange-100',
-      iconBg: 'from-orange-500 to-orange-600'
+      iconBg: 'from-orange-500 to-orange-600',
+      learnMoreHref: '/settings'
     }
   ];
 
@@ -104,10 +111,13 @@ const Features = () => {
                   {feature.description}
                 </p>
 
-                <div className="flex items-center text-blue-600 font-semibold group-hover:text-purple-600 transition-colors duration-300">
+                <Link 
+                  to={feature.learnMoreHref}
+                  className="flex items-center text-blue-600 font-semibold group-hover:text-purple-600 transition-colors duration-300"
+                >
                   <span className="text-sm">Learn more</span>
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                </div>
+                </Link>
               </div>
             </div>
           ))}
@@ -123,10 +133,12 @@ const Features = () => {
               Join thousands of businesses using ClearQR.io to create engaging, 
               trackable QR code experiences that drive real results and measurable growth.
             </p>
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl group">
-              Start Your Free Trial
-              <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            <Link to="/register">
+              <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl group">
+                Start Your Free Trial
+                <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </Link>
           </div>
         </div>
       </div>

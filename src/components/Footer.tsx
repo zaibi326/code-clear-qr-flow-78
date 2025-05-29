@@ -8,16 +8,16 @@ const Footer = () => {
     Product: [
       { name: 'Features', href: '#features' },
       { name: 'Pricing', href: '#pricing' },
-      { name: 'API Documentation', href: '/support' },
-      { name: 'Integrations', href: '/support' },
+      { name: 'API Documentation', href: '/api-documentation' },
+      { name: 'Integrations', href: '/integrations' },
       { name: 'Changelog', href: '/support' }
     ],
     Solutions: [
-      { name: 'Marketing', href: '#features' },
-      { name: 'Events', href: '#features' },
-      { name: 'Restaurants', href: '#features' },
-      { name: 'Retail', href: '#features' },
-      { name: 'Healthcare', href: '#features' }
+      { name: 'Marketing', href: '/quick-generate' },
+      { name: 'Events', href: '/campaigns' },
+      { name: 'Restaurants', href: '/quick-generate' },
+      { name: 'Retail', href: '/quick-generate' },
+      { name: 'Healthcare', href: '/quick-generate' }
     ],
     Resources: [
       { name: 'Blog', href: '/support' },
