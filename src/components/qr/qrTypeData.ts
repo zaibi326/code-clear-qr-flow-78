@@ -1,0 +1,182 @@
+
+import { 
+  Link, 
+  FileText, 
+  MapPin, 
+  Users, 
+  FormInput, 
+  Share2, 
+  Smartphone, 
+  Gift, 
+  Globe, 
+  Facebook, 
+  Building, 
+  Image, 
+  Music, 
+  Mail, 
+  Phone, 
+  MessageSquare,
+  Star,
+  UtensilsCrossed
+} from 'lucide-react';
+import { QRCodeType } from './QRGeneratorStepper';
+
+export const dynamicQRTypes: QRCodeType[] = [
+  {
+    id: 'url',
+    title: 'URL/Link',
+    description: 'Open a website URL',
+    icon: Link,
+    color: 'bg-blue-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'multi-link',
+    title: 'Linkpage',
+    description: 'Show a list of links',
+    icon: Share2,
+    color: 'bg-purple-500',
+    category: 'dynamic',
+    badge: 'NEW'
+  },
+  {
+    id: 'pdf',
+    title: 'PDF',
+    description: 'Show a PDF',
+    icon: FileText,
+    color: 'bg-red-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'restaurant-menu',
+    title: 'Restaurant Menu',
+    description: 'Display a restaurant or bar menu',
+    icon: UtensilsCrossed,
+    color: 'bg-orange-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'form',
+    title: 'Form',
+    description: 'Create and share a form',
+    icon: FormInput,
+    color: 'bg-indigo-500',
+    category: 'dynamic',
+    badge: 'NEW'
+  },
+  {
+    id: 'smart-rules',
+    title: 'Smart Rules',
+    description: 'One QR Code, multiple destinations',
+    icon: Star,
+    color: 'bg-yellow-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'social-media',
+    title: 'Social Media',
+    description: 'Share your social links',
+    icon: Users,
+    color: 'bg-pink-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'landing-page',
+    title: 'Landing Page',
+    description: 'Create a mobile-friendly page',
+    icon: Globe,
+    color: 'bg-cyan-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'mobile-app',
+    title: 'Mobile App',
+    description: 'Redirect to your mobile app',
+    icon: Smartphone,
+    color: 'bg-emerald-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'location',
+    title: 'Map Location',
+    description: 'Open location on Google Maps',
+    icon: MapPin,
+    color: 'bg-green-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'coupon-code',
+    title: 'Coupon Code',
+    description: 'Share a coupon code',
+    icon: Gift,
+    color: 'bg-rose-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'geolocation-redirect',
+    title: 'Geolocation Redirect',
+    description: 'Open URLs based on country',
+    icon: Globe,
+    color: 'bg-teal-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'facebook-page',
+    title: 'Facebook Page',
+    description: 'Share your Facebook profile',
+    icon: Facebook,
+    color: 'bg-blue-600',
+    category: 'dynamic'
+  },
+  {
+    id: 'business-page',
+    title: 'Business Page',
+    description: 'Display your business details',
+    icon: Building,
+    color: 'bg-gray-600',
+    category: 'dynamic'
+  },
+  {
+    id: 'image',
+    title: 'Image',
+    description: 'Show an image',
+    icon: Image,
+    color: 'bg-violet-500',
+    category: 'dynamic'
+  },
+  {
+    id: 'mp3',
+    title: 'MP3',
+    description: 'Play an audio file',
+    icon: Music,
+    color: 'bg-amber-500',
+    category: 'dynamic'
+  }
+];
+
+export const staticQRTypes: QRCodeType[] = [
+  {
+    id: 'email-static',
+    title: 'Email',
+    description: 'Send an email',
+    icon: Mail,
+    color: 'bg-blue-400',
+    category: 'static'
+  },
+  {
+    id: 'call-static',
+    title: 'Call',
+    description: 'Place a quick call',
+    icon: Phone,
+    color: 'bg-green-600',
+    category: 'static'
+  },
+  {
+    id: 'sms-static',
+    title: 'SMS',
+    description: 'Send a text message',
+    icon: MessageSquare,
+    color: 'bg-purple-600',
+    category: 'static'
+  }
+];
