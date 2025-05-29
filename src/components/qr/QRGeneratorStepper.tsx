@@ -25,6 +25,8 @@ interface QRGeneratorStepperProps {
 export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
+  const [setupData, setSetupData] = useState<any>(null);
+  const [customizeData, setCustomizeData] = useState<any>(null);
 
   console.log('QRGeneratorStepper: initialType received:', initialType);
   console.log('QRGeneratorStepper: currentStep:', currentStep);
@@ -48,6 +50,16 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
     console.log('QRGeneratorStepper: Type selected:', type);
     setSelectedType(type);
     setCurrentStep(2);
+  };
+
+  const handleSetupComplete = (data: any) => {
+    setSetupData(data);
+    setCurrentStep(3);
+  };
+
+  const handleCustomizeComplete = (data: any) => {
+    setCustomizeData(data);
+    setCurrentStep(4);
   };
 
   const nextStep = () => {
@@ -108,20 +120,23 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
         {currentStep === 2 && selectedType && (
           <QRSetupPanel 
             qrType={selectedType} 
-            onNext={nextStep} 
+            onComplete={handleSetupComplete} 
             onBack={prevStep}
           />
         )}
-        {currentStep === 3 && selectedType && (
+        {currentStep === 3 && selectedType && setupData && (
           <QRCustomizePanel 
             qrType={selectedType} 
-            onNext={nextStep} 
+            setupData={setupData}
+            onComplete={handleCustomizeComplete} 
             onBack={prevStep}
           />
         )}
-        {currentStep === 4 && selectedType && (
+        {currentStep === 4 && selectedType && setupData && customizeData && (
           <QRFinalPanel 
             qrType={selectedType} 
+            setupData={setupData}
+            customizeData={customizeData}
             onBack={prevStep}
           />
         )}
