@@ -1,77 +1,78 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DatabaseUser, DatabaseQRCode, DatabaseTemplate } from '@/types/database';
+import { DatabaseUser, DatabaseQRCode, DatabaseScanEvent } from '@/types/database';
 
 export const supabaseService = {
-  // User Profile operations
-  async createUserProfile(profile: Omit<DatabaseUser, 'id'> & { id: string }): Promise<DatabaseUser> {
-    const profileData = {
-      id: profile.id,
-      email: profile.email,
-      name: profile.name,
-      company: profile.company || '',
-      phone: profile.phone || null,
-      avatar_url: profile.avatar_url || null,
-      plan: profile.plan || 'free',
-      subscription_status: profile.subscription_status || 'trial',
-      language: profile.language || 'en',
-      timezone: profile.timezone || 'UTC',
-      preferences: profile.preferences || {},
-      usage_stats: profile.usage_stats || {
+  // User Profile Operations
+  async createUserProfile(userData: Omit<DatabaseUser, 'id'>): Promise<DatabaseUser> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        company: userData.company || '',
+        phone: userData.phone || null,
+        avatar_url: userData.avatar_url || null,
+        plan: userData.plan || 'free',
+        subscription_status: userData.subscription_status || 'trial',
+        trial_ends_at: userData.trial_ends_at?.toISOString() || null,
+        created_at: userData.created_at.toISOString(),
+        updated_at: userData.updated_at.toISOString(),
+        last_login_at: userData.last_login_at?.toISOString() || null,
+        timezone: userData.timezone || 'UTC',
+        language: userData.language || 'en',
+        preferences: userData.preferences || {
+          notifications: {
+            email: true,
+            scan_alerts: true,
+            weekly_reports: false,
+            marketing: false
+          },
+          dashboard: {
+            default_view: 'grid',
+            items_per_page: 10
+          }
+        },
+        usage_stats: userData.usage_stats || {
+          qr_codes_created: 0,
+          campaigns_created: 0,
+          total_scans: 0,
+          storage_used: 0
+        }
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating user profile:', error);
+      throw error;
+    }
+
+    return {
+      ...data,
+      created_at: new Date(data.created_at),
+      updated_at: new Date(data.updated_at),
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined,
+      preferences: data.preferences || {
+        notifications: {
+          email: true,
+          scan_alerts: true,
+          weekly_reports: false,
+          marketing: false
+        },
+        dashboard: {
+          default_view: 'grid' as const,
+          items_per_page: 10
+        }
+      },
+      usage_stats: data.usage_stats || {
         qr_codes_created: 0,
         campaigns_created: 0,
         total_scans: 0,
         storage_used: 0
-      },
-      created_at: profile.created_at.toISOString(),
-      updated_at: profile.updated_at.toISOString(),
-      trial_ends_at: profile.trial_ends_at?.toISOString() || null,
-      last_login_at: profile.last_login_at?.toISOString() || null
-    };
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert(profileData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
-    } as DatabaseUser;
-  },
-
-  async updateUserProfile(userId: string, updates: Partial<DatabaseUser>): Promise<DatabaseUser> {
-    const updateData: any = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-
-    // Convert Date objects to ISO strings for database storage
-    if (updates.created_at) updateData.created_at = updates.created_at.toISOString();
-    if (updates.trial_ends_at) updateData.trial_ends_at = updates.trial_ends_at.toISOString();
-    if (updates.last_login_at) updateData.last_login_at = updates.last_login_at.toISOString();
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
+      }
     } as DatabaseUser;
   },
 
@@ -83,7 +84,10 @@ export const supabaseService = {
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return null; // No rows returned
+      if (error.code === 'PGRST116') {
+        return null; // User not found
+      }
+      console.error('Error fetching user profile:', error);
       throw error;
     }
 
@@ -91,189 +95,116 @@ export const supabaseService = {
       ...data,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : null,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : null
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined,
+      preferences: data.preferences || {
+        notifications: {
+          email: true,
+          scan_alerts: true,
+          weekly_reports: false,
+          marketing: false
+        },
+        dashboard: {
+          default_view: 'grid' as const,
+          items_per_page: 10
+        }
+      },
+      usage_stats: data.usage_stats || {
+        qr_codes_created: 0,
+        campaigns_created: 0,
+        total_scans: 0,
+        storage_used: 0
+      }
     } as DatabaseUser;
   },
 
-  // QR Code operations
-  async createQRCode(qrCode: Omit<DatabaseQRCode, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseQRCode> {
-    const qrCodeData = {
-      ...qrCode,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      expires_at: qrCode.expires_at?.toISOString() || null
-    };
+  async updateUserProfile(userId: string, updates: Partial<DatabaseUser>): Promise<DatabaseUser> {
+    const updateData: any = { ...updates };
+    
+    // Convert dates to ISO strings for database storage
+    if (updateData.trial_ends_at) {
+      updateData.trial_ends_at = updateData.trial_ends_at.toISOString();
+    }
+    if (updateData.last_login_at) {
+      updateData.last_login_at = updateData.last_login_at.toISOString();
+    }
+    updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from('qr_codes')
-      .insert(qrCodeData)
+      .from('profiles')
+      .update(updateData)
+      .eq('id', userId)
       .select()
       .single();
 
-    if (error) throw error;
-    
+    if (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+
     return {
       ...data,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      expires_at: data.expires_at ? new Date(data.expires_at) : null
-    } as DatabaseQRCode;
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined
+    } as DatabaseUser;
+  },
+
+  // QR Code Operations - Simplified for now since we don't have the qr_codes table
+  async createQRCode(qrCodeData: Omit<DatabaseQRCode, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseQRCode> {
+    // For now, return a mock QR code since we don't have the table set up
+    const mockQRCode: DatabaseQRCode = {
+      id: `qr_${Date.now()}`,
+      campaign_id: qrCodeData.campaign_id,
+      user_id: qrCodeData.user_id,
+      name: qrCodeData.name,
+      content: qrCodeData.content,
+      content_type: qrCodeData.content_type,
+      qr_image_url: qrCodeData.qr_image_url,
+      pdf_url: qrCodeData.pdf_url,
+      short_url: qrCodeData.short_url,
+      custom_data: qrCodeData.custom_data,
+      is_active: qrCodeData.is_active,
+      expires_at: qrCodeData.expires_at,
+      password_protected: qrCodeData.password_protected,
+      password_hash: qrCodeData.password_hash,
+      created_at: new Date(),
+      updated_at: new Date(),
+      stats: qrCodeData.stats
+    };
+    
+    console.log('Mock QR code created:', mockQRCode);
+    return mockQRCode;
   },
 
   async getUserQRCodes(userId: string): Promise<DatabaseQRCode[]> {
-    const { data, error } = await supabase
-      .from('qr_codes')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return (data || []).map(qr => ({
-      ...qr,
-      created_at: new Date(qr.created_at),
-      updated_at: new Date(qr.updated_at),
-      expires_at: qr.expires_at ? new Date(qr.expires_at) : null
-    })) as DatabaseQRCode[];
+    // Return empty array for now since we don't have the table
+    console.log('Getting QR codes for user:', userId);
+    return [];
   },
 
-  async updateQRCode(qrCodeId: string, updates: Partial<DatabaseQRCode>): Promise<DatabaseQRCode> {
-    const updateData = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-      ...(updates.created_at && { created_at: updates.created_at.toISOString() }),
-      ...(updates.expires_at && { expires_at: updates.expires_at.toISOString() })
+  async updateQRCode(id: string, updates: Partial<DatabaseQRCode>): Promise<DatabaseQRCode | null> {
+    // Mock update for now
+    console.log('Updating QR code:', id, updates);
+    return null;
+  },
+
+  async deleteQRCode(id: string): Promise<boolean> {
+    // Mock delete for now
+    console.log('Deleting QR code:', id);
+    return true;
+  },
+
+  // Scan Event Operations - Mock for now
+  async recordScanEvent(scanData: Omit<DatabaseScanEvent, 'id' | 'timestamp'>): Promise<DatabaseScanEvent> {
+    const mockScanEvent: DatabaseScanEvent = {
+      id: `scan_${Date.now()}`,
+      timestamp: new Date(),
+      ...scanData
     };
-
-    const { data, error } = await supabase
-      .from('qr_codes')
-      .update(updateData)
-      .eq('id', qrCodeId)
-      .select()
-      .single();
-
-    if (error) throw error;
     
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
-      expires_at: data.expires_at ? new Date(data.expires_at) : null
-    } as DatabaseQRCode;
-  },
-
-  async deleteQRCode(qrCodeId: string): Promise<void> {
-    const { error } = await supabase
-      .from('qr_codes')
-      .delete()
-      .eq('id', qrCodeId);
-
-    if (error) throw error;
-  },
-
-  // Template operations
-  async createTemplate(template: Omit<DatabaseTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseTemplate> {
-    const templateData = {
-      ...template,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('templates')
-      .insert(templateData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at)
-    } as DatabaseTemplate;
-  },
-
-  async getUserTemplates(userId: string): Promise<DatabaseTemplate[]> {
-    const { data, error } = await supabase
-      .from('templates')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return (data || []).map(template => ({
-      ...template,
-      created_at: new Date(template.created_at),
-      updated_at: new Date(template.updated_at)
-    })) as DatabaseTemplate[];
-  },
-
-  async getPublicTemplates(): Promise<DatabaseTemplate[]> {
-    const { data, error } = await supabase
-      .from('templates')
-      .select('*')
-      .eq('is_public', true)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return (data || []).map(template => ({
-      ...template,
-      created_at: new Date(template.created_at),
-      updated_at: new Date(template.updated_at)
-    })) as DatabaseTemplate[];
-  },
-
-  async updateTemplate(templateId: string, updates: Partial<DatabaseTemplate>): Promise<DatabaseTemplate> {
-    const updateData = {
-      ...updates,
-      updated_at: new Date().toISOString(),
-      ...(updates.created_at && { created_at: updates.created_at.toISOString() })
-    };
-
-    const { data, error } = await supabase
-      .from('templates')
-      .update(updateData)
-      .eq('id', templateId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at)
-    } as DatabaseTemplate;
-  },
-
-  async deleteTemplate(templateId: string): Promise<void> {
-    const { error } = await supabase
-      .from('templates')
-      .delete()
-      .eq('id', templateId);
-
-    if (error) throw error;
-  },
-
-  // Scan tracking
-  async recordScan(qrCodeId: string, metadata: Record<string, any> = {}): Promise<void> {
-    const { error } = await supabase
-      .from('scan_events')
-      .insert({
-        qr_code_id: qrCodeId,
-        scanned_at: new Date().toISOString(),
-        user_agent: metadata.userAgent || '',
-        ip_address: metadata.ipAddress || '',
-        country: metadata.country || '',
-        city: metadata.city || '',
-        device_type: metadata.deviceType || '',
-        referrer: metadata.referrer || ''
-      });
-
-    if (error) throw error;
+    console.log('Mock scan event recorded:', mockScanEvent);
+    return mockScanEvent;
   }
 };

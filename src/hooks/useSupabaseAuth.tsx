@@ -115,7 +115,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           subscription_status: 'trial',
           language: 'en',
           timezone: 'UTC',
-          preferences: {},
+          preferences: {
+            notifications: {
+              email: true,
+              scan_alerts: true,
+              weekly_reports: false,
+              marketing: false
+            },
+            dashboard: {
+              default_view: 'grid',
+              items_per_page: 10
+            }
+          },
           usage_stats: {
             qr_codes_created: 0,
             campaigns_created: 0,

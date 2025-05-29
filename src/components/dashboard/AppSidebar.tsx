@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -22,14 +22,22 @@ import {
 import { useAuth } from '@/hooks/useSupabaseAuth';
 
 interface AppSidebarProps {
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
 }
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ 
+  isCollapsed: propIsCollapsed, 
+  setIsCollapsed: propSetIsCollapsed 
+}) => {
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+
+  // Use props if provided, otherwise use internal state
+  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalIsCollapsed;
+  const setIsCollapsed = propSetIsCollapsed || setInternalIsCollapsed;
 
   const sidebarItems = [
     {
