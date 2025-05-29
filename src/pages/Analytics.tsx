@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -8,6 +9,8 @@ import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
 import { QRCodeTable } from '@/components/analytics/QRCodeTable';
 import { UserInteractionLog } from '@/components/analytics/UserInteractionLog';
 import { CampaignInsights } from '@/components/analytics/CampaignInsights';
+import { ScanActivityChart } from '@/components/analytics/ScanActivityChart';
+import { CampaignPerformanceChart } from '@/components/analytics/CampaignPerformanceChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
@@ -64,9 +67,5 @@ const Analytics = () => {
     </div>
   );
 };
-
-// Import these components to prevent build errors
-import { ScanActivityChart } from '@/components/analytics/ScanActivityChart';
-import { CampaignPerformanceChart } from '@/components/analytics/CampaignPerformanceChart';
 
 export default Analytics;
