@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, QrCode, BarChart3, Users, CheckCircle, Star } from 'lucide-react';
+import { ArrowRight, Play, QrCode, BarChart3, Users, CheckCircle, Star, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
@@ -72,9 +72,10 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
-            <Link to="/register">
+            <Link to="/quick-generate">
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 text-xl font-semibold shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 rounded-2xl group">
-                Start Free Trial
+                <Plus className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
+                Create QR Code
                 <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
