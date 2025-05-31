@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -38,7 +39,7 @@ const DataManager = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 ml-0 lg:ml-64" style={{ boxSizing: 'border-box' }}>
+        <main className="flex-1 flex flex-col min-w-0 ml-0 lg:ml-[250px] transition-all duration-300" style={{ boxSizing: 'border-box' }}>
           <DashboardTopbar />
           
           {/* Header Section */}
