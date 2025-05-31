@@ -96,14 +96,22 @@ const RegistrationForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Registration form submitted');
+    
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
 
     const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
     
     try {
-      console.log('Submitting registration form...');
+      console.log('Attempting registration with:', {
+        name: fullName,
+        email: formData.email.trim(),
+        company: formData.company.trim() || undefined
+      });
+      
       const success = await register(
         fullName,
         formData.email.trim(),
@@ -111,14 +119,17 @@ const RegistrationForm = () => {
         formData.company.trim() || undefined
       );
       
+      console.log('Registration result:', success);
+      
       if (success) {
+        console.log('Registration successful, navigating to dashboard');
         toast({
           title: "Account created successfully!",
           description: "Welcome to ClearQR.io! You can now start creating QR codes.",
         });
-        // Navigate directly to dashboard since email confirmation is disabled
         navigate('/dashboard');
       } else {
+        console.log('Registration failed - success was false');
         toast({
           title: "Registration failed",
           description: "There was an error creating your account. Please try again.",
@@ -126,7 +137,7 @@ const RegistrationForm = () => {
         });
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Registration error caught:', error);
       toast({
         title: "Registration failed",
         description: "An unexpected error occurred. Please try again.",
