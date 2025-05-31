@@ -189,8 +189,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             company: company || '',
             phone: null,
             avatar_url: null,
-            plan: 'free',
-            subscription_status: 'trial',
+            plan: 'free' as const,
+            subscription_status: 'trial' as const,
             language: 'en',
             timezone: 'UTC',
             preferences: {
@@ -201,7 +201,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 marketing: false
               },
               dashboard: {
-                default_view: 'grid',
+                default_view: 'grid' as const,
                 items_per_page: 10
               }
             },
