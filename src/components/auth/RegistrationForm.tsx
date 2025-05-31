@@ -114,10 +114,10 @@ const RegistrationForm = () => {
       if (success) {
         toast({
           title: "Account created successfully!",
-          description: "Please check your email and click the confirmation link to complete your registration. After confirming, you can sign in.",
+          description: "Welcome to ClearQR.io! You can now start creating QR codes.",
         });
-        // Redirect to login page instead of dashboard
-        navigate('/login');
+        // Navigate directly to dashboard since email confirmation is disabled
+        navigate('/dashboard');
       } else {
         toast({
           title: "Registration failed",

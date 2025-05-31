@@ -39,9 +39,7 @@ const LoginForm = () => {
         
         // Handle specific error cases
         if (error.message === 'Invalid login credentials') {
-          setError('Invalid email or password. If you just signed up, please check your email and click the confirmation link first.');
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link before signing in.');
+          setError('Invalid email or password. Please check your credentials and try again.');
         } else if (error.message.includes('signup_disabled')) {
           setError('New signups are currently disabled. Please contact support.');
         } else if (error.message.includes('too_many_requests')) {
@@ -109,12 +107,6 @@ const LoginForm = () => {
           </Button>
         </div>
       </form>
-      
-      <div className="text-center text-sm text-gray-600">
-        <p className="mb-2">
-          If you just signed up, please check your email and click the confirmation link before signing in.
-        </p>
-      </div>
       
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
