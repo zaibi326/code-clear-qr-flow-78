@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Plus, Trash2, Image, Palette, Settings } from 'lucide-react';
+import { Upload, Plus, Trash2, Image, Palette, Settings, X, Check } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 
 interface RestaurantMenuFormProps {
   formData: any;
@@ -18,6 +18,10 @@ interface RestaurantMenuFormProps {
 export function RestaurantMenuForm({ formData, onInputChange }: RestaurantMenuFormProps) {
   const [activeTab, setActiveTab] = useState('menu');
   const [menuItems, setMenuItems] = useState([{ name: '', description: '', price: '' }]);
+  const [logoPreview, setLogoPreview] = useState<string | null>(formData.logoUrl || null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(formData.coverImage || null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const addMenuItem = () => {
     setMenuItems([...menuItems, { name: '', description: '', price: '' }]);
@@ -33,6 +37,68 @@ export function RestaurantMenuForm({ formData, onInputChange }: RestaurantMenuFo
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setMenuItems(updatedItems);
     onInputChange('menuItems', JSON.stringify(updatedItems));
+  };
+
+  const handleFileUpload = useCallback(async (file: File, type: 'logo' | 'cover') => {
+    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingCover;
+    const setPreview = type === 'logo' ? setLogoPreview : setCoverPreview;
+    const fieldName = type === 'logo' ? 'logoUrl' : 'coverImage';
+
+    setUploading(true);
+    
+    try {
+      // Create a preview URL for immediate display
+      const previewUrl = URL.createObjectURL(file);
+      setPreview(previewUrl);
+      
+      // In a real implementation, you would upload the file to your storage service
+      // For now, we'll simulate an upload and use the preview URL
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate upload delay
+      
+      // Update the form data with the file URL
+      onInputChange(fieldName, previewUrl);
+      
+      console.log(`${type} uploaded successfully:`, file.name);
+    } catch (error) {
+      console.error(`Error uploading ${type}:`, error);
+      setPreview(null);
+    } finally {
+      setUploading(false);
+    }
+  }, [onInputChange]);
+
+  const logoDropzone = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxSize: 5 * 1024 * 1024, // 5MB
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        handleFileUpload(acceptedFiles[0], 'logo');
+      }
+    }
+  });
+
+  const coverDropzone = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxSize: 5 * 1024 * 1024, // 5MB
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        handleFileUpload(acceptedFiles[0], 'cover');
+      }
+    }
+  });
+
+  const removeLogo = () => {
+    setLogoPreview(null);
+    onInputChange('logoUrl', '');
+  };
+
+  const removeCover = () => {
+    setCoverPreview(null);
+    onInputChange('coverImage', '');
   };
 
   return (
@@ -172,21 +238,60 @@ export function RestaurantMenuForm({ formData, onInputChange }: RestaurantMenuFo
                 Restaurant Branding
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Restaurant Logo Upload */}
               <div>
-                <Label htmlFor="logoUrl">Restaurant Logo</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    id="logoUrl"
-                    type="url"
-                    placeholder="https://example.com/logo.jpg"
-                    value={formData.logoUrl || ''}
-                    onChange={(e) => onInputChange('logoUrl', e.target.value)}
-                  />
-                  <Button variant="outline" size="sm">
-                    <Image className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
+                <Label>Restaurant Logo</Label>
+                <div className="space-y-3">
+                  {logoPreview ? (
+                    <div className="relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden">
+                      <img 
+                        src={logoPreview} 
+                        alt="Logo preview" 
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        onClick={removeLogo}
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      {...logoDropzone.getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                        logoDropzone.isDragActive 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <input {...logoDropzone.getInputProps()} />
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-600 mb-1">
+                        {uploadingLogo ? 'Uploading...' : 'Drag logo here or click to upload'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        PNG, JPG, GIF up to 5MB
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">or</span>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/logo.jpg"
+                      value={formData.logoUrl || ''}
+                      onChange={(e) => {
+                        onInputChange('logoUrl', e.target.value);
+                        setLogoPreview(e.target.value);
+                      }}
+                      className="flex-1"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -227,20 +332,59 @@ export function RestaurantMenuForm({ formData, onInputChange }: RestaurantMenuFo
                 </div>
               </div>
 
+              {/* Cover Image Upload */}
               <div>
-                <Label htmlFor="coverImage">Cover Image</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    id="coverImage"
-                    type="url"
-                    placeholder="https://example.com/cover.jpg"
-                    value={formData.coverImage || ''}
-                    onChange={(e) => onInputChange('coverImage', e.target.value)}
-                  />
-                  <Button variant="outline" size="sm">
-                    <Image className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
+                <Label>Cover Image</Label>
+                <div className="space-y-3">
+                  {coverPreview ? (
+                    <div className="relative w-full h-32 border-2 border-gray-200 rounded-lg overflow-hidden">
+                      <img 
+                        src={coverPreview} 
+                        alt="Cover preview" 
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        onClick={removeCover}
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2 h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      {...coverDropzone.getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                        coverDropzone.isDragActive 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <input {...coverDropzone.getInputProps()} />
+                      <Image className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-600 mb-1">
+                        {uploadingCover ? 'Uploading...' : 'Drag cover image here or click to upload'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        PNG, JPG, GIF up to 5MB
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">or</span>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/cover.jpg"
+                      value={formData.coverImage || ''}
+                      onChange={(e) => {
+                        onInputChange('coverImage', e.target.value);
+                        setCoverPreview(e.target.value);
+                      }}
+                      className="flex-1"
+                    />
+                  </div>
                 </div>
               </div>
 
