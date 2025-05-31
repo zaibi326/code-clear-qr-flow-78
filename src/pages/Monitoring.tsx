@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -10,12 +11,14 @@ const Monitoring = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <SidebarInset>
-            <DashboardTopbar />
-            <main className="flex-1">
-              <PerformanceMonitor />
-            </main>
-          </SidebarInset>
+          <div className="flex-1 ml-60">
+            <SidebarInset>
+              <DashboardTopbar />
+              <main className="flex-1 overflow-y-auto">
+                <PerformanceMonitor />
+              </main>
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     </div>

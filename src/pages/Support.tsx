@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -10,17 +11,19 @@ const Support = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <SidebarInset>
-            <DashboardTopbar />
-            <main className="flex-1 p-6 space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Support Center</h1>
-                <p className="text-gray-600">Get help with your QR code campaigns and account management</p>
-              </div>
-              
-              <SupportTicketSystem />
-            </main>
-          </SidebarInset>
+          <div className="flex-1 ml-60">
+            <SidebarInset>
+              <DashboardTopbar />
+              <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Support Center</h1>
+                  <p className="text-gray-600">Get help with your QR code campaigns and account management</p>
+                </div>
+                
+                <SupportTicketSystem />
+              </main>
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     </div>

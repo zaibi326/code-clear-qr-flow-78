@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -39,21 +40,23 @@ const DataManager = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <SidebarInset>
-            <DashboardTopbar />
-            <main className="flex-1 p-6 space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Manager</h1>
-                <p className="text-gray-600">Upload, manage, and organize your campaign data with CSV files</p>
-              </div>
+          <div className="flex-1 ml-60">
+            <SidebarInset>
+              <DashboardTopbar />
+              <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Manager</h1>
+                  <p className="text-gray-600">Upload, manage, and organize your campaign data with CSV files</p>
+                </div>
 
-              <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-              {activeTab === 'upload' && <DataUploadTab />}
-              {activeTab === 'manage' && <DataManageTab mockDataSets={mockDataSets} />}
-              {activeTab === 'templates' && <DataTemplatesTab />}
-            </main>
-          </SidebarInset>
+                {activeTab === 'upload' && <DataUploadTab />}
+                {activeTab === 'manage' && <DataManageTab mockDataSets={mockDataSets} />}
+                {activeTab === 'templates' && <DataTemplatesTab />}
+              </main>
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     </div>

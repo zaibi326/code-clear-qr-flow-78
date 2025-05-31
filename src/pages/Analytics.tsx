@@ -19,49 +19,51 @@ const Analytics = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <SidebarInset>
-            <DashboardTopbar />
-            <main className="flex-1 p-6 space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
-                <p className="text-gray-600">Track your QR code performance and scan analytics</p>
-              </div>
-              
-              <AnalyticsFilters />
-              
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid grid-cols-4 mb-6 w-[600px]">
-                  <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
-                  <TabsTrigger value="insights">Campaign Insights</TabsTrigger>
-                  <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
-                  <TabsTrigger value="interactions">User Interactions</TabsTrigger>
-                </TabsList>
+          <div className="flex-1 ml-60">
+            <SidebarInset>
+              <DashboardTopbar />
+              <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
+                  <p className="text-gray-600">Track your QR code performance and scan analytics</p>
+                </div>
                 
-                <TabsContent value="overview" className="space-y-6">
-                  <AnalyticsStats />
+                <AnalyticsFilters />
+                
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="grid grid-cols-4 mb-6 w-[600px]">
+                    <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
+                    <TabsTrigger value="insights">Campaign Insights</TabsTrigger>
+                    <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
+                    <TabsTrigger value="interactions">User Interactions</TabsTrigger>
+                  </TabsList>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <ScanActivityChart />
-                    <CampaignPerformanceChart />
-                  </div>
-                  
-                  <QRCodeTable />
-                </TabsContent>
+                  <TabsContent value="overview" className="space-y-6">
+                    <AnalyticsStats />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <ScanActivityChart />
+                      <CampaignPerformanceChart />
+                    </div>
+                    
+                    <QRCodeTable />
+                  </TabsContent>
 
-                <TabsContent value="insights">
-                  <CampaignInsights />
-                </TabsContent>
-                
-                <TabsContent value="advanced">
-                  <AdvancedAnalytics />
-                </TabsContent>
-                
-                <TabsContent value="interactions">
-                  <UserInteractionLog />
-                </TabsContent>
-              </Tabs>
-            </main>
-          </SidebarInset>
+                  <TabsContent value="insights">
+                    <CampaignInsights />
+                  </TabsContent>
+                  
+                  <TabsContent value="advanced">
+                    <AdvancedAnalytics />
+                  </TabsContent>
+                  
+                  <TabsContent value="interactions">
+                    <UserInteractionLog />
+                  </TabsContent>
+                </Tabs>
+              </main>
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     </div>

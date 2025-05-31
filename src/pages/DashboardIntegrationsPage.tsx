@@ -15,7 +15,7 @@ const DashboardIntegrationsPage = () => {
           isCollapsed={isSidebarCollapsed} 
           setIsCollapsed={setIsSidebarCollapsed} 
         />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-60'}`}>
           <DashboardTopbar toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
           <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
             <DashboardIntegrations />
