@@ -20,31 +20,31 @@ const Analytics = () => {
         <AppSidebar />
         <SidebarInset className="flex-1">
           <DashboardTopbar />
-          <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto">
-            <div className="max-w-full mx-auto space-y-4 lg:space-y-6">
-              <div className="mb-4 lg:mb-6">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
-                <p className="text-sm sm:text-base text-gray-600">Track your QR code performance and scan analytics</p>
+          <main className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
+                <p className="text-gray-600">Track your QR code performance and scan analytics</p>
               </div>
               
-              <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6">
                 <AnalyticsFilters />
               </div>
               
               <Tabs defaultValue="overview" className="w-full">
-                <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
-                  <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-4 lg:mb-6 w-full max-w-2xl">
-                    <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
-                    <TabsTrigger value="insights" className="text-xs md:text-sm">Insights</TabsTrigger>
-                    <TabsTrigger value="advanced" className="text-xs md:text-sm">Advanced</TabsTrigger>
-                    <TabsTrigger value="interactions" className="text-xs md:text-sm">Interactions</TabsTrigger>
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 w-full max-w-2xl">
+                    <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+                    <TabsTrigger value="insights" className="text-sm">Insights</TabsTrigger>
+                    <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
+                    <TabsTrigger value="interactions" className="text-sm">Interactions</TabsTrigger>
                   </TabsList>
                 </div>
                 
-                <TabsContent value="overview" className="space-y-4 lg:space-y-6 mt-4 lg:mt-6">
+                <TabsContent value="overview" className="space-y-6 mt-6">
                   <AnalyticsStats />
                   
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <ScanActivityChart />
                     <CampaignPerformanceChart />
                   </div>
@@ -52,15 +52,15 @@ const Analytics = () => {
                   <QRCodeTable />
                 </TabsContent>
 
-                <TabsContent value="insights" className="mt-4 lg:mt-6">
+                <TabsContent value="insights" className="mt-6">
                   <CampaignInsights />
                 </TabsContent>
                 
-                <TabsContent value="advanced" className="mt-4 lg:mt-6">
+                <TabsContent value="advanced" className="mt-6">
                   <AdvancedAnalytics />
                 </TabsContent>
                 
-                <TabsContent value="interactions" className="mt-4 lg:mt-6">
+                <TabsContent value="interactions" className="mt-6">
                   <UserInteractionLog />
                 </TabsContent>
               </Tabs>

@@ -38,35 +38,35 @@ const CampaignCreator = () => {
         <AppSidebar />
         <SidebarInset className="flex-1">
           <DashboardTopbar />
-          <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto">
-            <div className="max-w-full mx-auto space-y-4 lg:space-y-6">
-              <div className="mb-4 lg:mb-6">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Campaign Creator</h1>
-                <p className="text-sm sm:text-base text-gray-600">Create, manage, and track your marketing campaigns</p>
+          <main className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaign Creator</h1>
+                <p className="text-gray-600">Create, manage, and track your marketing campaigns</p>
               </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
-                <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-                <div className="mt-4 lg:mt-6">
-                  {activeTab === 'create' && !showWizard && (
-                    <CreateCampaignTab onStartCampaign={handleStartNewCampaign} />
-                  )}
-                  
-                  {activeTab === 'create' && showWizard && (
-                    <CampaignWizard onCampaignCreate={handleCampaignCreate} />
-                  )}
-                  
-                  {activeTab === 'manage' && (
-                    <ManageCampaignsTab 
-                      campaigns={campaigns}
-                      onCreateNew={handleStartNewCampaign}
-                    />
-                  )}
-                  
-                  {activeTab === 'analytics' && (
-                    <CampaignAnalyticsTab campaigns={campaigns} />
-                  )}
+              <div className="bg-white rounded-lg shadow-sm border">
+                <div className="p-6">
+                  <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                  <div className="mt-6">
+                    {activeTab === 'create' && !showWizard && (
+                      <CreateCampaignTab onStartCampaign={handleStartNewCampaign} />
+                    )}
+                    
+                    {activeTab === 'create' && showWizard && (
+                      <CampaignWizard onCampaignCreate={handleCampaignCreate} />
+                    )}
+                    
+                    {activeTab === 'manage' && (
+                      <ManageCampaignsTab 
+                        campaigns={campaigns}
+                        onCreateNew={handleStartNewCampaign}
+                      />
+                    )}
+                    
+                    {activeTab === 'analytics' && (
+                      <CampaignAnalyticsTab campaigns={campaigns} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
