@@ -29,7 +29,7 @@ interface DashboardTopbarProps {
 export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user, profile } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -38,6 +38,28 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar 
 
   const handleProfileClick = () => {
     navigate('/settings');
+  };
+
+  // Get user display name and initials
+  const getUserDisplayName = () => {
+    if (profile?.name) return profile.name;
+    if (user?.user_metadata?.name) return user.user_metadata.name;
+    if (user?.email) return user.email;
+    return 'User';
+  };
+
+  const getUserEmail = () => {
+    if (profile?.email) return profile.email;
+    if (user?.email) return user.email;
+    return 'user@example.com';
+  };
+
+  const getUserInitials = () => {
+    const name = getUserDisplayName();
+    if (name === 'User' || name.includes('@')) {
+      return 'U';
+    }
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -93,9 +115,9 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar 
                 className="relative h-10 w-10 rounded-xl border border-indigo-100/50 bg-white/80 backdrop-blur-sm hover:bg-indigo-50 transition-all duration-300 p-0"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt="User" />
+                  <AvatarImage src={profile?.avatar_url || ""} alt={getUserDisplayName()} />
                   <AvatarFallback className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm">
-                    U
+                    {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -103,9 +125,9 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar 
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">User</p>
+                  <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    user@example.com
+                    {getUserEmail()}
                   </p>
                 </div>
               </DropdownMenuLabel>

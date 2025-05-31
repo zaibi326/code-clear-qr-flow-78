@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseUser } from '@/types/database';
 import { supabaseService } from '@/utils/supabaseService';
+import { userProfileService } from '@/utils/userProfileService';
 
 interface AuthContextType {
   user: User | null;
@@ -95,7 +96,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const userProfile = await supabaseService.getUserProfile(userId);
+      // Try to get profile from Supabase first
+      let userProfile = await supabaseService.getUserProfile(userId);
+      
+      // If no profile exists in Supabase, load from userProfileService
+      if (!userProfile) {
+        userProfile = await userProfileService.loadUserProfile(userId);
+      }
+      
       if (userProfile) {
         setProfile(userProfile);
       }
@@ -159,7 +167,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: fullName,
+            company: company || ''
+          }
         }
       });
 
@@ -169,9 +181,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        // Create user profile
+        // Create user profile immediately
         try {
-          await supabaseService.createUserProfile({
+          const profileData = {
             email,
             name: fullName,
             company: company || '',
@@ -203,7 +215,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             updated_at: new Date(),
             trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
             last_login_at: null
-          }, data.user.id);
+          };
+
+          await supabaseService.createUserProfile(profileData, data.user.id);
+          
+          // Also sync with userProfileService for immediate local access
+          await userProfileService.updateProfile({
+            name: fullName,
+            email: email,
+            company: company
+          });
+          
           return true;
         } catch (profileError) {
           console.error('Profile creation error:', profileError);
