@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
+import { toast } from 'sonner';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -44,7 +45,11 @@ const LoginForm = () => {
         }
       } else {
         console.log('Sign in successful, navigating to dashboard');
-        navigate('/dashboard');
+        toast.success('Successfully signed in!');
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
       }
     } catch (err: any) {
       console.error('Unexpected login error:', err);

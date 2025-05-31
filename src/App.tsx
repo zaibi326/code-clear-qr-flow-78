@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useSupabaseAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import QuickGenerate from "./pages/QuickGenerate";
@@ -28,33 +30,133 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/quick-generate" element={<QuickGenerate />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/campaign-creator" element={<CampaignCreator />} />
-          <Route path="/data-manager" element={<DataManager />} />
-          <Route path="/template-manager" element={<TemplateManager />} />
-          <Route path="/testing" element={<Testing />} />
-          <Route path="/monitoring" element={<Monitoring />} />
-          <Route path="/integrations" element={<Integrations />} />
-          <Route path="/api-documentation" element={<ApiDocumentation />} />
-          <Route path="/bulk-data-selector" element={<BulkDataSelector />} />
-          <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/quick-generate" 
+              element={
+                <ProtectedRoute>
+                  <QuickGenerate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/analytics" 
+              element={
+                <ProtectedRoute>
+                  <Analytics />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/support" 
+              element={
+                <ProtectedRoute>
+                  <Support />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/campaign-creator" 
+              element={
+                <ProtectedRoute>
+                  <CampaignCreator />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/data-manager" 
+              element={
+                <ProtectedRoute>
+                  <DataManager />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/template-manager" 
+              element={
+                <ProtectedRoute>
+                  <TemplateManager />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/testing" 
+              element={
+                <ProtectedRoute>
+                  <Testing />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/monitoring" 
+              element={
+                <ProtectedRoute>
+                  <Monitoring />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/integrations" 
+              element={
+                <ProtectedRoute>
+                  <Integrations />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/api-documentation" 
+              element={
+                <ProtectedRoute>
+                  <ApiDocumentation />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/bulk-data-selector" 
+              element={
+                <ProtectedRoute>
+                  <BulkDataSelector />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/integrations" 
+              element={
+                <ProtectedRoute>
+                  <DashboardIntegrationsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
