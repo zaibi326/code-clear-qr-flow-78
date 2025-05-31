@@ -46,27 +46,27 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Home',
     },
     {
-      path: '/dashboard/analytics',
+      path: '/analytics',
       icon: BarChart3,
       label: 'Analytics',
     },
     {
-      path: '/dashboard/qr-codes',
+      path: '/quick-generate',
       icon: QrCode,
       label: 'QR Codes',
     },
     {
-      path: '/dashboard/templates',
+      path: '/template-manager',
       icon: FileText,
       label: 'Templates',
     },
     {
-      path: '/dashboard/projects',
+      path: '/data-manager',
       icon: Database,
       label: 'Projects',
     },
     {
-      path: '/dashboard/campaigns',
+      path: '/campaign-creator',
       icon: Megaphone,
       label: 'Campaigns',
     },
@@ -76,12 +76,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Integrations',
     },
     {
-      path: '/dashboard/activity',
+      path: '/monitoring',
       icon: Activity,
       label: 'Activity',
     },
     {
-      path: '/dashboard/help',
+      path: '/support',
       icon: HelpCircle,
       label: 'Help',
     },
@@ -109,8 +109,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             <li key={item.path} className="mb-1">
               <button
                 onClick={() => navigate(item.path)}
-                className={`flex items-center w-full p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 ${location.pathname.startsWith(item.path) ? 'bg-gray-100 dark:bg-gray-800' : ''
-                  }`}
+                className={`flex items-center w-full p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                  location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
+                    ? 'bg-gray-100 dark:bg-gray-800' 
+                    : ''
+                }`}
               >
                 <item.icon className="h-5 w-5 mr-2" />
                 {!isCollapsed && <span>{item.label}</span>}
