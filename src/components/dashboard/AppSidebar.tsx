@@ -93,12 +93,23 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     navigate('/login');
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   return (
     <div
       className={`fixed left-0 top-0 z-30 flex flex-col h-screen bg-white ${isCollapsed ? 'w-20' : 'w-60'} border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out shadow-sm`}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        {!isCollapsed && <span className="font-bold text-lg">ClearQR.io</span>}
+        {!isCollapsed && (
+          <button 
+            onClick={handleLogoClick}
+            className="font-bold text-lg hover:text-blue-600 transition-colors cursor-pointer"
+          >
+            ClearQR.io
+          </button>
+        )}
         <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
           <ChevronUp className={`h-6 w-6 transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
         </button>
