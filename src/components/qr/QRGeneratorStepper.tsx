@@ -106,7 +106,7 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
         </CardContent>
       </Card>
 
-      {/* Step Content - Always show QRTypeSelector for step 1 */}
+      {/* Step Content */}
       <div>
         {currentStep === 1 && (
           <QRTypeSelector onTypeSelect={handleTypeSelect} initialType={initialType} />

@@ -32,17 +32,17 @@ export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProp
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {dynamicQRTypes.map((type) => (
             <Card 
               key={type.id} 
-              className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-blue-300 hover:scale-105 group"
+              className="cursor-pointer hover:shadow-xl transition-all duration-300 hover:border-blue-300 hover:scale-105 group bg-white border border-gray-200"
               onClick={() => handleTypeClick(type)}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`p-2.5 rounded-lg ${type.color} text-white group-hover:scale-110 transition-transform`}>
-                    <type.icon className="h-5 w-5" />
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`p-3 rounded-lg ${type.color} text-white group-hover:scale-110 transition-transform duration-300`}>
+                    <type.icon className="h-6 w-6" />
                   </div>
                   {type.badge && (
                     <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
@@ -50,7 +50,9 @@ export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProp
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-base font-semibold">{type.title}</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {type.title}
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm text-gray-600 leading-relaxed">
@@ -74,23 +76,25 @@ export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProp
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {staticQRTypes.map((type) => (
             <Card 
               key={type.id} 
-              className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-blue-300 hover:scale-105 group"
+              className="cursor-pointer hover:shadow-xl transition-all duration-300 hover:border-blue-300 hover:scale-105 group bg-white border border-gray-200"
               onClick={() => handleTypeClick(type)}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`p-2.5 rounded-lg ${type.color} text-white group-hover:scale-110 transition-transform`}>
-                    <type.icon className="h-5 w-5" />
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`p-3 rounded-lg ${type.color} text-white group-hover:scale-110 transition-transform duration-300`}>
+                    <type.icon className="h-6 w-6" />
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
                     Static
                   </Badge>
                 </div>
-                <CardTitle className="text-base font-semibold">{type.title}</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {type.title}
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm text-gray-600 leading-relaxed">
@@ -105,7 +109,7 @@ export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProp
       {/* Preview Note */}
       <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
         <p className="text-blue-700 font-medium">
-          💡 Preview: Hover over a dynamic type to see preview
+          💡 Preview: Hover over a QR code type to see preview functionality
         </p>
       </div>
     </div>
