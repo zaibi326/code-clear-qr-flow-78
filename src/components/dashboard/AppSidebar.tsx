@@ -94,7 +94,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   };
 
   const handleLogoClick = () => {
-    navigate('/');
+    // Navigate to main page and reload to ensure landing page shows
+    window.location.href = '/';
   };
 
   return (
