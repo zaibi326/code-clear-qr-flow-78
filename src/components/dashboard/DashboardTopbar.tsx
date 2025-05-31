@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Bell, Search, Menu, Settings, HelpCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,22 @@ interface DashboardTopbarProps {
 export const DashboardTopbar = ({ toggleSidebar }: DashboardTopbarProps) => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+  const handleGlobalSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGlobalSearchQuery(value);
+    console.log('Global search query:', value);
+    // Add global search functionality here
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+
+  const handleHelpClick = () => {
+    navigate('/support');
+  };
 
   return (
     <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 shadow-sm">
@@ -29,6 +45,8 @@ export const DashboardTopbar = ({ toggleSidebar }: DashboardTopbarProps) => {
           <Input 
             type="search" 
             placeholder="Search QR codes, campaigns, templates..." 
+            value={globalSearchQuery}
+            onChange={handleGlobalSearch}
             className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
@@ -53,11 +71,11 @@ export const DashboardTopbar = ({ toggleSidebar }: DashboardTopbarProps) => {
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
           </Button>
           
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={handleHelpClick}>
             <HelpCircle className="h-5 w-5 text-gray-600" />
           </Button>
           
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={handleSettingsClick}>
             <Settings className="h-5 w-5 text-gray-600" />
           </Button>
         </div>

@@ -11,6 +11,12 @@ const Dashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    console.log('Dashboard search query:', query);
+  };
 
   return (
     <SidebarProvider>
@@ -52,6 +58,7 @@ const Dashboard = () => {
                   setActiveTab={setActiveTab}
                   viewMode={viewMode}
                   setViewMode={setViewMode}
+                  onSearch={handleSearch}
                 />
               </div>
 
@@ -60,6 +67,7 @@ const Dashboard = () => {
                 <QRCodeGrid 
                   activeTab={activeTab}
                   viewMode={viewMode}
+                  searchQuery={searchQuery}
                 />
               </div>
             </div>

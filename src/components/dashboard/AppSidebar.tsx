@@ -97,12 +97,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   };
 
   const handleLogoClick = () => {
-    // Navigate to main page and reload to ensure landing page shows
     window.location.href = '/';
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
   };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+    console.log('Sidebar toggled:', !isCollapsed);
   };
 
   return (
@@ -125,9 +133,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 z-40 h-screen bg-white transition-all duration-300 ease-in-out border-r border-gray-200 shadow-sm w-[240px] ${
+        className={`fixed left-0 top-0 z-40 h-screen bg-white transition-all duration-300 ease-in-out border-r border-gray-200 shadow-sm ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 md:block`}
+        } md:translate-x-0 md:block w-[240px]`}
         style={{ boxSizing: 'border-box' }}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
@@ -138,7 +146,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             ClearQR.io
           </button>
           <button 
-            onClick={() => setIsCollapsed(!isCollapsed)} 
+            onClick={toggleSidebar}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 hidden md:block"
           >
             <ChevronUp className={`h-5 w-5 transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
@@ -172,11 +180,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
         <div className="p-3 border-t border-gray-200">
           <button
-            onClick={handleSignOut}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+            onClick={handleSettingsClick}
+            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 mb-2"
           >
             <Settings className="h-5 w-5 flex-shrink-0" />
             <span className="ml-3 truncate">Settings</span>
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+          >
+            <User2 className="h-5 w-5 flex-shrink-0" />
+            <span className="ml-3 truncate">Sign Out</span>
           </button>
         </div>
       </div>
