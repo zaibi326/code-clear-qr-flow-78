@@ -6,7 +6,7 @@ import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRGeneratorStepper } from '@/components/qr/QRGeneratorStepper';
 
 const Dashboard = () => {
-  console.log('Dashboard: Rendering dashboard page with QR generator');
+  console.log('Dashboard: Rendering dashboard page');
   
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -21,7 +21,9 @@ const Dashboard = () => {
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
                   <p className="text-gray-600">Welcome to your QR code management dashboard</p>
                 </div>
-                <QRGeneratorStepper />
+                <div className="grid gap-6">
+                  <QRGeneratorStepper />
+                </div>
               </div>
             </main>
           </SidebarInset>

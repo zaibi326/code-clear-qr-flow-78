@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,34 +11,44 @@ import { useAuth } from '@/hooks/useSupabaseAuth';
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
     if (!email || !password) {
       setError('Please enter your email and password.');
-      setLoading(false);
+      return;
+    }
+
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address.');
       return;
     }
 
     try {
+      console.log('Attempting to sign in with:', email);
       const { error } = await signIn(email, password);
 
       if (error) {
-        setError(error.message || 'Sign in failed.');
+        console.error('Login error:', error);
+        if (error.message === 'Invalid login credentials') {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please check your email and click the confirmation link before signing in.');
+        } else {
+          setError(error.message || 'Sign in failed. Please try again.');
+        }
       } else {
+        console.log('Sign in successful, navigating to dashboard');
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setLoading(false);
+      console.error('Unexpected login error:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -51,8 +62,8 @@ const LoginForm = () => {
         </Alert>
       )}
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
+        <div className="grid gap-4">
+          <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -62,10 +73,11 @@ const LoginForm = () => {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
+              disabled={isLoading}
+              required
             />
           </div>
-          <div className="grid gap-1">
+          <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -74,14 +86,15 @@ const LoginForm = () => {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
+              disabled={isLoading}
+              required
             />
           </div>
-          <Button disabled={loading}>
-            {loading && (
+          <Button type="submit" disabled={isLoading || !email || !password}>
+            {isLoading && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Sign In
+            {isLoading ? 'Signing In...' : 'Sign In'}
           </Button>
         </div>
       </form>
@@ -91,13 +104,15 @@ const LoginForm = () => {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            Don't have an account?
           </span>
         </div>
       </div>
-      <Button variant="outline" disabled>
-        Google
-      </Button>
+      <Link to="/register">
+        <Button variant="outline" className="w-full">
+          Create Account
+        </Button>
+      </Link>
     </div>
   );
 };

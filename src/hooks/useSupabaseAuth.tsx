@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseUser } from '@/types/database';
 import { supabaseService } from '@/utils/supabaseService';
@@ -7,6 +8,7 @@ import { supabaseService } from '@/utils/supabaseService';
 interface AuthContextType {
   user: User | null;
   profile: DatabaseUser | null;
+  session: Session | null;
   loading: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -20,33 +22,75 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<DatabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+    let mounted = true;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadUserProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
+        if (!mounted) return;
 
-    return () => subscription.unsubscribe();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user && event !== 'SIGNED_OUT') {
+          // Use setTimeout to avoid potential deadlocks
+          setTimeout(async () => {
+            if (mounted) {
+              await loadUserProfile(session.user.id);
+            }
+          }, 0);
+        } else {
+          setProfile(null);
+          if (mounted) {
+            setLoading(false);
+          }
+        }
+      }
+    );
+
+    // THEN check for existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          // Clear any invalid tokens
+          await supabase.auth.signOut();
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await loadUserProfile(session.user.id);
+          } else {
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserProfile = async (userId: string) => {
@@ -69,6 +113,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
       });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Unexpected sign in error:', error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -78,10 +130,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
       });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+      }
+      
       return { error };
     } finally {
       setIsLoading(false);
@@ -91,9 +153,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (fullName: string, email: string, password: string, company?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
       });
 
       if (error) {
@@ -102,41 +169,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        // Create user profile with all required fields (excluding id since it's handled by the service)
-        await supabaseService.createUserProfile({
-          email,
-          name: fullName,
-          company: company || '',
-          phone: null,
-          avatar_url: null,
-          plan: 'free',
-          subscription_status: 'trial',
-          language: 'en',
-          timezone: 'UTC',
-          preferences: {
-            notifications: {
-              email: true,
-              scan_alerts: true,
-              weekly_reports: false,
-              marketing: false
+        // Create user profile
+        try {
+          await supabaseService.createUserProfile({
+            email,
+            name: fullName,
+            company: company || '',
+            phone: null,
+            avatar_url: null,
+            plan: 'free',
+            subscription_status: 'trial',
+            language: 'en',
+            timezone: 'UTC',
+            preferences: {
+              notifications: {
+                email: true,
+                scan_alerts: true,
+                weekly_reports: false,
+                marketing: false
+              },
+              dashboard: {
+                default_view: 'grid',
+                items_per_page: 10
+              }
             },
-            dashboard: {
-              default_view: 'grid',
-              items_per_page: 10
-            }
-          },
-          usage_stats: {
-            qr_codes_created: 0,
-            campaigns_created: 0,
-            total_scans: 0,
-            storage_used: 0
-          },
-          created_at: new Date(),
-          updated_at: new Date(),
-          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
-          last_login_at: null
-        }, data.user.id);
-        return true;
+            usage_stats: {
+              qr_codes_created: 0,
+              campaigns_created: 0,
+              total_scans: 0,
+              storage_used: 0
+            },
+            created_at: new Date(),
+            updated_at: new Date(),
+            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            last_login_at: null
+          }, data.user.id);
+          return true;
+        } catch (profileError) {
+          console.error('Profile creation error:', profileError);
+          return false;
+        }
       }
 
       return false;
@@ -149,7 +221,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+      
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+    } catch (error) {
+      console.error('Unexpected sign out error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (updates: Partial<DatabaseUser>) => {
@@ -168,6 +255,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     profile,
+    session,
     loading,
     isLoading,
     signIn,
