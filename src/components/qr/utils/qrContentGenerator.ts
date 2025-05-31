@@ -1,4 +1,3 @@
-
 export const generateQRContent = (qrTypeId: string, setupData: any): string => {
   console.log(`Generating QR content for type: ${qrTypeId}`, setupData);
   
@@ -8,6 +7,7 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.url || 'https://example.com';
       
     case 'multi-link':
+    case 'linkpage-static':
       return setupData.linkPageUrl || setupData.url || 'https://linktr.ee/example';
       
     case 'pdf':
@@ -68,7 +68,11 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.audioUrl || setupData.url || 'https://example.com/audio.mp3';
       
     // Static QR Codes
+    case 'website-static':
+      return setupData.url || 'https://example.com';
+      
     case 'email-static':
+    case 'business-card-static':
       const email = setupData.email || 'contact@example.com';
       const subject = setupData.subject ? `?subject=${encodeURIComponent(setupData.subject)}` : '';
       const body = setupData.body ? `${subject ? '&' : '?'}body=${encodeURIComponent(setupData.body)}` : '';
@@ -82,6 +86,15 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       const smsPhone = setupData.phone || '+1234567890';
       const message = setupData.message ? `?body=${encodeURIComponent(setupData.message)}` : '';
       return `sms:${smsPhone.replace(/\s+/g, '')}${message}`;
+      
+    case 'plain-text-static':
+      return setupData.text || setupData.content || 'Hello World';
+      
+    case 'wifi-static':
+      const ssid = setupData.networkName || setupData.ssid || 'WiFi_Network';
+      const password = setupData.password || '';
+      const security = setupData.security || 'WPA';
+      return `WIFI:T:${security};S:${ssid};P:${password};;`;
       
     default:
       console.warn(`Unknown QR type: ${qrTypeId}, using default content`);
@@ -107,9 +120,14 @@ export const getQRTypeDescription = (qrTypeId: string): string => {
     'business-page': 'Shows your business information',
     'image': 'Displays an image',
     'mp3': 'Plays an audio file',
+    'website-static': 'Opens a website URL when scanned',
+    'business-card-static': 'Shows contact information',
+    'linkpage-static': 'Shows a page with multiple links',
     'email-static': 'Opens email app to send an email',
     'call-static': 'Initiates a phone call',
-    'sms-static': 'Opens SMS app to send a text message'
+    'sms-static': 'Opens SMS app to send a text message',
+    'plain-text-static': 'Displays plain text message',
+    'wifi-static': 'Connects to a WiFi network'
   };
   
   return descriptions[qrTypeId] || 'Performs the configured action when scanned';

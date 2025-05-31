@@ -9,6 +9,9 @@ import { SMSForm } from './SMSForm';
 import { LocationForm } from './LocationForm';
 import { RestaurantMenuForm } from './RestaurantMenuForm';
 import { SocialMediaForm } from './SocialMediaForm';
+import { FormQRForm } from './FormQRForm';
+import { SmartRulesForm } from './SmartRulesForm';
+import { LandingPageForm } from './LandingPageForm';
 import { DefaultForm } from './DefaultForm';
 
 interface QRFormProps {
@@ -22,10 +25,10 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
   'multi-link': MultiLinkForm,
   'pdf': PDFForm,
   'restaurant-menu': RestaurantMenuForm,
-  'form': URLForm, // Forms use URL input
-  'smart-rules': URLForm, // Smart rules use primary URL
+  'form': FormQRForm,
+  'smart-rules': SmartRulesForm,
   'social-media': SocialMediaForm,
-  'landing-page': URLForm, // Landing pages use URL input
+  'landing-page': LandingPageForm,
   'mobile-app': URLForm, // Mobile apps use URL input
   'location': LocationForm,
   'coupon-code': URLForm, // Coupons use URL input
@@ -36,9 +39,14 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
   'mp3': URLForm, // Audio files use URL input
   
   // Static QR Codes
+  'website-static': URLForm,
+  'business-card-static': EmailForm, // Use email form for business cards
+  'linkpage-static': MultiLinkForm,
   'email-static': EmailForm,
   'call-static': PhoneForm,
   'sms-static': SMSForm,
+  'plain-text-static': DefaultForm,
+  'wifi-static': DefaultForm,
 };
 
 export function getQRForm(qrTypeId: string): React.ComponentType<QRFormProps> {
