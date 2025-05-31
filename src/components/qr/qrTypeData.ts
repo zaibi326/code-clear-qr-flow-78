@@ -17,7 +17,10 @@ import {
   Phone, 
   MessageSquare,
   Star,
-  UtensilsCrossed
+  UtensilsCrossed,
+  CreditCard,
+  Wifi,
+  Type
 } from 'lucide-react';
 import { QRCodeType } from './QRGeneratorStepper';
 
@@ -156,6 +159,30 @@ export const dynamicQRTypes: QRCodeType[] = [
 
 export const staticQRTypes: QRCodeType[] = [
   {
+    id: 'website-static',
+    title: 'Website',
+    description: 'Open a website URL',
+    icon: Globe,
+    color: 'bg-blue-500',
+    category: 'static'
+  },
+  {
+    id: 'business-card-static',
+    title: 'Digital Business Card',
+    description: 'Share contact details',
+    icon: CreditCard,
+    color: 'bg-gray-700',
+    category: 'static'
+  },
+  {
+    id: 'linkpage-static',
+    title: 'Linkpage',
+    description: 'Show a list of links',
+    icon: Share2,
+    color: 'bg-purple-500',
+    category: 'static'
+  },
+  {
     id: 'email-static',
     title: 'Email',
     description: 'Send an email',
@@ -164,19 +191,35 @@ export const staticQRTypes: QRCodeType[] = [
     category: 'static'
   },
   {
-    id: 'call-static',
-    title: 'Call',
-    description: 'Place a quick call',
-    icon: Phone,
-    color: 'bg-green-600',
-    category: 'static'
-  },
-  {
     id: 'sms-static',
     title: 'SMS',
     description: 'Send a text message',
     icon: MessageSquare,
-    color: 'bg-purple-600',
+    color: 'bg-green-600',
+    category: 'static'
+  },
+  {
+    id: 'call-static',
+    title: 'Call',
+    description: 'Place a quick call',
+    icon: Phone,
+    color: 'bg-emerald-600',
+    category: 'static'
+  },
+  {
+    id: 'plain-text-static',
+    title: 'Plain Text',
+    description: 'Display a short message',
+    icon: Type,
+    color: 'bg-gray-500',
+    category: 'static'
+  },
+  {
+    id: 'wifi-static',
+    title: 'Wi-Fi',
+    description: 'Connect to a Wifi network',
+    icon: Wifi,
+    color: 'bg-indigo-600',
     category: 'static'
   }
 ];
