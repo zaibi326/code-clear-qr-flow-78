@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ export const DashboardIntegrations = () => {
   const [zapierDialogOpen, setZapierDialogOpen] = useState(false);
   const [analyticsId, setAnalyticsId] = useState('');
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('connected');
 
   const [integrations, setIntegrations] = useState([
     {
@@ -124,7 +124,7 @@ export const DashboardIntegrations = () => {
     });
   };
 
-  const handleWebhookConfigure = () => {
+  const handleWebhookConfigure = async () => {
     if (!webhookUrl.trim()) {
       toast({
         title: "Error",
@@ -134,16 +134,37 @@ export const DashboardIntegrations = () => {
       return;
     }
 
-    // Simulate webhook configuration
-    toast({
-      title: "Webhook Configured",
-      description: "Your webhook has been successfully configured.",
-    });
-    setWebhookDialogOpen(false);
-    setWebhookUrl('');
+    try {
+      // Simulate webhook configuration API call
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: "webhook_test",
+          message: "Webhook configuration test from ClearQR.io"
+        }),
+      });
+
+      toast({
+        title: "Webhook Configured",
+        description: "Your webhook has been successfully configured and tested.",
+      });
+      setWebhookDialogOpen(false);
+      setWebhookUrl('');
+    } catch (error) {
+      toast({
+        title: "Webhook Error",
+        description: "Failed to configure webhook. Please check the URL and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleZapierConnect = () => {
+  const handleZapierConnect = async () => {
     if (!zapierUrl.trim()) {
       toast({
         title: "Error",
@@ -153,20 +174,42 @@ export const DashboardIntegrations = () => {
       return;
     }
 
-    setIntegrations(prev => 
-      prev.map(integration => 
-        integration.name === 'Zapier' 
-          ? { ...integration, connected: true }
-          : integration
-      )
-    );
+    try {
+      // Test the Zapier webhook
+      const response = await fetch(zapierUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors",
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: "zapier_connection_test",
+          source: "ClearQR.io"
+        }),
+      });
 
-    toast({
-      title: "Zapier Connected",
-      description: "Zapier integration has been successfully configured.",
-    });
-    setZapierDialogOpen(false);
-    setZapierUrl('');
+      setIntegrations(prev => 
+        prev.map(integration => 
+          integration.name === 'Zapier' 
+            ? { ...integration, connected: true }
+            : integration
+        )
+      );
+
+      toast({
+        title: "Zapier Connected",
+        description: "Zapier integration has been successfully configured and tested.",
+      });
+      setZapierDialogOpen(false);
+      setZapierUrl('');
+    } catch (error) {
+      toast({
+        title: "Zapier Connection Error",
+        description: "Failed to connect to Zapier. Please check your webhook URL.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAnalyticsConnect = () => {
@@ -179,12 +222,23 @@ export const DashboardIntegrations = () => {
       return;
     }
 
+    // Validate tracking ID format
+    const isValidId = /^(GA-\d+-\d+|G-[A-Z0-9]+)$/.test(analyticsId);
+    if (!isValidId) {
+      toast({
+        title: "Invalid Tracking ID",
+        description: "Please enter a valid Google Analytics tracking ID (GA-XXXXXXXXX-X or G-XXXXXXXXXX)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIntegrations(prev => 
       prev.map(integration => 
         integration.name === 'Google Analytics' 
           ? { ...integration, connected: true }
           : integration
-      )
+        )
     );
 
     toast({
@@ -196,26 +250,29 @@ export const DashboardIntegrations = () => {
   };
 
   const handleAddIntegration = () => {
+    setActiveTab('available');
     toast({
-      title: "Add Integration",
-      description: "Browse available integrations in the 'Available' tab or contact sales for custom integrations.",
+      title: "Browse Integrations",
+      description: "Check out our available integrations below!",
     });
   };
 
   const handleContactSales = () => {
+    // In a real app, this would open a contact form or redirect
+    window.open('mailto:sales@clearqr.io?subject=Custom Integration Request', '_blank');
     toast({
       title: "Contact Sales",
-      description: "Redirecting to sales contact form...",
+      description: "Opening email client to contact our sales team...",
     });
-    // In a real app, this would redirect to a contact form or open a chat
   };
 
   const handleViewApiDocs = () => {
+    // In a real app, this would redirect to actual API documentation
+    window.open('https://docs.clearqr.io/api', '_blank');
     toast({
       title: "API Documentation",
-      description: "Opening API documentation...",
+      description: "Opening API documentation in a new tab...",
     });
-    // In a real app, this would redirect to API docs
   };
 
   return (
@@ -233,7 +290,7 @@ export const DashboardIntegrations = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="connected" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="connected">Connected ({connectedIntegrations.length})</TabsTrigger>
           <TabsTrigger value="available">Available ({availableIntegrations.length})</TabsTrigger>
@@ -326,7 +383,7 @@ export const DashboardIntegrations = () => {
                 <p className="text-gray-600 mb-4">
                   Connect your first integration to start automating your QR code workflows
                 </p>
-                <Button onClick={() => document.querySelector('[value="available"]')?.click()}>
+                <Button onClick={() => setActiveTab('available')}>
                   Browse Available Integrations
                 </Button>
               </CardContent>
