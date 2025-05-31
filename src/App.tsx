@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
 import TemplateManager from "./pages/TemplateManager";
 import CampaignCreator from "./pages/CampaignCreator";
 import DataManager from "./pages/DataManager";
@@ -73,7 +73,7 @@ const App = () => (
             } />
             <Route path="/dashboard/integrations" element={
               <ProtectedRoute>
-                <Integrations />
+                <DashboardIntegrationsPage />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/activity" element={
