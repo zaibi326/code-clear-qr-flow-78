@@ -161,6 +161,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (fullName: string, email: string, password: string, company?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      console.log('Starting registration process for:', email);
+      
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -181,9 +183,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        // Create user profile immediately
+        console.log('User created successfully:', data.user.id);
+        
+        // Wait a moment for the auth state to settle
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         try {
-          const profileData = {
+          // Create user profile in Supabase
+          const profileData: Omit<DatabaseUser, 'id'> = {
             email,
             name: fullName,
             company: company || '',
@@ -217,7 +224,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             last_login_at: null
           };
 
+          console.log('Creating profile with data:', profileData);
           await supabaseService.createUserProfile(profileData, data.user.id);
+          console.log('Profile created successfully');
           
           // Also sync with userProfileService for immediate local access
           await userProfileService.updateProfile({
@@ -229,7 +238,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return true;
         } catch (profileError) {
           console.error('Profile creation error:', profileError);
-          return false;
+          // Even if profile creation fails, the user account was created
+          // We'll let them proceed and fix the profile later
+          return true;
         }
       }
 

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
+import { useToast } from '@/hooks/use-toast';
 import FormField from './FormField';
 import PasswordInput from './PasswordInput';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
@@ -13,6 +14,7 @@ import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const { register, isLoading } = useAuth();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -46,17 +48,17 @@ const RegistrationForm = () => {
     };
     let isValid = true;
 
-    if (!formData.firstName) {
+    if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
       isValid = false;
     }
 
-    if (!formData.lastName) {
+    if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
       isValid = false;
     }
 
-    if (!formData.email) {
+    if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -102,18 +104,34 @@ const RegistrationForm = () => {
     const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
     
     try {
+      console.log('Submitting registration form...');
       const success = await register(
         fullName,
-        formData.email,
+        formData.email.trim(),
         formData.password,
-        formData.company || undefined
+        formData.company.trim() || undefined
       );
       
       if (success) {
+        toast({
+          title: "Account created successfully!",
+          description: "Welcome to ClearQR.io. You can now start creating QR codes.",
+        });
         navigate('/dashboard');
+      } else {
+        toast({
+          title: "Registration failed",
+          description: "There was an error creating your account. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
+      toast({
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
