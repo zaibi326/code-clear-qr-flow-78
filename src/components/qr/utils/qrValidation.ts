@@ -1,3 +1,4 @@
+
 export const validateQRForm = (qrTypeId: string, formData: any): boolean => {
   console.log(`Validating form for QR type: ${qrTypeId}`, formData);
   
@@ -40,9 +41,13 @@ export const validateQRForm = (qrTypeId: string, formData: any): boolean => {
       return (formData.url || '').trim().length > 0;
     
     case 'email-static':
-    case 'business-card-static':
       return (formData.email || '').trim().length > 0 && 
              (formData.email || '').includes('@');
+    
+    case 'business-card-static':
+      // Require at least first name and last name for business card
+      return (formData.firstName || '').trim().length > 0 && 
+             (formData.lastName || '').trim().length > 0;
     
     case 'call-static':
     case 'sms-static':
@@ -79,8 +84,9 @@ export const getValidationMessage = (qrTypeId: string): string => {
     case 'facebook-page':
       return 'Please provide a Facebook username.';
     case 'email-static':
-    case 'business-card-static':
       return 'Please provide a valid email address.';
+    case 'business-card-static':
+      return 'Please provide at least first name and last name.';
     case 'call-static':
     case 'sms-static':
       return 'Please provide a valid phone number.';

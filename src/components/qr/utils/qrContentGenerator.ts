@@ -1,3 +1,4 @@
+
 export const generateQRContent = (qrTypeId: string, setupData: any): string => {
   console.log(`Generating QR content for type: ${qrTypeId}`, setupData);
   
@@ -53,11 +54,48 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.url || 'https://example.com';
       
     case 'email-static':
-    case 'business-card-static':
       const email = setupData.email || 'contact@example.com';
       const subject = setupData.subject ? `?subject=${encodeURIComponent(setupData.subject)}` : '';
       const body = setupData.body ? `${subject ? '&' : '?'}body=${encodeURIComponent(setupData.body)}` : '';
       return `mailto:${email}${subject}${body}`;
+      
+    case 'business-card-static':
+      // Generate vCard format
+      const firstName = setupData.firstName || 'John';
+      const lastName = setupData.lastName || 'Doe';
+      const company = setupData.company || '';
+      const designation = setupData.designation || '';
+      const phoneWork = setupData.phoneWork || '';
+      const phoneHome = setupData.phoneHome || '';
+      const phoneMobile = setupData.phoneMobile || '';
+      const emailAddr = setupData.email || '';
+      const website = setupData.website || '';
+      const addressLine1 = setupData.addressLine1 || '';
+      const addressLine2 = setupData.addressLine2 || '';
+      const city = setupData.city || '';
+      const state = setupData.state || '';
+      const country = setupData.country || '';
+      const zip = setupData.zip || '';
+      
+      let vCard = 'BEGIN:VCARD\nVERSION:3.0\n';
+      vCard += `FN:${firstName} ${lastName}\n`;
+      vCard += `N:${lastName};${firstName};;;\n`;
+      
+      if (company) vCard += `ORG:${company}\n`;
+      if (designation) vCard += `TITLE:${designation}\n`;
+      if (emailAddr) vCard += `EMAIL:${emailAddr}\n`;
+      if (website) vCard += `URL:${website}\n`;
+      if (phoneWork) vCard += `TEL;TYPE=WORK:${phoneWork}\n`;
+      if (phoneHome) vCard += `TEL;TYPE=HOME:${phoneHome}\n`;
+      if (phoneMobile) vCard += `TEL;TYPE=CELL:${phoneMobile}\n`;
+      
+      if (addressLine1 || city || state || country || zip) {
+        const address = `${addressLine1}${addressLine2 ? ';' + addressLine2 : ''};${city};${state};${zip};${country}`;
+        vCard += `ADR;TYPE=WORK:;;${address}\n`;
+      }
+      
+      vCard += 'END:VCARD';
+      return vCard;
       
     case 'call-static':
       const phone = setupData.phone || '+1234567890';

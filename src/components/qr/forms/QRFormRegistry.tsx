@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { URLForm } from './URLForm';
 import { MultiLinkForm } from './MultiLinkForm';
@@ -12,6 +13,7 @@ import { FacebookPageForm } from './FacebookPageForm';
 import { MobileAppForm } from './MobileAppForm';
 import { DefaultForm } from './DefaultForm';
 import { ImageForm } from './ImageForm';
+import { BusinessCardForm } from './BusinessCardForm';
 
 interface QRFormProps {
   formData: any;
@@ -28,11 +30,11 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
   'landing-page': LandingPageForm,
   'mobile-app': MobileAppForm,
   'facebook-page': FacebookPageForm,
-  'image': ImageForm, // Updated to use ImageForm
+  'image': ImageForm,
   
   // Static QR Codes
   'website-static': URLForm,
-  'business-card-static': EmailForm, // Use email form for business cards
+  'business-card-static': BusinessCardForm,
   'email-static': EmailForm,
   'call-static': PhoneForm,
   'sms-static': SMSForm,
