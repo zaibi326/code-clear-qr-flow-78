@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -96,45 +97,52 @@ const TemplateManager = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        <div className="flex-1 ml-60">
-          <SidebarInset>
-            <DashboardTopbar />
-            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50">
-              <div className="max-w-6xl mx-auto space-y-6">
-                <div className="mb-6">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Template Manager</h1>
-                  <p className="text-gray-600">Upload, manage, and organize your marketing templates</p>
+        <SidebarInset className="flex-1 flex flex-col min-w-0">
+          <DashboardTopbar />
+          
+          {/* Header Section */}
+          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Template Manager</h1>
+                <p className="text-sm text-gray-600 mt-1">Upload, manage, and organize your marketing templates</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-auto">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
+                  <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
-                  <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-                  <div className="mt-6">
-                    {activeTab === 'upload' && (
-                      <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
-                    )}
-                    {activeTab === 'manage' && (
-                      <TemplateManageTab 
-                        templates={templates}
-                        onTemplateEdit={handleTemplateEdit}
-                        onTemplateDelete={handleTemplateDelete}
-                        onTemplateDuplicate={handleTemplateDuplicate}
-                      />
-                    )}
-                    {activeTab === 'library' && (
-                      <TemplateLibraryTab 
-                        templates={templates}
-                        onTemplateSelect={handleTemplateUse}
-                      />
-                    )}
-                  </div>
+                <div className="p-4 sm:p-6">
+                  {activeTab === 'upload' && (
+                    <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
+                  )}
+                  {activeTab === 'manage' && (
+                    <TemplateManageTab 
+                      templates={templates}
+                      onTemplateEdit={handleTemplateEdit}
+                      onTemplateDelete={handleTemplateDelete}
+                      onTemplateDuplicate={handleTemplateDuplicate}
+                    />
+                  )}
+                  {activeTab === 'library' && (
+                    <TemplateLibraryTab 
+                      templates={templates}
+                      onTemplateSelect={handleTemplateUse}
+                    />
+                  )}
                 </div>
               </div>
-            </main>
-          </SidebarInset>
-        </div>
+            </div>
+          </div>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
