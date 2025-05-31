@@ -22,7 +22,7 @@ export const DataManagerTabs = ({ activeTab, setActiveTab }: DataManagerTabsProp
 
   return (
     <div className="border-b border-gray-200">
-      <nav className="-mb-px flex space-x-8">
+      <nav className="flex space-x-8">
         {tabs.map((tab) => (
           <button
             key={tab.id}

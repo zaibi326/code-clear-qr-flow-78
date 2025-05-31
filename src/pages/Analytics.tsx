@@ -16,56 +16,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const Analytics = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex-1">
           <DashboardTopbar />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
-                <p className="text-gray-600">Track your QR code performance and scan analytics</p>
+          <div className="flex flex-col h-[calc(100vh-4rem)]">
+            <div className="flex-none bg-white border-b px-8 py-6">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl font-semibold text-gray-900">Analytics</h1>
+                <p className="text-sm text-gray-600 mt-1">Track your QR code performance and scan analytics</p>
               </div>
-              
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <AnalyticsFilters />
-              </div>
-              
-              <Tabs defaultValue="overview" className="w-full">
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 w-full max-w-2xl">
-                    <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
-                    <TabsTrigger value="insights" className="text-sm">Insights</TabsTrigger>
-                    <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
-                    <TabsTrigger value="interactions" className="text-sm">Interactions</TabsTrigger>
-                  </TabsList>
+            </div>
+            
+            <div className="flex-1 overflow-auto bg-gray-50">
+              <div className="max-w-7xl mx-auto px-8 py-6 space-y-6">
+                <div className="bg-white rounded-lg border shadow-sm p-6">
+                  <AnalyticsFilters />
                 </div>
                 
-                <TabsContent value="overview" className="space-y-6 mt-6">
-                  <AnalyticsStats />
-                  
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <ScanActivityChart />
-                    <CampaignPerformanceChart />
-                  </div>
-                  
-                  <QRCodeTable />
-                </TabsContent>
+                <Tabs defaultValue="overview" className="w-full">
+                  <div className="bg-white rounded-lg border shadow-sm">
+                    <div className="px-6 pt-6 pb-0">
+                      <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full max-w-2xl">
+                        <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+                        <TabsTrigger value="insights" className="text-sm">Insights</TabsTrigger>
+                        <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
+                        <TabsTrigger value="interactions" className="text-sm">Interactions</TabsTrigger>
+                      </TabsList>
+                    </div>
+                    
+                    <div className="p-6">
+                      <TabsContent value="overview" className="space-y-6 m-0">
+                        <AnalyticsStats />
+                        
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                          <ScanActivityChart />
+                          <CampaignPerformanceChart />
+                        </div>
+                        
+                        <QRCodeTable />
+                      </TabsContent>
 
-                <TabsContent value="insights" className="mt-6">
-                  <CampaignInsights />
-                </TabsContent>
-                
-                <TabsContent value="advanced" className="mt-6">
-                  <AdvancedAnalytics />
-                </TabsContent>
-                
-                <TabsContent value="interactions" className="mt-6">
-                  <UserInteractionLog />
-                </TabsContent>
-              </Tabs>
+                      <TabsContent value="insights" className="m-0">
+                        <CampaignInsights />
+                      </TabsContent>
+                      
+                      <TabsContent value="advanced" className="m-0">
+                        <AdvancedAnalytics />
+                      </TabsContent>
+                      
+                      <TabsContent value="interactions" className="m-0">
+                        <UserInteractionLog />
+                      </TabsContent>
+                    </div>
+                  </div>
+                </Tabs>
+              </div>
             </div>
-          </main>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>

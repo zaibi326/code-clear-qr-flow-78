@@ -37,20 +37,25 @@ const DataManager = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex-1">
           <DashboardTopbar />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Data Manager</h1>
-                <p className="text-gray-600">Upload, manage, and organize your campaign data with CSV files</p>
+          <div className="flex flex-col h-[calc(100vh-4rem)]">
+            <div className="flex-none bg-white border-b px-8 py-6">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
+                <p className="text-sm text-gray-600 mt-1">Upload, manage, and organize your campaign data with CSV files</p>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border">
-                <div className="p-6">
-                  <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                  <div className="mt-6">
+            </div>
+            
+            <div className="flex-1 overflow-auto bg-gray-50">
+              <div className="max-w-7xl mx-auto px-8 py-6">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="px-6 pt-6 pb-0">
+                    <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                  </div>
+                  <div className="p-6">
                     {activeTab === 'upload' && <DataUploadTab />}
                     {activeTab === 'manage' && <DataManageTab mockDataSets={mockDataSets} />}
                     {activeTab === 'templates' && <DataTemplatesTab />}
@@ -58,7 +63,7 @@ const DataManager = () => {
                 </div>
               </div>
             </div>
-          </main>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>

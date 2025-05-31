@@ -22,21 +22,28 @@ const QuickGenerate = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex-1">
           <DashboardTopbar />
-          <main className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-7xl mx-auto">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Create QR Code</h1>
-                <p className="text-gray-600">Generate custom QR codes with advanced styling options and analytics tracking.</p>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <QRGeneratorStepper initialType={selectedType} />
+          <div className="flex flex-col h-[calc(100vh-4rem)]">
+            <div className="flex-none bg-white border-b px-8 py-6">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl font-semibold text-gray-900">Create QR Code</h1>
+                <p className="text-sm text-gray-600 mt-1">Generate custom QR codes with advanced styling options and analytics tracking</p>
               </div>
             </div>
-          </main>
+            
+            <div className="flex-1 overflow-auto bg-gray-50">
+              <div className="max-w-7xl mx-auto px-8 py-6">
+                <div className="bg-white rounded-lg border shadow-sm">
+                  <div className="p-8">
+                    <QRGeneratorStepper initialType={selectedType} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>
