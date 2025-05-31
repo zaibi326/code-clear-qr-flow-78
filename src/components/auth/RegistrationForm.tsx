@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -115,9 +114,10 @@ const RegistrationForm = () => {
       if (success) {
         toast({
           title: "Account created successfully!",
-          description: "Welcome to ClearQR.io. You can now start creating QR codes.",
+          description: "Please check your email and click the confirmation link to complete your registration. After confirming, you can sign in.",
         });
-        navigate('/dashboard');
+        // Redirect to login page instead of dashboard
+        navigate('/login');
       } else {
         toast({
           title: "Registration failed",
