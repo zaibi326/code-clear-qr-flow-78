@@ -20,7 +20,7 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50" style={{ boxSizing: 'border-box' }}>
         <AppSidebar 
           isCollapsed={isSidebarCollapsed} 
           setIsCollapsed={setIsSidebarCollapsed} 
@@ -32,12 +32,12 @@ const Dashboard = () => {
           <DashboardTopbar toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
           
           {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
+          <div className="bg-white/80 backdrop-blur-sm border-b border-indigo-100 px-4 sm:px-6 lg:px-8 py-8 shadow-sm">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">QR Codes</h1>
-                  <p className="text-sm text-gray-600 mt-2">Manage your dynamic and static QR codes</p>
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">QR Codes</h1>
+                  <p className="text-base text-slate-600 mt-3 font-medium">Manage your dynamic and static QR codes with advanced analytics</p>
                 </div>
               </div>
             </div>
@@ -45,14 +45,14 @@ const Dashboard = () => {
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
               {/* Stats Section */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-indigo-100 shadow-lg shadow-indigo-500/10 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300">
                 <QRCodeStats />
               </div>
 
               {/* Filters Section */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-indigo-100 shadow-lg shadow-indigo-500/10 p-8 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300">
                 <QRCodeFilters 
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -63,7 +63,7 @@ const Dashboard = () => {
               </div>
 
               {/* QR Codes Grid */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-indigo-100 shadow-lg shadow-indigo-500/10 p-8 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300">
                 <QRCodeGrid 
                   activeTab={activeTab}
                   viewMode={viewMode}

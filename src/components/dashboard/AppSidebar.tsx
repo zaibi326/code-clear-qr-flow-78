@@ -118,44 +118,44 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-md bg-white shadow-md border border-gray-200"
+        className="fixed top-4 left-4 z-50 md:hidden p-3 rounded-xl bg-white/90 backdrop-blur-sm shadow-lg border border-indigo-100 hover:bg-white transition-all duration-200"
       >
-        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {isMobileMenuOpen ? <X className="h-5 w-5 text-indigo-600" /> : <Menu className="h-5 w-5 text-indigo-600" />}
       </button>
 
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 z-40 h-screen bg-white transition-all duration-300 ease-in-out border-r border-gray-200 shadow-sm ${
+        className={`fixed left-0 top-0 z-40 h-screen bg-white/95 backdrop-blur-md transition-all duration-300 ease-in-out border-r border-indigo-100 shadow-2xl shadow-indigo-500/10 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 md:block w-[240px]`}
         style={{ boxSizing: 'border-box' }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50">
           <button 
             onClick={handleLogoClick}
-            className="font-bold text-lg hover:text-blue-600 transition-colors cursor-pointer truncate"
+            className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 cursor-pointer truncate"
           >
             ClearQR.io
           </button>
           <button 
             onClick={toggleSidebar}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 hidden md:block"
+            className="p-2 rounded-xl hover:bg-indigo-100 transition-colors flex-shrink-0 hidden md:block group"
           >
-            <ChevronUp className={`h-5 w-5 transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+            <ChevronUp className={`h-5 w-5 text-indigo-600 group-hover:text-indigo-700 transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
-        <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
-          <nav className="p-3">
-            <ul className="space-y-1">
+        <ScrollArea className="flex-1 h-[calc(100vh-140px)]">
+          <nav className="p-4">
+            <ul className="space-y-2">
               {sidebarItems.map((item) => (
                 <li key={item.path}>
                   <button
@@ -163,14 +163,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                       navigate(item.path);
                       closeMobileMenu();
                     }}
-                    className={`flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-left ${
+                    className={`flex items-center w-full p-4 rounded-xl hover:bg-indigo-50 transition-all duration-200 text-left group ${
                       location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
-                        : 'text-gray-700'
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25' 
+                        : 'text-slate-700 hover:text-indigo-700'
                     }`}
                   >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    <span className="ml-3 truncate">{item.label}</span>
+                    <item.icon className={`h-5 w-5 flex-shrink-0 transition-colors duration-200 ${
+                      location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
+                        ? 'text-white' 
+                        : 'text-slate-500 group-hover:text-indigo-600'
+                    }`} />
+                    <span className="ml-4 truncate font-medium">{item.label}</span>
                   </button>
                 </li>
               ))}
@@ -178,20 +182,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </nav>
         </ScrollArea>
 
-        <div className="p-3 border-t border-gray-200">
+        <div className="p-4 border-t border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50">
           <button
             onClick={handleSettingsClick}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 mb-2"
+            className="flex items-center w-full p-4 rounded-xl hover:bg-indigo-100 transition-all duration-200 text-slate-700 hover:text-indigo-700 mb-2 group"
           >
-            <Settings className="h-5 w-5 flex-shrink-0" />
-            <span className="ml-3 truncate">Settings</span>
+            <Settings className="h-5 w-5 flex-shrink-0 text-slate-500 group-hover:text-indigo-600 transition-colors duration-200" />
+            <span className="ml-4 truncate font-medium">Settings</span>
           </button>
           <button
             onClick={handleSignOut}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+            className="flex items-center w-full p-4 rounded-xl hover:bg-red-50 transition-all duration-200 text-slate-700 hover:text-red-600 group"
           >
-            <User2 className="h-5 w-5 flex-shrink-0" />
-            <span className="ml-3 truncate">Sign Out</span>
+            <User2 className="h-5 w-5 flex-shrink-0 text-slate-500 group-hover:text-red-500 transition-colors duration-200" />
+            <span className="ml-4 truncate font-medium">Sign Out</span>
           </button>
         </div>
       </div>
