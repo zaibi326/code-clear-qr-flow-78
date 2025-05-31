@@ -1,16 +1,9 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { QrCode, Eye, MoreHorizontal, Download, Edit, Trash2, Copy } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { QRCodeCard } from './QRCodeCard';
+import { QRCodeListItem } from './QRCodeListItem';
 
 interface QRCodeGridProps {
   activeTab: string;
@@ -124,7 +117,6 @@ export function QRCodeGrid({ activeTab, viewMode, searchQuery = '' }: QRCodeGrid
       title: "Edit QR Code",
       description: `Opening editor for ${qr.name}`,
     });
-    // Here you would navigate to edit page or open edit modal
   };
 
   const handleDownload = (qr: any) => {
@@ -210,79 +202,14 @@ export function QRCodeGrid({ activeTab, viewMode, searchQuery = '' }: QRCodeGrid
         </div>
         <div className="divide-y divide-gray-200">
           {filteredData.map((qr) => (
-            <div key={qr.id} className="p-4 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 flex-1 min-w-0">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <QrCode className="h-6 w-6 text-gray-600" />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">{qr.name}</h4>
-                    <p className="text-sm text-gray-500 truncate">{qr.url}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={qr.type === 'dynamic' ? 'default' : 'secondary'} className="text-xs">
-                      {qr.type}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {qr.category}
-                    </Badge>
-                  </div>
-                  
-                  <div className="text-center">
-                    <p className="font-medium text-sm">{qr.scans.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">scans</p>
-                  </div>
-                  
-                  <Badge 
-                    variant={qr.status === 'active' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {qr.status}
-                  </Badge>
-                  
-                  <span className="text-sm text-gray-500 w-20 text-right">{qr.created}</span>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-gray-200"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => handleEdit(qr)} className="cursor-pointer">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(qr)} className="cursor-pointer">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(qr)} className="cursor-pointer">
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(qr)} 
-                        className="text-red-600 cursor-pointer hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </div>
+            <QRCodeListItem
+              key={qr.id}
+              qr={qr}
+              onEdit={handleEdit}
+              onDownload={handleDownload}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
         
@@ -304,82 +231,14 @@ export function QRCodeGrid({ activeTab, viewMode, searchQuery = '' }: QRCodeGrid
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredData.map((qr) => (
-          <Card key={qr.id} className="group hover:shadow-lg transition-all duration-200 cursor-pointer relative">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-gray-900 mb-1 truncate">{qr.name}</h4>
-                  <p className="text-sm text-gray-500 truncate">{qr.url}</p>
-                </div>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => handleEdit(qr)} className="cursor-pointer">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDownload(qr)} className="cursor-pointer">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDuplicate(qr)} className="cursor-pointer">
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleDelete(qr)} 
-                      className="text-red-600 cursor-pointer hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
-                <QrCode className="h-16 w-16 text-gray-400" />
-              </div>
-
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex space-x-2">
-                  <Badge 
-                    variant={qr.type === 'dynamic' ? 'default' : 'secondary'} 
-                    className="text-xs"
-                  >
-                    {qr.type}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {qr.category}
-                  </Badge>
-                </div>
-                <Badge 
-                  variant={qr.status === 'active' ? 'default' : 'secondary'} 
-                  className="text-xs"
-                >
-                  {qr.status}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-1 text-gray-600">
-                  <Eye className="h-4 w-4" />
-                  <span>{qr.scans.toLocaleString()}</span>
-                </div>
-                <span className="text-gray-500">{qr.created}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <QRCodeCard
+            key={qr.id}
+            qr={qr}
+            onEdit={handleEdit}
+            onDownload={handleDownload}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
       
