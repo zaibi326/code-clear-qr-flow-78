@@ -1,12 +1,13 @@
-
 export const validateQRForm = (qrTypeId: string, formData: any): boolean => {
   console.log(`Validating form for QR type: ${qrTypeId}`, formData);
   
   switch (qrTypeId) {
     // Dynamic QR Codes that need URLs
     case 'url':
-    case 'image':
       return (formData.url || '').trim().length > 0;
+    
+    case 'image':
+      return (formData.imageUrl || formData.url || formData.uploadedFile || '').trim().length > 0;
     
     case 'multi-link':
       return (formData.linkPageUrl || formData.url || '').trim().length > 0;
@@ -59,9 +60,10 @@ export const validateQRForm = (qrTypeId: string, formData: any): boolean => {
 export const getValidationMessage = (qrTypeId: string): string => {
   switch (qrTypeId) {
     case 'url':
-    case 'image':
     case 'website-static':
       return 'Please provide a valid URL.';
+    case 'image':
+      return 'Please upload an image file or provide an image URL.';
     case 'multi-link':
       return 'Please provide a link page URL.';
     case 'pdf':
