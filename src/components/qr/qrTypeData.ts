@@ -59,23 +59,6 @@ export const dynamicQRTypes: QRCodeType[] = [
     category: 'dynamic'
   },
   {
-    id: 'form',
-    title: 'Form',
-    description: 'Create and share a form',
-    icon: FormInput,
-    color: 'bg-indigo-500',
-    category: 'dynamic',
-    badge: 'NEW'
-  },
-  {
-    id: 'smart-rules',
-    title: 'Smart Rules',
-    description: 'One QR Code, multiple destinations',
-    icon: Star,
-    color: 'bg-yellow-500',
-    category: 'dynamic'
-  },
-  {
     id: 'social-media',
     title: 'Social Media',
     description: 'Share your social links',
@@ -100,30 +83,6 @@ export const dynamicQRTypes: QRCodeType[] = [
     category: 'dynamic'
   },
   {
-    id: 'location',
-    title: 'Map Location',
-    description: 'Open location on Google Maps',
-    icon: MapPin,
-    color: 'bg-green-500',
-    category: 'dynamic'
-  },
-  {
-    id: 'coupon-code',
-    title: 'Coupon Code',
-    description: 'Share a coupon code',
-    icon: Gift,
-    color: 'bg-rose-500',
-    category: 'dynamic'
-  },
-  {
-    id: 'geolocation-redirect',
-    title: 'Geolocation Redirect',
-    description: 'Open URLs based on country',
-    icon: Globe,
-    color: 'bg-teal-500',
-    category: 'dynamic'
-  },
-  {
     id: 'facebook-page',
     title: 'Facebook Page',
     description: 'Share your Facebook profile',
@@ -132,27 +91,11 @@ export const dynamicQRTypes: QRCodeType[] = [
     category: 'dynamic'
   },
   {
-    id: 'business-page',
-    title: 'Business Page',
-    description: 'Display your business details',
-    icon: Building,
-    color: 'bg-gray-600',
-    category: 'dynamic'
-  },
-  {
     id: 'image',
     title: 'Image',
     description: 'Show an image',
     icon: Image,
     color: 'bg-violet-500',
-    category: 'dynamic'
-  },
-  {
-    id: 'mp3',
-    title: 'MP3',
-    description: 'Play an audio file',
-    icon: Music,
-    color: 'bg-amber-500',
     category: 'dynamic'
   }
 ];
@@ -172,14 +115,6 @@ export const staticQRTypes: QRCodeType[] = [
     description: 'Share contact details',
     icon: CreditCard,
     color: 'bg-gray-700',
-    category: 'static'
-  },
-  {
-    id: 'linkpage-static',
-    title: 'Linkpage',
-    description: 'Show a list of links',
-    icon: Share2,
-    color: 'bg-purple-500',
     category: 'static'
   },
   {
@@ -212,14 +147,6 @@ export const staticQRTypes: QRCodeType[] = [
     description: 'Display a short message',
     icon: Type,
     color: 'bg-gray-500',
-    category: 'static'
-  },
-  {
-    id: 'wifi-static',
-    title: 'Wi-Fi',
-    description: 'Connect to a Wifi network',
-    icon: Wifi,
-    color: 'bg-indigo-600',
     category: 'static'
   }
 ];

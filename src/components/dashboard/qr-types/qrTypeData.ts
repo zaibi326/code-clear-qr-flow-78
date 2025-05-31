@@ -44,13 +44,6 @@ export const frequentlyUsedQRTypes: QRType[] = [
     icon: FileText,
     color: 'bg-red-500',
     popular: true
-  },
-  {
-    id: 'location',
-    title: 'Location',
-    description: 'Point to any location on Google Maps',
-    icon: MapPin,
-    color: 'bg-green-500'
   }
 ];
 
@@ -61,21 +54,6 @@ export const moreQRTypes: QRType[] = [
     description: 'Organize all your QR menus in one digital location',
     icon: Building,
     color: 'bg-orange-500'
-  },
-  {
-    id: 'form',
-    title: 'Form',
-    description: 'Design a form and get responses through scans',
-    icon: FormInput,
-    color: 'bg-indigo-500',
-    badge: 'NEW'
-  },
-  {
-    id: 'smart-rules',
-    title: 'Smart Rules',
-    description: 'Create smarter QR Codes that redirect based on logical conditions',
-    icon: Star,
-    color: 'bg-yellow-500'
   },
   {
     id: 'social-media',
@@ -99,20 +77,6 @@ export const moreQRTypes: QRType[] = [
     color: 'bg-emerald-500'
   },
   {
-    id: 'coupon-code',
-    title: 'Coupon Code',
-    description: 'Route to a page displaying coupon code details',
-    icon: Gift,
-    color: 'bg-rose-500'
-  },
-  {
-    id: 'geolocation-redirect',
-    title: 'Geolocation Redirect',
-    description: "Show a specific website URL based on the scanner's country",
-    icon: Globe,
-    color: 'bg-teal-500'
-  },
-  {
     id: 'facebook-page',
     title: 'Facebook Page',
     description: 'Redirect to the "like" button of your Facebook page',
@@ -120,25 +84,11 @@ export const moreQRTypes: QRType[] = [
     color: 'bg-blue-600'
   },
   {
-    id: 'business-page',
-    title: 'Business Page',
-    description: 'Link to a page containing your business details',
-    icon: Building,
-    color: 'bg-gray-600'
-  },
-  {
     id: 'image',
     title: 'Image',
     description: 'Show a photo',
     icon: Image,
     color: 'bg-violet-500'
-  },
-  {
-    id: 'mp3',
-    title: 'MP3',
-    description: 'Play an audio file',
-    icon: Music,
-    color: 'bg-amber-500'
   },
   {
     id: 'email',
