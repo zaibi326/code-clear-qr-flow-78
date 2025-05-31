@@ -29,43 +29,24 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.pageUrl || setupData.url || 'https://example.com/landing';
       
     case 'mobile-app':
-      // For mobile apps, prioritize universal links, then platform-specific
-      if (setupData.appUrl) return setupData.appUrl;
-      if (setupData.iosUrl) return setupData.iosUrl;
-      if (setupData.androidUrl) return setupData.androidUrl;
-      return setupData.url || 'https://apps.apple.com/app/example';
-      
-    case 'location':
-      if (setupData.latitude && setupData.longitude) {
-        const lat = setupData.latitude;
-        const lng = setupData.longitude;
-        const label = setupData.locationName || 'Location';
-        return `https://maps.google.com/?q=${lat},${lng}+(${encodeURIComponent(label)})`;
-      } else if (setupData.address) {
-        const label = setupData.locationName || 'Location';
-        return `https://maps.google.com/?q=${encodeURIComponent(setupData.address)}`;
+      // For mobile apps, prioritize based on platform availability
+      if (setupData.androidUrl && setupData.iosUrl) {
+        // If both Android and iOS URLs are provided, create a smart link
+        return setupData.webUrl || setupData.androidUrl || setupData.iosUrl;
       }
-      return 'https://maps.google.com/?q=40.7128,-74.0060+(Location)';
-      
-    case 'coupon-code':
-      return setupData.couponUrl || setupData.url || 'https://example.com/coupon';
-      
-    case 'geolocation-redirect':
-      return setupData.defaultUrl || setupData.url || 'https://example.com';
+      if (setupData.androidUrl) return setupData.androidUrl;
+      if (setupData.iosUrl) return setupData.iosUrl;
+      if (setupData.ipadUrl) return setupData.ipadUrl;
+      if (setupData.webUrl) return setupData.webUrl;
+      return 'https://apps.apple.com/app/example';
       
     case 'facebook-page':
-      const fbPage = setupData.facebookPage || setupData.url || 'https://facebook.com/example';
-      if (fbPage.startsWith('http')) return fbPage;
-      return `https://facebook.com/${fbPage}`;
-      
-    case 'business-page':
-      return setupData.businessUrl || setupData.url || 'https://example.com/business';
+      const fbUsername = setupData.facebookUsername || 'example';
+      if (fbUsername.startsWith('http')) return fbUsername;
+      return `https://facebook.com/${fbUsername}`;
       
     case 'image':
       return setupData.imageUrl || setupData.url || 'https://example.com/image.jpg';
-      
-    case 'mp3':
-      return setupData.audioUrl || setupData.url || 'https://example.com/audio.mp3';
       
     // Static QR Codes
     case 'website-static':
