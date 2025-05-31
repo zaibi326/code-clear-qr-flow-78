@@ -13,18 +13,6 @@ interface QRTypeSelectorProps {
 export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProps) {
   console.log('QRTypeSelector: initialType received:', initialType);
 
-  // Auto-select type if initialType is provided
-  React.useEffect(() => {
-    if (initialType) {
-      const allTypes = [...dynamicQRTypes, ...staticQRTypes];
-      const foundType = allTypes.find(type => type.id === initialType);
-      if (foundType) {
-        console.log('QRTypeSelector: Auto-selecting type:', foundType);
-        onTypeSelect(foundType);
-      }
-    }
-  }, [initialType, onTypeSelect]);
-
   const handleTypeClick = (type: QRCodeType) => {
     console.log('QRTypeSelector: Type clicked:', type);
     onTypeSelect(type);

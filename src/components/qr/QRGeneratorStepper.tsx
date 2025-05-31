@@ -33,19 +33,6 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   console.log('QRGeneratorStepper: currentStep:', currentStep);
   console.log('QRGeneratorStepper: selectedType:', selectedType);
 
-  useEffect(() => {
-    if (initialType && !selectedType) {
-      console.log('QRGeneratorStepper: Looking for initial type:', initialType);
-      const allTypes = [...dynamicQRTypes, ...staticQRTypes];
-      const foundType = allTypes.find(type => type.id === initialType);
-      if (foundType) {
-        console.log('QRGeneratorStepper: Found and setting initial type:', foundType);
-        setSelectedType(foundType);
-        setCurrentStep(2); // Skip type selection
-      }
-    }
-  }, [initialType, selectedType]);
-
   const steps = [
     { number: 1, title: 'Select type', description: 'Choose your QR code type' },
     { number: 2, title: 'Setup', description: 'Configure your content' },
@@ -85,18 +72,6 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Type Selection Header */}
-      {currentStep === 1 && (
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Select QR Code Type
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose the type of QR code you want to create. Dynamic QR codes can be modified after creation, while static QR codes are permanent.
-          </p>
-        </div>
-      )}
-
       {/* Progress Steps */}
       <Card>
         <CardContent className="p-6">
