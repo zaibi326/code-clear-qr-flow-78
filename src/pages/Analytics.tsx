@@ -18,31 +18,33 @@ const Analytics = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        <SidebarInset className="flex-1 flex flex-col min-w-0">
+        <SidebarInset className="flex-1 flex flex-col min-w-0 ml-0">
           <DashboardTopbar />
           
           {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Analytics</h1>
-                <p className="text-sm text-gray-600 mt-1">Track your QR code performance and scan analytics</p>
+          <div className="bg-white border-b border-gray-200 px-6 lg:px-8 py-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Analytics</h1>
+                  <p className="text-sm text-gray-600 mt-2">Track your QR code performance and scan analytics</p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto">
-            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
               {/* Filters */}
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <AnalyticsFilters />
               </div>
               
               {/* Tabs Content */}
               <Tabs defaultValue="overview" className="w-full">
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                  <div className="px-6 pt-6 pb-0">
                     <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full max-w-2xl">
                       <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
                       <TabsTrigger value="insights" className="text-sm">Insights</TabsTrigger>
@@ -51,11 +53,11 @@ const Analytics = () => {
                     </TabsList>
                   </div>
                   
-                  <div className="p-4 sm:p-6">
-                    <TabsContent value="overview" className="space-y-4 sm:space-y-6 m-0">
+                  <div className="p-6">
+                    <TabsContent value="overview" className="space-y-6 m-0">
                       <AnalyticsStats />
                       
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <ScanActivityChart />
                         <CampaignPerformanceChart />
                       </div>
