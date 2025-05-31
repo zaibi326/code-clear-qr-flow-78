@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 
 const QuickGenerate = () => {
   const [searchParams] = useSearchParams();
-  const [selectedType, setSelectedType] = useState<string>('url');
+  const [selectedType, setSelectedType] = useState<string>('');
 
   useEffect(() => {
     const type = searchParams.get('type');

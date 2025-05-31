@@ -1,13 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { QRTypeSelector } from './QRTypeSelector';
 import { QRSetupPanel } from './QRSetupPanel';
 import { QRCustomizePanel } from './QRCustomizePanel';
 import { QRFinalPanel } from './QRFinalPanel';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
-import { dynamicQRTypes, staticQRTypes } from './qrTypeData';
 
 export interface QRCodeType {
   id: string;
@@ -108,7 +106,7 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
         </CardContent>
       </Card>
 
-      {/* Step Content */}
+      {/* Step Content - Always show QRTypeSelector for step 1 */}
       <div>
         {currentStep === 1 && (
           <QRTypeSelector onTypeSelect={handleTypeSelect} initialType={initialType} />
