@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Eye, Zap, TrendingUp } from 'lucide-react';
+import { QrCode, Eye, Zap, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
 
 const statsData = [
   {
@@ -10,7 +10,8 @@ const statsData = [
     change: "+12%",
     changeType: "positive" as const,
     icon: QrCode,
-    description: "Active QR codes"
+    description: "Active codes",
+    previousValue: "209"
   },
   {
     title: "Total Scans",
@@ -18,7 +19,8 @@ const statsData = [
     change: "+18%",
     changeType: "positive" as const,
     icon: Eye,
-    description: "This month"
+    description: "This month",
+    previousValue: "10,462"
   },
   {
     title: "Active Campaigns",
@@ -26,58 +28,58 @@ const statsData = [
     change: "+3%",
     changeType: "positive" as const,
     icon: Zap,
-    description: "Running campaigns"
+    description: "Running now",
+    previousValue: "47"
   },
   {
     title: "Conversion Rate",
     value: "8.2%",
-    change: "+2.1%",
-    changeType: "positive" as const,
+    change: "-2.1%",
+    changeType: "negative" as const,
     icon: TrendingUp,
-    description: "Avg. this month"
+    description: "Avg. this month",
+    previousValue: "8.4%"
   }
 ];
 
 export function DashboardStats() {
   return (
-    <div className="grid-responsive-stats">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statsData.map((stat, index) => (
         <Card 
           key={index} 
-          className="card-elevated group hover:scale-[1.02] transition-all duration-200"
-          role="article"
-          aria-labelledby={`stat-title-${index}`}
+          className="border-0 shadow-sm bg-white hover:shadow-md transition-all duration-200"
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle 
-              id={`stat-title-${index}`}
-              className="text-sm font-medium text-gray-600 leading-tight"
-            >
-              {stat.title}
-            </CardTitle>
-            <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-              <stat.icon 
-                className="h-4 w-4 text-blue-600" 
-                aria-hidden="true"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
-              {stat.value}
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <span 
-                className={`font-medium ${
-                  stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                }`}
-                aria-label={`${stat.changeType === 'positive' ? 'Increase' : 'Decrease'} of ${stat.change}`}
-              >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 rounded-xl ${
+                stat.changeType === 'positive' ? 'bg-green-50' : 
+                stat.changeType === 'negative' ? 'bg-red-50' : 'bg-blue-50'
+              }`}>
+                <stat.icon className={`h-6 w-6 ${
+                  stat.changeType === 'positive' ? 'text-green-600' : 
+                  stat.changeType === 'negative' ? 'text-red-600' : 'text-blue-600'
+                }`} />
+              </div>
+              <div className={`flex items-center text-sm font-medium ${
+                stat.changeType === 'positive' ? 'text-green-600' : 
+                stat.changeType === 'negative' ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {stat.changeType === 'positive' ? (
+                  <ArrowUp className="h-4 w-4 mr-1" />
+                ) : stat.changeType === 'negative' ? (
+                  <ArrowDown className="h-4 w-4 mr-1" />
+                ) : null}
                 {stat.change}
-              </span>
-              <span className="text-gray-500">
-                {stat.description}
-              </span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium text-gray-600">{stat.title}</h3>
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <p className="text-xs text-gray-500">
+                {stat.description} • Previous: {stat.previousValue}
+              </p>
             </div>
           </CardContent>
         </Card>
