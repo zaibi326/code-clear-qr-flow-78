@@ -43,9 +43,9 @@ export const validateQRForm = (qrTypeId: string, formData: any): boolean => {
     case 'mobile-app':
       return (formData.appUrl || formData.url || formData.iosUrl || formData.androidUrl || '').trim().length > 0;
     
-    // Facebook page
+    // Facebook page - now requires username
     case 'facebook-page':
-      return (formData.facebookPage || formData.url || '').trim().length > 0;
+      return (formData.facebookUsername || '').trim().length > 0;
     
     // Location
     case 'location':

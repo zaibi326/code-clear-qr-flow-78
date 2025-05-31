@@ -12,6 +12,7 @@ import { SocialMediaForm } from './SocialMediaForm';
 import { FormQRForm } from './FormQRForm';
 import { SmartRulesForm } from './SmartRulesForm';
 import { LandingPageForm } from './LandingPageForm';
+import { FacebookPageForm } from './FacebookPageForm';
 import { DefaultForm } from './DefaultForm';
 
 interface QRFormProps {
@@ -33,7 +34,7 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
   'location': LocationForm,
   'coupon-code': URLForm, // Coupons use URL input
   'geolocation-redirect': URLForm, // Geo redirect uses default URL
-  'facebook-page': URLForm, // Facebook uses URL input
+  'facebook-page': FacebookPageForm, // Facebook uses specialized form
   'business-page': URLForm, // Business page uses URL input
   'image': URLForm, // Images use URL input
   'mp3': URLForm, // Audio files use URL input
