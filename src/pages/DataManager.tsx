@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -37,13 +36,13 @@ const DataManager = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
+      <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
         <AppSidebar />
-        <SidebarInset className="flex-1 flex flex-col min-w-0 ml-0">
+        <main className="flex-1 flex flex-col min-w-0 ml-0 lg:ml-64" style={{ boxSizing: 'border-box' }}>
           <DashboardTopbar />
           
           {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-6 lg:px-8 py-6">
+          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -56,7 +55,7 @@ const DataManager = () => {
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="px-6 pt-6 pb-0">
                   <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -69,7 +68,7 @@ const DataManager = () => {
               </div>
             </div>
           </div>
-        </SidebarInset>
+        </main>
       </div>
     </SidebarProvider>
   );
