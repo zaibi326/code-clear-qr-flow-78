@@ -15,33 +15,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <div className="flex-1 ml-60">
-            <SidebarInset>
-              <DashboardTopbar />
-              <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 ml-60">
+          <SidebarInset>
+            <DashboardTopbar />
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50">
+              <div className="max-w-7xl mx-auto space-y-6">
+                <div className="mb-6">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
                   <p className="text-gray-600">Track your QR code performance and scan analytics</p>
                 </div>
                 
-                <AnalyticsFilters />
+                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
+                  <AnalyticsFilters />
+                </div>
                 
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid grid-cols-4 mb-6 w-[600px]">
-                    <TabsTrigger value="overview">Overview Dashboard</TabsTrigger>
-                    <TabsTrigger value="insights">Campaign Insights</TabsTrigger>
-                    <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
-                    <TabsTrigger value="interactions">User Interactions</TabsTrigger>
-                  </TabsList>
+                  <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
+                    <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 w-full max-w-2xl">
+                      <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
+                      <TabsTrigger value="insights" className="text-xs md:text-sm">Insights</TabsTrigger>
+                      <TabsTrigger value="advanced" className="text-xs md:text-sm">Advanced</TabsTrigger>
+                      <TabsTrigger value="interactions" className="text-xs md:text-sm">Interactions</TabsTrigger>
+                    </TabsList>
+                  </div>
                   
-                  <TabsContent value="overview" className="space-y-6">
+                  <TabsContent value="overview" className="space-y-6 mt-6">
                     <AnalyticsStats />
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       <ScanActivityChart />
                       <CampaignPerformanceChart />
                     </div>
@@ -49,24 +53,24 @@ const Analytics = () => {
                     <QRCodeTable />
                   </TabsContent>
 
-                  <TabsContent value="insights">
+                  <TabsContent value="insights" className="mt-6">
                     <CampaignInsights />
                   </TabsContent>
                   
-                  <TabsContent value="advanced">
+                  <TabsContent value="advanced" className="mt-6">
                     <AdvancedAnalytics />
                   </TabsContent>
                   
-                  <TabsContent value="interactions">
+                  <TabsContent value="interactions" className="mt-6">
                     <UserInteractionLog />
                   </TabsContent>
                 </Tabs>
-              </main>
-            </SidebarInset>
-          </div>
+              </div>
+            </main>
+          </SidebarInset>
         </div>
-      </SidebarProvider>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

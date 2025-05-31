@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -96,42 +95,48 @@ const TemplateManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 ml-60">
           <SidebarInset>
             <DashboardTopbar />
-            <main className="flex-1 p-6 space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Template Manager</h1>
-                <p className="text-gray-600">Upload, manage, and organize your marketing templates</p>
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50">
+              <div className="max-w-6xl mx-auto space-y-6">
+                <div className="mb-6">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Template Manager</h1>
+                  <p className="text-gray-600">Upload, manage, and organize your marketing templates</p>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
+                  <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+
+                  <div className="mt-6">
+                    {activeTab === 'upload' && (
+                      <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
+                    )}
+                    {activeTab === 'manage' && (
+                      <TemplateManageTab 
+                        templates={templates}
+                        onTemplateEdit={handleTemplateEdit}
+                        onTemplateDelete={handleTemplateDelete}
+                        onTemplateDuplicate={handleTemplateDuplicate}
+                      />
+                    )}
+                    {activeTab === 'library' && (
+                      <TemplateLibraryTab 
+                        templates={templates}
+                        onTemplateSelect={handleTemplateUse}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
-
-              <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-              {activeTab === 'upload' && (
-                <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
-              )}
-              {activeTab === 'manage' && (
-                <TemplateManageTab 
-                  templates={templates}
-                  onTemplateEdit={handleTemplateEdit}
-                  onTemplateDelete={handleTemplateDelete}
-                  onTemplateDuplicate={handleTemplateDuplicate}
-                />
-              )}
-              {activeTab === 'library' && (
-                <TemplateLibraryTab 
-                  templates={templates}
-                  onTemplateSelect={handleTemplateUse}
-                />
-              )}
             </main>
           </SidebarInset>
         </div>
-      </SidebarProvider>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
