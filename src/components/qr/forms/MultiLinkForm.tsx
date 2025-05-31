@@ -2,7 +2,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 interface MultiLinkFormProps {
   formData: any;
@@ -13,24 +12,27 @@ export function MultiLinkForm({ formData, onInputChange }: MultiLinkFormProps) {
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="linkpage-url">Linkpage URL *</Label>
+        <Label htmlFor="linkPageUrl">Link Page URL *</Label>
         <Input
-          id="linkpage-url"
+          id="linkPageUrl"
           type="url"
-          placeholder="https://linktr.ee/yourname"
-          value={formData.url || ''}
-          onChange={(e) => onInputChange('url', e.target.value)}
-          className="mt-1"
+          placeholder="https://linktr.ee/yourprofile or your custom link page"
+          value={formData.linkPageUrl || formData.url || ''}
+          onChange={(e) => onInputChange('linkPageUrl', e.target.value)}
+          required
         />
+        <p className="text-sm text-gray-500 mt-1">
+          Enter your Linktree, bio.link, or custom multi-link page URL
+        </p>
       </div>
+      
       <div>
-        <Label htmlFor="description">Description (Optional)</Label>
-        <Textarea
-          id="description"
-          placeholder="Describe your link collection"
-          value={formData.description || ''}
-          onChange={(e) => onInputChange('description', e.target.value)}
-          className="mt-1"
+        <Label htmlFor="pageTitle">Page Title</Label>
+        <Input
+          id="pageTitle"
+          placeholder="Your Name or Brand"
+          value={formData.pageTitle || ''}
+          onChange={(e) => onInputChange('pageTitle', e.target.value)}
         />
       </div>
     </div>

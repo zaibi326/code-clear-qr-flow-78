@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Lock } from 'lucide-react';
 import { dynamicQRTypes, staticQRTypes } from './qrTypeData';
 import { QRCodeType } from './QRGeneratorStepper';
 
@@ -12,106 +11,98 @@ interface QRTypeSelectorProps {
 }
 
 export function QRTypeSelector({ onTypeSelect, initialType }: QRTypeSelectorProps) {
-  // Auto-select the initial type if provided
-  useEffect(() => {
+  console.log('QRTypeSelector: initialType received:', initialType);
+
+  // Auto-select type if initialType is provided
+  React.useEffect(() => {
     if (initialType) {
       const allTypes = [...dynamicQRTypes, ...staticQRTypes];
       const foundType = allTypes.find(type => type.id === initialType);
       if (foundType) {
-        console.log(`Auto-selecting QR type: ${foundType.title}`);
+        console.log('QRTypeSelector: Auto-selecting type:', foundType);
         onTypeSelect(foundType);
       }
     }
   }, [initialType, onTypeSelect]);
 
+  const handleTypeClick = (type: QRCodeType) => {
+    console.log('QRTypeSelector: Type clicked:', type);
+    onTypeSelect(type);
+  };
+
   return (
     <div className="space-y-8">
-      {/* Dynamic QR Codes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Zap className="h-5 w-5 text-blue-600" />
-            </div>
-            Dynamic QR Codes
-            <Badge className="bg-green-100 text-green-700 border-green-200">
-              Trackable
-            </Badge>
-          </CardTitle>
-          <p className="text-gray-600">
-            Modify content anytime, even after printing
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {dynamicQRTypes.map((qrType) => (
-              <div
-                key={qrType.id}
-                onClick={() => onTypeSelect(qrType)}
-                className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${qrType.color} text-white group-hover:scale-110 transition-transform duration-200`}>
-                    <qrType.icon className="h-5 w-5" />
+      {/* Dynamic QR Codes Section */}
+      <div>
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Dynamic QR Codes</h3>
+          <p className="text-gray-600">QR codes that can be edited after creation. Perfect for campaigns and changing content.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {dynamicQRTypes.map((type) => (
+            <Card 
+              key={type.id} 
+              className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-blue-300"
+              onClick={() => handleTypeClick(type)}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className={`p-3 rounded-lg ${type.color} text-white`}>
+                    <type.icon className="h-6 w-6" />
                   </div>
-                  {qrType.badge && (
+                  {type.badge && (
                     <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
-                      {qrType.badge}
+                      {type.badge}
                     </Badge>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                  {qrType.title}
-                </h3>
+                <CardTitle className="text-lg">{type.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {qrType.description}
+                  {type.description}
                 </p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
-      {/* Static QR Codes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Lock className="h-5 w-5 text-gray-600" />
-            </div>
-            Static QR Codes
-            <Badge variant="outline" className="text-gray-600 border-gray-300">
-              Non-Trackable
-            </Badge>
-          </CardTitle>
-          <p className="text-gray-600">
-            Create permanent QR Codes that cannot be modified
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {staticQRTypes.map((qrType) => (
-              <div
-                key={qrType.id}
-                onClick={() => onTypeSelect(qrType)}
-                className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${qrType.color} text-white group-hover:scale-110 transition-transform duration-200`}>
-                    <qrType.icon className="h-5 w-5" />
+      {/* Static QR Codes Section */}
+      <div>
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Static QR Codes</h3>
+          <p className="text-gray-600">QR codes with fixed content that cannot be changed after creation. Great for permanent information.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {staticQRTypes.map((type) => (
+            <Card 
+              key={type.id} 
+              className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-blue-300"
+              onClick={() => handleTypeClick(type)}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className={`p-3 rounded-lg ${type.color} text-white`}>
+                    <type.icon className="h-6 w-6" />
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    Static
+                  </Badge>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                  {qrType.title}
-                </h3>
+                <CardTitle className="text-lg">{type.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {qrType.description}
+                  {type.description}
                 </p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

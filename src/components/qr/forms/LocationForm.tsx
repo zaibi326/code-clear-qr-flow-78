@@ -15,47 +15,46 @@ export function LocationForm({ formData, onInputChange }: LocationFormProps) {
         <Label htmlFor="locationName">Location Name *</Label>
         <Input
           id="locationName"
-          placeholder="Restaurant Name, Business, etc."
+          placeholder="e.g., Coffee Shop, Office, Event Venue"
           value={formData.locationName || ''}
           onChange={(e) => onInputChange('locationName', e.target.value)}
-          className="mt-1"
+          required
         />
       </div>
+      
+      <div>
+        <Label htmlFor="address">Address *</Label>
+        <Input
+          id="address"
+          placeholder="123 Main St, City, State, Country"
+          value={formData.address || ''}
+          onChange={(e) => onInputChange('address', e.target.value)}
+          required
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          Enter the full address or use coordinates below
+        </p>
+      </div>
+      
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="latitude">Latitude *</Label>
+          <Label htmlFor="latitude">Latitude</Label>
           <Input
             id="latitude"
-            type="number"
-            step="any"
             placeholder="40.7128"
             value={formData.latitude || ''}
             onChange={(e) => onInputChange('latitude', e.target.value)}
-            className="mt-1"
           />
         </div>
         <div>
-          <Label htmlFor="longitude">Longitude *</Label>
+          <Label htmlFor="longitude">Longitude</Label>
           <Input
             id="longitude"
-            type="number"
-            step="any"
             placeholder="-74.0060"
             value={formData.longitude || ''}
             onChange={(e) => onInputChange('longitude', e.target.value)}
-            className="mt-1"
           />
         </div>
-      </div>
-      <div>
-        <Label htmlFor="address">Address (Optional)</Label>
-        <Input
-          id="address"
-          placeholder="123 Main St, New York, NY"
-          value={formData.address || ''}
-          onChange={(e) => onInputChange('address', e.target.value)}
-          className="mt-1"
-        />
       </div>
     </div>
   );

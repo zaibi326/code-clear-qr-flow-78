@@ -42,5 +42,10 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
 };
 
 export function getQRForm(qrTypeId: string): React.ComponentType<QRFormProps> {
-  return QRFormRegistry[qrTypeId] || DefaultForm;
+  const form = QRFormRegistry[qrTypeId];
+  if (!form) {
+    console.warn(`No form found for QR type: ${qrTypeId}, using DefaultForm`);
+    return DefaultForm;
+  }
+  return form;
 }

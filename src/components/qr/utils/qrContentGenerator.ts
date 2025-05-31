@@ -8,10 +8,10 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.url || 'https://example.com';
       
     case 'multi-link':
-      return setupData.url || 'https://linktr.ee/example';
+      return setupData.linkPageUrl || setupData.url || 'https://linktr.ee/example';
       
     case 'pdf':
-      return setupData.url || 'https://example.com/document.pdf';
+      return setupData.pdfUrl || setupData.url || 'https://example.com/document.pdf';
       
     case 'restaurant-menu':
       return setupData.menuUrl || setupData.url || 'https://example.com/menu';
@@ -29,17 +29,23 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       return setupData.pageUrl || setupData.url || 'https://example.com/landing';
       
     case 'mobile-app':
-      // For mobile apps, create a smart link that detects platform
-      const appUrl = setupData.appUrl || setupData.url;
-      const iosUrl = setupData.iosUrl || 'https://apps.apple.com/app/example';
-      const androidUrl = setupData.androidUrl || 'https://play.google.com/store/apps/details?id=com.example';
-      return appUrl || iosUrl; // Default to iOS URL if no universal link
+      // For mobile apps, prioritize universal links, then platform-specific
+      if (setupData.appUrl) return setupData.appUrl;
+      if (setupData.iosUrl) return setupData.iosUrl;
+      if (setupData.androidUrl) return setupData.androidUrl;
+      return setupData.url || 'https://apps.apple.com/app/example';
       
     case 'location':
-      const lat = setupData.latitude || '40.7128';
-      const lng = setupData.longitude || '-74.0060';
-      const label = setupData.locationName || 'Location';
-      return `https://maps.google.com/?q=${lat},${lng}+(${encodeURIComponent(label)})`;
+      if (setupData.latitude && setupData.longitude) {
+        const lat = setupData.latitude;
+        const lng = setupData.longitude;
+        const label = setupData.locationName || 'Location';
+        return `https://maps.google.com/?q=${lat},${lng}+(${encodeURIComponent(label)})`;
+      } else if (setupData.address) {
+        const label = setupData.locationName || 'Location';
+        return `https://maps.google.com/?q=${encodeURIComponent(setupData.address)}`;
+      }
+      return 'https://maps.google.com/?q=40.7128,-74.0060+(Location)';
       
     case 'coupon-code':
       return setupData.couponUrl || setupData.url || 'https://example.com/coupon';
@@ -49,7 +55,8 @@ export const generateQRContent = (qrTypeId: string, setupData: any): string => {
       
     case 'facebook-page':
       const fbPage = setupData.facebookPage || setupData.url || 'https://facebook.com/example';
-      return fbPage.startsWith('http') ? fbPage : `https://facebook.com/${fbPage}`;
+      if (fbPage.startsWith('http')) return fbPage;
+      return `https://facebook.com/${fbPage}`;
       
     case 'business-page':
       return setupData.businessUrl || setupData.url || 'https://example.com/business';

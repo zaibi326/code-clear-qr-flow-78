@@ -7,6 +7,7 @@ import { QRFinalPanel } from './QRFinalPanel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
+import { dynamicQRTypes, staticQRTypes } from './qrTypeData';
 
 export interface QRCodeType {
   id: string;
@@ -34,8 +35,14 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
 
   useEffect(() => {
     if (initialType && !selectedType) {
-      console.log('QRGeneratorStepper: Auto-advancing to step 2 due to initialType');
-      setCurrentStep(2);
+      console.log('QRGeneratorStepper: Looking for initial type:', initialType);
+      const allTypes = [...dynamicQRTypes, ...staticQRTypes];
+      const foundType = allTypes.find(type => type.id === initialType);
+      if (foundType) {
+        console.log('QRGeneratorStepper: Found and setting initial type:', foundType);
+        setSelectedType(foundType);
+        setCurrentStep(2); // Skip type selection
+      }
     }
   }, [initialType, selectedType]);
 
@@ -53,11 +60,13 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   };
 
   const handleSetupComplete = (data: any) => {
+    console.log('QRGeneratorStepper: Setup completed with data:', data);
     setSetupData(data);
     setCurrentStep(3);
   };
 
   const handleCustomizeComplete = (data: any) => {
+    console.log('QRGeneratorStepper: Customize completed with data:', data);
     setCustomizeData(data);
     setCurrentStep(4);
   };

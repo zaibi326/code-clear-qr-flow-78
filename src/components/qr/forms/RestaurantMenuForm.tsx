@@ -2,7 +2,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 interface RestaurantMenuFormProps {
   formData: any;
@@ -18,29 +17,22 @@ export function RestaurantMenuForm({ formData, onInputChange }: RestaurantMenuFo
           id="menuUrl"
           type="url"
           placeholder="https://yourmenu.com or PDF link"
-          value={formData.menuUrl || formData.url || ''}
+          value={formData.menuUrl || ''}
           onChange={(e) => onInputChange('menuUrl', e.target.value)}
-          className="mt-1"
+          required
         />
+        <p className="text-sm text-gray-500 mt-1">
+          Enter the URL to your digital menu, menu PDF, or menu page
+        </p>
       </div>
+      
       <div>
-        <Label htmlFor="restaurantName">Restaurant Name (Optional)</Label>
+        <Label htmlFor="restaurantName">Restaurant Name</Label>
         <Input
           id="restaurantName"
           placeholder="Your Restaurant Name"
           value={formData.restaurantName || ''}
           onChange={(e) => onInputChange('restaurantName', e.target.value)}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <Label htmlFor="description">Description (Optional)</Label>
-        <Textarea
-          id="description"
-          placeholder="Brief description of your menu or restaurant"
-          value={formData.description || ''}
-          onChange={(e) => onInputChange('description', e.target.value)}
-          className="mt-1"
         />
       </div>
     </div>

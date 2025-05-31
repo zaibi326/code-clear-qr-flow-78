@@ -2,6 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface SocialMediaFormProps {
   formData: any;
@@ -16,21 +17,14 @@ export function SocialMediaForm({ formData, onInputChange }: SocialMediaFormProp
         <Input
           id="socialUrl"
           type="url"
-          placeholder="https://linktr.ee/yourname or Instagram/Facebook profile"
-          value={formData.socialUrl || formData.url || ''}
+          placeholder="https://linktr.ee/yourprofile or https://instagram.com/yourprofile"
+          value={formData.socialUrl || ''}
           onChange={(e) => onInputChange('socialUrl', e.target.value)}
-          className="mt-1"
+          required
         />
-      </div>
-      <div>
-        <Label htmlFor="platform">Platform (Optional)</Label>
-        <Input
-          id="platform"
-          placeholder="Instagram, Facebook, Twitter, etc."
-          value={formData.platform || ''}
-          onChange={(e) => onInputChange('platform', e.target.value)}
-          className="mt-1"
-        />
+        <p className="text-sm text-gray-500 mt-1">
+          Enter your Linktree, Instagram, Twitter, or other social media profile URL
+        </p>
       </div>
     </div>
   );
