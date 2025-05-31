@@ -78,11 +78,11 @@ export function QRActionButtons({ generatedQR, qrTypeId }: QRActionButtonsProps)
   };
 
   return (
-    <div className="flex items-center justify-center gap-3 flex-wrap">
+    <div className="flex items-center justify-center gap-4 flex-wrap">
       <Button 
         onClick={handleDownload} 
         disabled={!generatedQR}
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 rounded-xl px-6 py-3"
       >
         <Download className="h-4 w-4 mr-2" />
         Download
@@ -91,6 +91,7 @@ export function QRActionButtons({ generatedQR, qrTypeId }: QRActionButtonsProps)
         onClick={handleCopy} 
         variant="outline" 
         disabled={!generatedQR}
+        className="border-indigo-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl px-6 py-3"
       >
         <Copy className="h-4 w-4 mr-2" />
         Copy
@@ -99,6 +100,7 @@ export function QRActionButtons({ generatedQR, qrTypeId }: QRActionButtonsProps)
         onClick={handleShare} 
         variant="outline" 
         disabled={!generatedQR}
+        className="border-indigo-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl px-6 py-3"
       >
         <Share2 className="h-4 w-4 mr-2" />
         Share

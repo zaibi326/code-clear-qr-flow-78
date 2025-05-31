@@ -71,33 +71,33 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Progress Steps */}
-      <Card>
-        <CardContent className="p-6">
+      <Card className="bg-white/80 backdrop-blur-sm border border-indigo-100/50 shadow-lg shadow-indigo-500/10">
+        <CardContent className="p-8">
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                     currentStep >= step.number 
-                      ? 'bg-blue-600 border-blue-600 text-white' 
-                      : 'border-gray-300 text-gray-400'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/25' 
+                      : 'border-indigo-200 text-indigo-400 bg-white'
                   }`}>
                     {currentStep > step.number ? (
-                      <Check className="w-5 h-5" />
+                      <Check className="w-6 h-6" />
                     ) : (
-                      <span className="font-semibold">{step.number}</span>
+                      <span className="font-bold text-lg">{step.number}</span>
                     )}
                   </div>
                   <div className="text-left">
-                    <div className={`font-semibold ${currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <div className={`font-bold text-lg ${currentStep >= step.number ? 'bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent' : 'text-slate-400'}`}>
                       {step.title}
                     </div>
-                    <div className="text-sm text-gray-500">{step.description}</div>
+                    <div className="text-sm text-slate-500 font-medium">{step.description}</div>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 ${
-                    currentStep > step.number ? 'bg-blue-600' : 'bg-gray-300'
+                  <div className={`flex-1 h-1 mx-6 rounded-full transition-all duration-300 ${
+                    currentStep > step.number ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-indigo-100'
                   }`} />
                 )}
               </div>
