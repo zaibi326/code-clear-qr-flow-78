@@ -1,41 +1,19 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const solutionsItems = [
-    { label: 'Marketing', href: '/solutions/marketing' },
-    { label: 'Events', href: '/solutions/events' },
-    { label: 'Restaurants', href: '/solutions/restaurants' },
-    { label: 'Retail', href: '/solutions/retail' },
-    { label: 'Healthcare', href: '/solutions/healthcare' }
-  ];
-
-  const resourcesItems = [
-    { label: 'Blog', href: '/blog' },
-    { label: 'Help Center', href: '/help-center' },
-    { label: 'Case Studies', href: '/case-studies' },
-    { label: 'QR Code Generator', href: '/quick-generate' },
-    { label: 'Best Practices', href: '/best-practices' }
-  ];
-
-  const companyItems = [
-    { label: 'About Us', href: '/company/about' },
-    { label: 'Careers', href: '/company/careers' },
-    { label: 'Contact', href: '/company/contact' },
-    { label: 'Privacy Policy', href: '/company/privacy' },
-    { label: 'Terms of Service', href: '/company/terms' }
-  ];
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMenuOpen(false);
+  };
 
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -50,73 +28,30 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="#features" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <button 
+              onClick={() => scrollToSection('features')} 
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               Features
-            </Link>
-            <Link to="#how-it-works" className="text-gray-700 hover:text-blue-600 transition-colors">
+            </button>
+            <button 
+              onClick={() => scrollToSection('how-it-works')} 
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               How it Works
-            </Link>
-            <Link to="#pricing" className="text-gray-700 hover:text-blue-600 transition-colors">
+            </button>
+            <button 
+              onClick={() => scrollToSection('pricing')} 
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               Pricing
-            </Link>
-            <Link to="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
+            </button>
+            <button 
+              onClick={() => scrollToSection('about')} 
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
               About
-            </Link>
-
-            {/* Solutions Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
-                <span>Solutions</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 bg-white border border-gray-200 shadow-lg">
-                {solutionsItems.map((item, index) => (
-                  <DropdownMenuItem key={index} asChild>
-                    <Link to={item.href} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Resources Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
-                <span>Resources</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 bg-white border border-gray-200 shadow-lg">
-                {resourcesItems.map((item, index) => (
-                  <DropdownMenuItem key={index} asChild>
-                    <Link to={item.href} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Company Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
-                <span>Company</span>
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 bg-white border border-gray-200 shadow-lg">
-                {companyItems.map((item, index) => (
-                  <DropdownMenuItem key={index} asChild>
-                    <Link to={item.href} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      {item.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Link to="/support" className="text-gray-700 hover:text-blue-600 transition-colors">
-              Support
-            </Link>
+            </button>
           </div>
 
           {/* Auth Buttons */}
@@ -145,84 +80,30 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-              <Link
-                to="#features"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              <button
+                onClick={() => scrollToSection('features')}
+                className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600"
               >
                 Features
-              </Link>
-              <Link
-                to="#how-it-works"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => scrollToSection('how-it-works')}
+                className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600"
               >
                 How it Works
-              </Link>
-              <Link
-                to="#pricing"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => scrollToSection('pricing')}
+                className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600"
               >
                 Pricing
-              </Link>
-              <Link
-                to="#about"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => scrollToSection('about')}
+                className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600"
               >
                 About
-              </Link>
-              
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-sm font-medium text-gray-900">Solutions</div>
-                {solutionsItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    to={item.href}
-                    className="block px-6 py-2 text-sm text-gray-600 hover:text-blue-600"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-sm font-medium text-gray-900">Resources</div>
-                {resourcesItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    to={item.href}
-                    className="block px-6 py-2 text-sm text-gray-600 hover:text-blue-600"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-sm font-medium text-gray-900">Company</div>
-                {companyItems.map((item, index) => (
-                  <Link
-                    key={index}
-                    to={item.href}
-                    className="block px-6 py-2 text-sm text-gray-600 hover:text-blue-600"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-
-              <Link
-                to="/support"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Support
-              </Link>
+              </button>
 
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="flex items-center px-5 space-x-3">
