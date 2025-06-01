@@ -22,8 +22,9 @@ interface QRFormProps {
 }
 
 export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = {
-  // Dynamic QR Codes
+  // Dynamic QR Codes - Use ComprehensiveQRForm for main types
   'url': ComprehensiveQRForm,
+  'website': ComprehensiveQRForm,
   'multi-link': MultiLinkForm,
   'pdf': PDFForm,
   'restaurant-menu': RestaurantMenuForm,
@@ -45,8 +46,8 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
 export function getQRForm(qrTypeId: string): React.ComponentType<QRFormProps> {
   const form = QRFormRegistry[qrTypeId];
   if (!form) {
-    console.warn(`No form found for QR type: ${qrTypeId}, using DefaultForm`);
-    return DefaultForm;
+    console.warn(`No form found for QR type: ${qrTypeId}, using ComprehensiveQRForm`);
+    return ComprehensiveQRForm;
   }
   return form;
 }
