@@ -12,10 +12,8 @@ import { Camera, Save, User, Mail, Phone, Building, Globe } from 'lucide-react';
 import { userProfileService, UserProfileUpdate } from '@/utils/userProfileService';
 import { DatabaseUser } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useSupabaseAuth';
 
 export function ProfileSettings() {
-  const { user, profile: authProfile, updateProfile: updateAuthProfile } = useAuth();
   const [userProfile, setUserProfile] = useState<DatabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,85 +23,32 @@ export function ProfileSettings() {
     company: '',
     phone: '',
     timezone: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
   });
 
   const { toast } = useToast();
 
   useEffect(() => {
     loadUserProfile();
-  }, [authProfile, user]);
+  }, []);
 
   const loadUserProfile = async () => {
     try {
-      // Use auth profile if available, otherwise load from userProfileService
-      let profile = authProfile;
-      
-      if (!profile && user) {
-        profile = await userProfileService.loadUserProfile(user.id);
-      }
+      setIsLoading(true);
+      // Load profile with a mock user ID for demo purposes
+      const profile = await userProfileService.loadUserProfile('demo-user-123');
       
       if (profile) {
         setUserProfile(profile);
         setFormData({
           name: profile.name || '',
-          email: profile.email || user?.email || '',
+          email: profile.email || '',
           company: profile.company || '',
           phone: profile.phone || '',
           timezone: profile.timezone || '',
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        });
-      } else if (user) {
-        // Create a basic profile from user data
-        const basicProfile: DatabaseUser = {
-          id: user.id,
-          email: user.email || '',
-          name: user.user_metadata?.name || user.email || '',
-          company: user.user_metadata?.company || '',
-          phone: user.user_metadata?.phone || '',
-          plan: 'free',
-          subscription_status: 'trial',
-          created_at: new Date(user.created_at),
-          updated_at: new Date(),
-          timezone: 'UTC',
-          language: 'en',
-          preferences: {
-            notifications: {
-              email: true,
-              scan_alerts: true,
-              weekly_reports: false,
-              marketing: false
-            },
-            dashboard: {
-              default_view: 'grid',
-              items_per_page: 10
-            }
-          },
-          usage_stats: {
-            qr_codes_created: 0,
-            campaigns_created: 0,
-            total_scans: 0,
-            storage_used: 0
-          }
-        };
-        
-        setUserProfile(basicProfile);
-        setFormData({
-          name: basicProfile.name,
-          email: basicProfile.email,
-          company: basicProfile.company || '',
-          phone: basicProfile.phone || '',
-          timezone: basicProfile.timezone || '',
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
         });
       }
     } catch (error) {
+      console.error('Error loading profile:', error);
       toast({
         title: "Error",
         description: "Failed to load user profile",
@@ -129,19 +74,9 @@ export function ProfileSettings() {
         timezone: formData.timezone
       };
 
-      // Update both local profile service and auth context
       const result = await userProfileService.updateProfile(updates);
       
       if (result.success) {
-        // Also update the auth context
-        if (authProfile) {
-          await updateAuthProfile({
-            ...authProfile,
-            ...updates,
-            updated_at: new Date()
-          });
-        }
-        
         toast({
           title: "Success",
           description: "Profile updated successfully"
@@ -182,12 +117,32 @@ export function ProfileSettings() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (isLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="text-gray-600">Loading profile...</div>
+      </div>
+    );
   }
 
   if (!userProfile) {
-    return <div className="text-center p-8 text-red-600">Failed to load user profile</div>;
+    return (
+      <div className="text-center p-8">
+        <div className="text-red-600 mb-4">Failed to load user profile</div>
+        <Button onClick={loadUserProfile} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
   }
 
   const limits = userProfileService.getPlanLimits();
@@ -207,7 +162,7 @@ export function ProfileSettings() {
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
               <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
-                {userProfile.name.split(' ').map(n => n[0]).join('')}
+                {getInitials(userProfile.name)}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -289,7 +244,7 @@ export function ProfileSettings() {
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
               <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
-                {formData.name.split(' ').map(n => n[0]).join('')}
+                {getInitials(formData.name)}
               </AvatarFallback>
             </Avatar>
             <Button variant="outline" className="flex items-center gap-2">
