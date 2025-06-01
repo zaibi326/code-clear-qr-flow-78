@@ -50,6 +50,19 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
+            <Link to="#features" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Features
+            </Link>
+            <Link to="#how-it-works" className="text-gray-700 hover:text-blue-600 transition-colors">
+              How it Works
+            </Link>
+            <Link to="#pricing" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Pricing
+            </Link>
+            <Link to="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
+              About
+            </Link>
+
             {/* Solutions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
@@ -101,11 +114,8 @@ const Navigation = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link to="/api-documentation" className="text-gray-700 hover:text-blue-600 transition-colors">
-              API
-            </Link>
-            <Link to="/integrations" className="text-gray-700 hover:text-blue-600 transition-colors">
-              Integrations
+            <Link to="/support" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Support
             </Link>
           </div>
 
@@ -115,7 +125,7 @@ const Navigation = () => {
               <Link to="/login">Sign In</Link>
             </Button>
             <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-              <Link to="/register">Get Started</Link>
+              <Link to="/register">Get Started Free</Link>
             </Button>
           </div>
 
@@ -135,6 +145,35 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+              <Link
+                to="#features"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Features
+              </Link>
+              <Link
+                to="#how-it-works"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                How it Works
+              </Link>
+              <Link
+                to="#pricing"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+              <Link
+                to="#about"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              
               <div className="space-y-1">
                 <div className="px-3 py-2 text-sm font-medium text-gray-900">Solutions</div>
                 {solutionsItems.map((item, index) => (
@@ -177,13 +216,21 @@ const Navigation = () => {
                 ))}
               </div>
 
+              <Link
+                to="/support"
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Support
+              </Link>
+
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="flex items-center px-5 space-x-3">
                   <Button variant="outline" className="flex-1" asChild>
                     <Link to="/login" onClick={() => setIsMenuOpen(false)}>Sign In</Link>
                   </Button>
                   <Button className="flex-1" asChild>
-                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                    <Link to="/register" onClick={() => setIsMenuOpen(false)}>Get Started Free</Link>
                   </Button>
                 </div>
               </div>

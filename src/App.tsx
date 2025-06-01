@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,6 +29,16 @@ import HelpCenter from "./pages/HelpCenter";
 import Marketing from "./pages/solutions/Marketing";
 import Restaurants from "./pages/solutions/Restaurants";
 import About from "./pages/company/About";
+import CaseStudies from "./pages/CaseStudies";
+import BestPractices from "./pages/BestPractices";
+import Changelog from "./pages/Changelog";
+import Events from "./pages/solutions/Events";
+import Retail from "./pages/solutions/Retail";
+import Healthcare from "./pages/solutions/Healthcare";
+import Careers from "./pages/company/Careers";
+import Contact from "./pages/company/Contact";
+import Privacy from "./pages/company/Privacy";
+import Terms from "./pages/company/Terms";
 
 const queryClient = new QueryClient();
 
@@ -49,15 +58,25 @@ const App = () => (
             {/* Blog and Resources */}
             <Route path="/blog" element={<Blog />} />
             <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/case-studies" element={<CaseStudies />} />
+            <Route path="/best-practices" element={<BestPractices />} />
             <Route path="/api-documentation" element={<ApiDocumentation />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/changelog" element={<Changelog />} />
             
             {/* Solutions */}
             <Route path="/solutions/marketing" element={<Marketing />} />
+            <Route path="/solutions/events" element={<Events />} />
             <Route path="/solutions/restaurants" element={<Restaurants />} />
+            <Route path="/solutions/retail" element={<Retail />} />
+            <Route path="/solutions/healthcare" element={<Healthcare />} />
             
             {/* Company */}
             <Route path="/company/about" element={<About />} />
+            <Route path="/company/careers" element={<Careers />} />
+            <Route path="/company/contact" element={<Contact />} />
+            <Route path="/company/privacy" element={<Privacy />} />
+            <Route path="/company/terms" element={<Terms />} />
             
             {/* Protected Dashboard Routes */}
             <Route 

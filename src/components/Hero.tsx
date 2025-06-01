@@ -13,58 +13,44 @@ const Hero = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          {/* Trust indicators */}
-          <div className="flex items-center justify-center gap-6 mb-8 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-              <span>4.9/5 rating</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>50,000+ users</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Zap className="h-4 w-4" />
-              <span>99.9% uptime</span>
-            </div>
+          {/* Trust indicator */}
+          <div className="mb-8 text-sm text-gray-600">
+            <span>Trusted by 50,000+ businesses worldwide</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            The Complete QR Code
+            Create
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              Platform for Business
+              Smart QR Codes
             </span>
+            <span className="block">That Drive Results</span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Create, customize, and track QR codes that drive real results. Generate dynamic QR codes, 
-            get detailed analytics, and manage everything from one powerful dashboard.
+            Transform your marketing with dynamic QR codes that track engagement, boost conversions, 
+            and provide deep insights into customer behavior.
           </p>
 
           {/* Key benefits list */}
           <div className="flex flex-wrap justify-center gap-6 mb-8 text-sm text-gray-700">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
-              <span>Unlimited QR codes</span>
+              <span>Custom Design</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
-              <span>Real-time analytics</span>
+              <span>Real-time Analytics</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
-              <span>Custom branding</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-500" />
-              <span>Team collaboration</span>
+              <span>Bulk Generation</span>
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all duration-200" asChild>
               <Link to="/register">
-                Get Started Free
+                Create QR Code
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -72,30 +58,60 @@ const Hero = () => {
             <DemoButton />
           </div>
 
-          {/* Feature highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-8 w-8 text-blue-600" />
+          {/* Trust benefits */}
+          <div className="flex flex-wrap justify-center gap-6 mb-12 text-sm text-gray-600">
+            <span>No credit card required</span>
+            <span>•</span>
+            <span>14-day free trial</span>
+            <span>•</span>
+            <span>Cancel anytime</span>
+            <span>•</span>
+            <span>24/7 support</span>
+          </div>
+
+          {/* Dashboard Preview */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
+              <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="ml-4 text-sm text-gray-600">clearqr.io/dashboard</span>
+                </div>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Dynamic QR Codes</h3>
-              <p className="text-gray-600">Update content anytime without reprinting codes</p>
+              <div className="p-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">12,847</div>
+                    <div className="text-sm text-gray-600">Total Scans</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">24</div>
+                    <div className="text-sm text-gray-600">Active Campaigns</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">18.4%</div>
+                    <div className="text-sm text-gray-600">Conversion Rate</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">$24.8K</div>
+                    <div className="text-sm text-gray-600">Revenue</div>
+                  </div>
+                </div>
+                <div className="text-center text-gray-600 font-semibold">Live Analytics</div>
+              </div>
             </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Advanced Analytics</h3>
-              <p className="text-gray-600">Track scans, locations, devices, and user behavior</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Custom Branding</h3>
-              <p className="text-gray-600">Add your logo, colors, and design to every QR code</p>
+          </div>
+
+          {/* Trust logos */}
+          <div className="mb-8">
+            <p className="text-gray-600 mb-6">Trusted by industry leaders worldwide</p>
+            <div className="flex justify-center items-center space-x-8 opacity-60">
+              <span className="text-2xl font-bold text-gray-400">Amazon</span>
+              <span className="text-2xl font-bold text-gray-400">KitKat</span>
+              <span className="text-2xl font-bold text-gray-400">Pepsi</span>
+              <span className="text-2xl font-bold text-gray-400">Toyota</span>
             </div>
           </div>
         </div>
