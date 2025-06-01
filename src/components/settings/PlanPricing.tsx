@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Check, Crown, Zap, Star, CreditCard, Users, Database, BarChart3 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlanFeature {
   name: string;
@@ -24,74 +25,77 @@ interface Plan {
   current?: boolean;
 }
 
-const plans: Plan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    period: 'month',
-    description: 'Perfect for getting started with QR code campaigns',
-    current: false,
-    features: [
-      { name: 'QR Codes', included: true, limit: '50' },
-      { name: 'Campaigns', included: true, limit: '5' },
-      { name: 'Templates', included: true, limit: '10' },
-      { name: 'Basic Analytics', included: true },
-      { name: 'Email Support', included: true },
-      { name: 'Storage', included: true, limit: '100MB' },
-      { name: 'Advanced Analytics', included: false },
-      { name: 'Priority Support', included: false },
-      { name: 'White Label', included: false }
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 29,
-    period: 'month',
-    description: 'For growing businesses and marketing teams',
-    popular: true,
-    current: true,
-    features: [
-      { name: 'QR Codes', included: true, limit: '1,000' },
-      { name: 'Campaigns', included: true, limit: '50' },
-      { name: 'Templates', included: true, limit: 'Unlimited' },
-      { name: 'Advanced Analytics', included: true },
-      { name: 'Priority Support', included: true },
-      { name: 'Storage', included: true, limit: '1GB' },
-      { name: 'API Access', included: true },
-      { name: 'Custom Domains', included: true },
-      { name: 'White Label', included: false }
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 99,
-    period: 'month',
-    description: 'For large organizations with advanced needs',
-    features: [
-      { name: 'QR Codes', included: true, limit: 'Unlimited' },
-      { name: 'Campaigns', included: true, limit: 'Unlimited' },
-      { name: 'Templates', included: true, limit: 'Unlimited' },
-      { name: 'Advanced Analytics', included: true },
-      { name: 'Dedicated Support', included: true },
-      { name: 'Storage', included: true, limit: 'Unlimited' },
-      { name: 'API Access', included: true },
-      { name: 'Custom Domains', included: true },
-      { name: 'White Label', included: true }
-    ]
-  }
-];
-
-const usageStats = {
-  qrCodes: { used: 156, limit: 1000 },
-  campaigns: { used: 12, limit: 50 },
-  storage: { used: 524288000, limit: 1073741824 } // 500MB used of 1GB
-};
-
 export function PlanPricing() {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const { toast } = useToast();
+  const [currentPlan, setCurrentPlan] = useState('pro');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const plans: Plan[] = [
+    {
+      id: 'free',
+      name: 'Free',
+      price: 0,
+      period: 'month',
+      description: 'Perfect for getting started with QR code campaigns',
+      current: currentPlan === 'free',
+      features: [
+        { name: 'QR Codes', included: true, limit: '50' },
+        { name: 'Campaigns', included: true, limit: '5' },
+        { name: 'Templates', included: true, limit: '10' },
+        { name: 'Basic Analytics', included: true },
+        { name: 'Email Support', included: true },
+        { name: 'Storage', included: true, limit: '100MB' },
+        { name: 'Advanced Analytics', included: false },
+        { name: 'Priority Support', included: false },
+        { name: 'White Label', included: false }
+      ]
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: 29,
+      period: 'month',
+      description: 'For growing businesses and marketing teams',
+      popular: true,
+      current: currentPlan === 'pro',
+      features: [
+        { name: 'QR Codes', included: true, limit: '1,000' },
+        { name: 'Campaigns', included: true, limit: '50' },
+        { name: 'Templates', included: true, limit: 'Unlimited' },
+        { name: 'Advanced Analytics', included: true },
+        { name: 'Priority Support', included: true },
+        { name: 'Storage', included: true, limit: '1GB' },
+        { name: 'API Access', included: true },
+        { name: 'Custom Domains', included: true },
+        { name: 'White Label', included: false }
+      ]
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 99,
+      period: 'month',
+      description: 'For large organizations with advanced needs',
+      current: currentPlan === 'enterprise',
+      features: [
+        { name: 'QR Codes', included: true, limit: 'Unlimited' },
+        { name: 'Campaigns', included: true, limit: 'Unlimited' },
+        { name: 'Templates', included: true, limit: 'Unlimited' },
+        { name: 'Advanced Analytics', included: true },
+        { name: 'Dedicated Support', included: true },
+        { name: 'Storage', included: true, limit: 'Unlimited' },
+        { name: 'API Access', included: true },
+        { name: 'Custom Domains', included: true },
+        { name: 'White Label', included: true }
+      ]
+    }
+  ];
+
+  const usageStats = {
+    qrCodes: { used: 156, limit: currentPlan === 'free' ? 50 : currentPlan === 'pro' ? 1000 : -1 },
+    campaigns: { used: 12, limit: currentPlan === 'free' ? 5 : currentPlan === 'pro' ? 50 : -1 },
+    storage: { used: 524288000, limit: currentPlan === 'free' ? 104857600 : currentPlan === 'pro' ? 1073741824 : -1 }
+  };
 
   const formatStorage = (bytes: number) => {
     const gb = bytes / (1024 * 1024 * 1024);
@@ -100,7 +104,44 @@ export function PlanPricing() {
   };
 
   const getUsagePercentage = (used: number, limit: number) => {
-    return Math.round((used / limit) * 100);
+    if (limit === -1) return 0; // Unlimited
+    return Math.min(Math.round((used / limit) * 100), 100);
+  };
+
+  const handlePlanChange = async (planId: string) => {
+    if (planId === currentPlan) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setCurrentPlan(planId);
+      
+      const actionType = plans.find(p => p.id === planId)?.price > plans.find(p => p.id === currentPlan)?.price ? 'upgraded' : 'downgraded';
+      
+      toast({
+        title: `Plan ${actionType} successfully!`,
+        description: `You have been ${actionType} to the ${plans.find(p => p.id === planId)?.name} plan.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error changing plan",
+        description: "There was an error processing your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getCurrentPlanName = () => {
+    return plans.find(p => p.id === currentPlan)?.name || 'Pro';
+  };
+
+  const getCurrentPlanPrice = () => {
+    return plans.find(p => p.id === currentPlan)?.price || 29;
   };
 
   return (
@@ -119,7 +160,9 @@ export function PlanPricing() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>QR Codes</span>
-                <span className="font-medium">{usageStats.qrCodes.used} / {usageStats.qrCodes.limit}</span>
+                <span className="font-medium">
+                  {usageStats.qrCodes.used} / {usageStats.qrCodes.limit === -1 ? 'Unlimited' : usageStats.qrCodes.limit}
+                </span>
               </div>
               <Progress value={getUsagePercentage(usageStats.qrCodes.used, usageStats.qrCodes.limit)} />
             </div>
@@ -127,7 +170,9 @@ export function PlanPricing() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Campaigns</span>
-                <span className="font-medium">{usageStats.campaigns.used} / {usageStats.campaigns.limit}</span>
+                <span className="font-medium">
+                  {usageStats.campaigns.used} / {usageStats.campaigns.limit === -1 ? 'Unlimited' : usageStats.campaigns.limit}
+                </span>
               </div>
               <Progress value={getUsagePercentage(usageStats.campaigns.used, usageStats.campaigns.limit)} />
             </div>
@@ -135,7 +180,9 @@ export function PlanPricing() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Storage</span>
-                <span className="font-medium">{formatStorage(usageStats.storage.used)} / {formatStorage(usageStats.storage.limit)}</span>
+                <span className="font-medium">
+                  {formatStorage(usageStats.storage.used)} / {usageStats.storage.limit === -1 ? 'Unlimited' : formatStorage(usageStats.storage.limit)}
+                </span>
               </div>
               <Progress value={getUsagePercentage(usageStats.storage.used, usageStats.storage.limit)} />
             </div>
@@ -194,14 +241,17 @@ export function PlanPricing() {
               <Button 
                 className="w-full" 
                 variant={plan.current ? "outline" : plan.popular ? "default" : "outline"}
-                disabled={plan.current}
+                disabled={plan.current || isProcessing}
+                onClick={() => handlePlanChange(plan.id)}
               >
-                {plan.current ? (
+                {isProcessing ? (
+                  "Processing..."
+                ) : plan.current ? (
                   "Current Plan"
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    {plan.id === 'free' ? 'Downgrade' : 'Upgrade'} to {plan.name}
+                    {plan.price > getCurrentPlanPrice() ? 'Upgrade' : 'Switch'} to {plan.name}
                   </>
                 )}
               </Button>
@@ -222,7 +272,7 @@ export function PlanPricing() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Current Plan</p>
-              <p className="text-sm text-gray-600">Pro Plan - $29/month</p>
+              <p className="text-sm text-gray-600">{getCurrentPlanName()} Plan - ${getCurrentPlanPrice()}/month</p>
             </div>
             <Badge className="bg-green-100 text-green-700">Active</Badge>
           </div>

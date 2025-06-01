@@ -1,28 +1,38 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Check, Star, Crown, Zap, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const Pricing = () => {
+  const { toast } = useToast();
+  const [currentPlan, setCurrentPlan] = useState('pro');
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const plans = [
     {
-      name: 'Starter',
-      price: '$9',
+      id: 'free',
+      name: 'Free',
+      price: '$0',
       period: '/month',
       description: 'Perfect for small businesses and individual creators',
       features: [
-        'Up to 100 QR codes',
+        'Up to 50 QR codes',
         'Basic analytics',
         'Standard templates',
         'Email support',
         'SSL security'
       ],
-      buttonText: 'Start Free Trial',
+      buttonText: 'Get Started Free',
       buttonVariant: 'outline' as const,
-      popular: false
+      popular: false,
+      icon: <Users className="h-8 w-8 text-gray-500" />
     },
     {
-      name: 'Professional',
+      id: 'pro',
+      name: 'Pro',
       price: '$29',
       period: '/month',
       description: 'Ideal for growing businesses and marketing teams',
@@ -37,9 +47,11 @@ const Pricing = () => {
       ],
       buttonText: 'Start Free Trial',
       buttonVariant: 'default' as const,
-      popular: true
+      popular: true,
+      icon: <Zap className="h-8 w-8 text-blue-500" />
     },
     {
+      id: 'enterprise',
       name: 'Enterprise',
       price: '$99',
       period: '/month',
@@ -55,9 +67,45 @@ const Pricing = () => {
       ],
       buttonText: 'Contact Sales',
       buttonVariant: 'outline' as const,
-      popular: false
+      popular: false,
+      icon: <Crown className="h-8 w-8 text-purple-500" />
     }
   ];
+
+  const handlePlanSelect = async (planId: string) => {
+    if (planId === currentPlan) {
+      // Redirect to dashboard if already on this plan
+      window.location.href = '/dashboard';
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setCurrentPlan(planId);
+      
+      toast({
+        title: "Plan selected successfully!",
+        description: `You have selected the ${plans.find(p => p.id === planId)?.name} plan.`,
+      });
+
+      // Redirect to register/login for plan setup
+      setTimeout(() => {
+        window.location.href = '/register';
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error selecting plan",
+        description: "There was an error processing your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 bg-gray-50">
@@ -95,7 +143,7 @@ const Pricing = () => {
                 plan.popular 
                   ? 'border-blue-500 shadow-lg scale-105' 
                   : 'border-gray-200 hover:border-blue-300'
-              }`}
+              } ${currentPlan === plan.id ? 'ring-2 ring-green-500' : ''}`}
             >
               {/* Popular Badge */}
               {plan.popular && (
@@ -107,8 +155,18 @@ const Pricing = () => {
                 </div>
               )}
 
+              {/* Current Plan Badge */}
+              {currentPlan === plan.id && (
+                <div className="absolute -top-4 right-4">
+                  <Badge className="bg-green-500">Current Plan</Badge>
+                </div>
+              )}
+
               {/* Plan Header */}
               <div className="text-center mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  {plan.icon}
+                </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                 <p className="text-gray-600 mb-4">{plan.description}</p>
                 <div className="flex items-end justify-center">
@@ -135,8 +193,16 @@ const Pricing = () => {
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
                     : ''
                 }`}
+                disabled={isProcessing}
+                onClick={() => handlePlanSelect(plan.id)}
               >
-                {plan.buttonText}
+                {isProcessing ? (
+                  "Processing..."
+                ) : currentPlan === plan.id ? (
+                  "Go to Dashboard"
+                ) : (
+                  plan.buttonText
+                )}
               </Button>
             </div>
           ))}
