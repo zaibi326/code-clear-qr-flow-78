@@ -25,6 +25,11 @@ import Integrations from "./pages/Integrations";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import BulkDataSelector from "./pages/BulkDataSelector";
 import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
+import Blog from "./pages/Blog";
+import HelpCenter from "./pages/HelpCenter";
+import Marketing from "./pages/solutions/Marketing";
+import Restaurants from "./pages/solutions/Restaurants";
+import About from "./pages/company/About";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +45,21 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Blog and Resources */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/api-documentation" element={<ApiDocumentation />} />
+            <Route path="/integrations" element={<Integrations />} />
+            
+            {/* Solutions */}
+            <Route path="/solutions/marketing" element={<Marketing />} />
+            <Route path="/solutions/restaurants" element={<Restaurants />} />
+            
+            {/* Company */}
+            <Route path="/company/about" element={<About />} />
+            
+            {/* Protected Dashboard Routes */}
             <Route 
               path="/dashboard" 
               element={
@@ -117,22 +137,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Monitoring />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/integrations" 
-              element={
-                <ProtectedRoute>
-                  <Integrations />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/api-documentation" 
-              element={
-                <ProtectedRoute>
-                  <ApiDocumentation />
                 </ProtectedRoute>
               } 
             />
