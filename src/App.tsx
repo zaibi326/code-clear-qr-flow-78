@@ -70,6 +70,7 @@ function App() {
               <Route path="/data-manager" element={<DataManager />} />
               <Route path="/integrations" element={<Integrations />} />
               <Route path="/dashboard-integrations" element={<DashboardIntegrationsPage />} />
+              <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
               <Route path="/api-documentation" element={<ApiDocumentation />} />
               <Route path="/monitoring" element={<Monitoring />} />
               <Route path="/testing" element={<Testing />} />
