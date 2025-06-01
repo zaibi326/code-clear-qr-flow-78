@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import QuickGenerate from "./pages/QuickGenerate";
+import CreateQRCode from "./pages/CreateQRCode";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Support from "./pages/Support";
@@ -61,6 +62,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/quick-generate" element={<QuickGenerate />} />
+              <Route path="/create-qr-code" element={<CreateQRCode />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/support" element={<Support />} />

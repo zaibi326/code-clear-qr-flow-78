@@ -31,22 +31,6 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   console.log('QRGeneratorStepper: currentStep:', currentStep);
   console.log('QRGeneratorStepper: selectedType:', selectedType);
 
-  // Auto-select URL type if no initialType is provided
-  useEffect(() => {
-    if (!initialType && !selectedType) {
-      const urlType: QRCodeType = {
-        id: 'url',
-        title: 'Website URL',
-        description: 'Link to any website',
-        icon: () => <div>🌐</div>,
-        color: 'blue',
-        category: 'dynamic'
-      };
-      setSelectedType(urlType);
-      setCurrentStep(2); // Skip type selection and go directly to setup
-    }
-  }, [initialType, selectedType]);
-
   const steps = [
     { number: 1, title: 'Select type', description: 'Choose your QR code type' },
     { number: 2, title: 'Setup', description: 'Configure your content' },

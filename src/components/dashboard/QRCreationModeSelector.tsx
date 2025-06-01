@@ -14,7 +14,7 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
 
   const handleModeSelect = (mode: 'single' | 'bulk') => {
     if (mode === 'single') {
-      navigate('/quick-generate');
+      navigate('/create-qr-code');
     } else {
       navigate('/bulk-data-selector');
     }
