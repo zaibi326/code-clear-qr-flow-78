@@ -32,7 +32,7 @@ const QuickGenerate = () => {
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Create QR Code</h1>
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Quick Generate</h1>
                   <p className="text-base text-slate-600 mt-3 font-medium">Generate custom QR codes with advanced styling options and analytics tracking</p>
                 </div>
               </div>
