@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Star, Users, Zap } from 'lucide-react';
+import { ArrowRight, Play, Star, Users, Zap, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DemoButton from './demo/DemoButton';
 
@@ -30,21 +30,41 @@ const Hero = () => {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Create Smart QR Codes
+            The Complete QR Code
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              That Actually Work
+              Platform for Business
             </span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Generate, customize, and track QR codes that drive real results. From simple URLs to complex campaigns, 
-            ClearQR.io makes it easy to connect your physical and digital marketing efforts.
+            Create, customize, and track QR codes that drive real results. Generate dynamic QR codes, 
+            get detailed analytics, and manage everything from one powerful dashboard.
           </p>
+
+          {/* Key benefits list */}
+          <div className="flex flex-wrap justify-center gap-6 mb-8 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>Unlimited QR codes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>Real-time analytics</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>Custom branding</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>Team collaboration</span>
+            </div>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all duration-200" asChild>
               <Link to="/register">
-                Start Free Trial
+                Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -58,24 +78,24 @@ const Hero = () => {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Lightning Fast</h3>
-              <p className="text-gray-600">Generate QR codes instantly with our optimized engine</p>
+              <h3 className="font-semibold text-lg mb-2">Dynamic QR Codes</h3>
+              <p className="text-gray-600">Update content anytime without reprinting codes</p>
             </div>
             
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Team Collaboration</h3>
-              <p className="text-gray-600">Work together with your team on QR code campaigns</p>
+              <h3 className="font-semibold text-lg mb-2">Advanced Analytics</h3>
+              <p className="text-gray-600">Track scans, locations, devices, and user behavior</p>
             </div>
             
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="font-semibold text-lg mb-2">Advanced Analytics</h3>
-              <p className="text-gray-600">Track performance with detailed insights and reporting</p>
+              <h3 className="font-semibold text-lg mb-2">Custom Branding</h3>
+              <p className="text-gray-600">Add your logo, colors, and design to every QR code</p>
             </div>
           </div>
         </div>
