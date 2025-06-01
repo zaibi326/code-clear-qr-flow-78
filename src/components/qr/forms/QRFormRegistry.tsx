@@ -14,6 +14,7 @@ import { MobileAppForm } from './MobileAppForm';
 import { DefaultForm } from './DefaultForm';
 import { ImageForm } from './ImageForm';
 import { BusinessCardForm } from './BusinessCardForm';
+import { ComprehensiveQRForm } from './ComprehensiveQRForm';
 
 interface QRFormProps {
   formData: any;
@@ -22,7 +23,7 @@ interface QRFormProps {
 
 export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = {
   // Dynamic QR Codes
-  'url': URLForm,
+  'url': ComprehensiveQRForm,
   'multi-link': MultiLinkForm,
   'pdf': PDFForm,
   'restaurant-menu': RestaurantMenuForm,
@@ -33,7 +34,7 @@ export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = 
   'image': ImageForm,
   
   // Static QR Codes
-  'website-static': URLForm,
+  'website-static': ComprehensiveQRForm,
   'business-card-static': BusinessCardForm,
   'email-static': EmailForm,
   'call-static': PhoneForm,
