@@ -6,6 +6,7 @@ import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRCodeGrid } from '@/components/dashboard/QRCodeGrid';
 import { QRCodeFilters } from '@/components/dashboard/QRCodeFilters';
 import { QRCodeStats } from '@/components/dashboard/QRCodeStats';
+import { QRCreationModeSelector } from '@/components/dashboard/QRCreationModeSelector';
 
 const Dashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -49,6 +50,11 @@ const Dashboard = () => {
               {/* Stats Section */}
               <div className="bg-white/95 backdrop-blur-lg rounded-3xl border border-indigo-100/50 shadow-xl shadow-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500">
                 <QRCodeStats />
+              </div>
+
+              {/* QR Creation Mode Selector */}
+              <div className="bg-white/95 backdrop-blur-lg rounded-3xl border border-indigo-100/50 shadow-xl shadow-indigo-500/10 p-8 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500">
+                <QRCreationModeSelector />
               </div>
 
               {/* Filters Section */}
