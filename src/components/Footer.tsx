@@ -13,11 +13,11 @@ const Footer = () => {
       { name: 'Changelog', href: '/support' }
     ],
     Solutions: [
-      { name: 'Marketing', href: '/quick-generate' },
-      { name: 'Events', href: '/campaigns' },
-      { name: 'Restaurants', href: '/quick-generate' },
-      { name: 'Retail', href: '/quick-generate' },
-      { name: 'Healthcare', href: '/quick-generate' }
+      { name: 'Marketing', href: '/solutions/marketing' },
+      { name: 'Events', href: '/solutions/events' },
+      { name: 'Restaurants', href: '/solutions/restaurants' },
+      { name: 'Retail', href: '/solutions/retail' },
+      { name: 'Healthcare', href: '/solutions/healthcare' }
     ],
     Resources: [
       { name: 'Blog', href: '/support' },
@@ -28,11 +28,21 @@ const Footer = () => {
     ],
     Company: [
       { name: 'About Us', href: '#about' },
-      { name: 'Careers', href: '/support' },
-      { name: 'Contact', href: '/support' },
-      { name: 'Privacy Policy', href: '/support' },
-      { name: 'Terms of Service', href: '/support' }
+      { name: 'Careers', href: '/company/careers' },
+      { name: 'Contact', href: '/company/contact' },
+      { name: 'Privacy Policy', href: '/company/privacy' },
+      { name: 'Terms of Service', href: '/company/terms' }
     ]
+  };
+
+  const handleLinkClick = (href: string) => {
+    if (href.startsWith('#')) {
+      // Handle anchor links
+      const element = document.getElementById(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (
@@ -78,12 +88,12 @@ const Footer = () => {
                 {links.map((link) => (
                   <li key={link.name}>
                     {link.href.startsWith('#') ? (
-                      <a 
-                        href={link.href} 
-                        className="text-gray-400 hover:text-white transition-colors"
+                      <button 
+                        onClick={() => handleLinkClick(link.href)}
+                        className="text-gray-400 hover:text-white transition-colors text-left"
                       >
                         {link.name}
-                      </a>
+                      </button>
                     ) : (
                       <Link 
                         to={link.href} 
@@ -124,8 +134,8 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
           <p>&copy; 2024 ClearQR.io. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/support" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Terms</Link>
+            <Link to="/company/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/company/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link to="/support" className="hover:text-white transition-colors">Cookies</Link>
           </div>
         </div>

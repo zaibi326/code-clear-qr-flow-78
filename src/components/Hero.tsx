@@ -13,8 +13,8 @@ const Hero = () => {
   };
 
   const openPreviewInNewTab = () => {
-    // Open current page in new tab to simulate preview functionality
-    window.open(window.location.href, '_blank');
+    // Open the quick generate page in a new tab as a preview
+    window.open('/quick-generate', '_blank');
   };
 
   const handleScheduleDemo = () => {
