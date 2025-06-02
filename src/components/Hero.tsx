@@ -2,6 +2,7 @@
 import React from 'react';
 import HeroHeader from './hero/HeroHeader';
 import HeroTrustedBy from './hero/HeroTrustedBy';
+import HeroStats from './hero/HeroStats';
 
 const Hero = () => {
   const scrollToSection = (sectionId: string) => {
@@ -46,6 +47,19 @@ const Hero = () => {
           openPreviewInNewTab={openPreviewInNewTab}
           handleScheduleDemo={handleScheduleDemo}
         />
+        
+        {/* Dashboard Preview Section */}
+        <div className="mb-24">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+              Professional Dashboard Experience
+            </h3>
+            <p className="text-lg text-gray-600">
+              Monitor your campaigns with enterprise-grade analytics and insights
+            </p>
+          </div>
+          <HeroStats />
+        </div>
         
         <HeroTrustedBy />
       </div>

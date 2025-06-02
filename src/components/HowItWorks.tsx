@@ -1,6 +1,5 @@
 
 import React from 'react';
-import HeroStats from './hero/HeroStats';
 
 const HowItWorks = () => {
   const steps = [
@@ -81,19 +80,6 @@ const HowItWorks = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Dashboard Preview Section */}
-        <div className="mt-24">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Professional Dashboard Experience
-            </h3>
-            <p className="text-lg text-gray-600">
-              Monitor your campaigns with enterprise-grade analytics and insights
-            </p>
-          </div>
-          <HeroStats />
         </div>
 
         {/* Bottom CTA */}
