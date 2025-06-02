@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, Play, Sparkles, Users, TrendingUp, Shield, Zap, Globe, ExternalLink } from 'lucide-react';
@@ -13,8 +12,8 @@ const Hero = () => {
   };
 
   const openPreviewInNewTab = () => {
-    // Open the quick generate page in a new tab as a preview
-    window.open('/quick-generate', '_blank');
+    // Open the actual preview URL in a new tab
+    window.open('https://preview--code-clear-qr-flow-78.lovable.app/quick-generate', '_blank', 'noopener,noreferrer');
   };
 
   const handleScheduleDemo = () => {
