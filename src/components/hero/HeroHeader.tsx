@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Sparkles, TrendingUp, Shield, Zap, Users, Globe } from 'lucide-react';
+import { ArrowRight, Play, Sparkles, TrendingUp, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface HeroHeaderProps {
@@ -80,72 +80,6 @@ const HeroHeader = ({ scrollToSection, openPreviewInNewTab, handleScheduleDemo }
           <Sparkles className="h-5 w-5 text-purple-500 mr-3" />
           <span className="font-bold text-gray-700">Cancel anytime</span>
         </div>
-      </div>
-
-      {/* Enhanced stats preview with Uniqode-style design */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {[
-          { 
-            number: "10M+", 
-            label: "QR Scans Monthly", 
-            icon: <Zap className="h-8 w-8" />, 
-            color: "from-blue-500 to-cyan-500",
-            bgColor: "from-blue-50 to-cyan-50",
-            description: "Trusted by enterprises"
-          },
-          { 
-            number: "99.9%", 
-            label: "Uptime Guaranteed", 
-            icon: <Shield className="h-8 w-8" />, 
-            color: "from-green-500 to-emerald-500",
-            bgColor: "from-green-50 to-emerald-50",
-            description: "Enterprise-grade reliability"
-          },
-          { 
-            number: "200+", 
-            label: "Countries Served", 
-            icon: <Globe className="h-8 w-8" />, 
-            color: "from-purple-500 to-pink-500",
-            bgColor: "from-purple-50 to-pink-50",
-            description: "Global reach & impact"
-          }
-        ].map((stat, index) => (
-          <div key={index} className={`relative text-center bg-gradient-to-br ${stat.bgColor} p-10 rounded-3xl shadow-2xl border border-white/50 hover:shadow-3xl transition-all duration-500 hover:scale-110 group overflow-hidden`}>
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
-            
-            <div className="relative z-10">
-              <div className={`w-20 h-20 bg-gradient-to-r ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-xl`}>
-                <div className="text-white">
-                  {stat.icon}
-                </div>
-              </div>
-              <div className={`text-5xl font-black bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-3 group-hover:scale-105 transition-transform`}>
-                {stat.number}
-              </div>
-              <div className="text-gray-800 font-bold text-xl mb-2">{stat.label}</div>
-              <div className="text-gray-600 font-medium text-sm">{stat.description}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Additional feature highlights */}
-      <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-        {[
-          { icon: <Users className="h-5 w-5" />, text: "50,000+ Users", color: "blue" },
-          { icon: <Zap className="h-5 w-5" />, text: "Real-time Analytics", color: "green" },
-          { icon: <Shield className="h-5 w-5" />, text: "Enterprise Security", color: "purple" },
-          { icon: <Globe className="h-5 w-5" />, text: "Global CDN", color: "orange" }
-        ].map((feature, index) => (
-          <div key={index} className="flex items-center justify-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-xl shadow-md border border-gray-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
-            <div className={`text-${feature.color}-500`}>
-              {feature.icon}
-            </div>
-            <span className="font-semibold text-gray-700 text-sm">{feature.text}</span>
-          </div>
-        ))}
       </div>
     </div>
   );
