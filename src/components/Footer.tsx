@@ -10,7 +10,7 @@ const Footer = () => {
       { name: 'Pricing', href: '#pricing' },
       { name: 'API Documentation', href: '/api-documentation' },
       { name: 'Integrations', href: '/integrations' },
-      { name: 'Changelog', href: '/support' }
+      { name: 'Changelog', href: '/changelog' }
     ],
     Solutions: [
       { name: 'Marketing', href: '/solutions/marketing' },
@@ -20,11 +20,11 @@ const Footer = () => {
       { name: 'Healthcare', href: '/solutions/healthcare' }
     ],
     Resources: [
-      { name: 'Blog', href: '/support' },
-      { name: 'Help Center', href: '/support' },
-      { name: 'Case Studies', href: '/support' },
+      { name: 'Blog', href: '/blog' },
+      { name: 'Help Center', href: '/help-center' },
+      { name: 'Case Studies', href: '/case-studies' },
       { name: 'QR Code Generator', href: '/quick-generate' },
-      { name: 'Best Practices', href: '/support' }
+      { name: 'Best Practices', href: '/best-practices' }
     ],
     Company: [
       { name: 'About Us', href: '#about' },
