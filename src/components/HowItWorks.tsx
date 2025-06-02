@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Upload, Zap, BarChart3, ArrowRight, Sparkles, Target, Rocket, Users, Globe, Settings } from 'lucide-react';
 import HeroStats from './hero/HeroStats';
 
 const HowItWorks = () => {
