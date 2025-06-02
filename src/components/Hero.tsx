@@ -14,8 +14,8 @@ const Hero = () => {
   };
 
   const openPreviewInNewTab = () => {
-    // Open the actual preview URL in a new tab
-    window.open('https://preview--code-clear-qr-flow-78.lovable.app/quick-generate', '_blank', 'noopener,noreferrer');
+    // Open the quick-generate page in a new tab
+    window.open('/quick-generate', '_blank', 'noopener,noreferrer');
   };
 
   const handleScheduleDemo = () => {

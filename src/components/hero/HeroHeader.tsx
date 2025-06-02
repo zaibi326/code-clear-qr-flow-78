@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Play, Sparkles, Shield, Zap, TrendingUp, Globe, ExternalLink } from 'lucide-react';
+import { ArrowRight, Check, Play, Sparkles, Shield, Zap, TrendingUp, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface HeroHeaderProps {
@@ -80,32 +80,6 @@ const HeroHeader = ({ scrollToSection, openPreviewInNewTab, handleScheduleDemo }
         >
           <Play className="h-6 w-6 mr-3 group-hover:text-blue-600 transition-colors" />
           <span className="group-hover:text-blue-600 transition-colors">Schedule Demo</span>
-        </Button>
-      </div>
-
-      {/* Navigation buttons for sections */}
-      <div className="flex flex-wrap justify-center gap-4 mb-12">
-        <Button 
-          variant="ghost" 
-          className="text-slate-600 hover:text-blue-600 font-semibold"
-          onClick={() => scrollToSection('features')}
-        >
-          View Features
-        </Button>
-        <Button 
-          variant="ghost" 
-          className="text-slate-600 hover:text-blue-600 font-semibold"
-          onClick={() => scrollToSection('how-it-works')}
-        >
-          How It Works
-        </Button>
-        <Button 
-          variant="ghost" 
-          className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2"
-          onClick={openPreviewInNewTab}
-        >
-          Open Preview
-          <ExternalLink className="h-4 w-4" />
         </Button>
       </div>
 
