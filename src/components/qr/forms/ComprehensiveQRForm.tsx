@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQRGenerator } from '@/hooks/useQRGenerator';
-import { Upload, Plus, FileText } from 'lucide-react';
+import { Upload, Plus, FileText, ColorPicker, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseCSV } from '@/utils/csvParser';
 
@@ -37,11 +36,57 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
   }, [formData.url, formData.foregroundColor, formData.backgroundColor, setConfig]);
 
   const handleColorChange = (field: string, color: string) => {
+    console.log(`Color change: ${field} = ${color}`);
     onInputChange(field, color);
     if (field === 'foregroundColor') {
       setConfig(prev => ({ ...prev, foregroundColor: color }));
     } else if (field === 'backgroundColor') {
       setConfig(prev => ({ ...prev, backgroundColor: color }));
+    }
+  };
+
+  const handleSave = async () => {
+    console.log('Save button clicked', formData);
+    
+    // Validate required fields
+    if (!formData.url) {
+      toast({
+        title: "Validation Error",
+        description: "Website URL is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.qrName) {
+      toast({
+        title: "Validation Error", 
+        description: "QR Code Name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Here you would typically save to your backend/database
+      // For now, we'll just show a success message
+      toast({
+        title: "Success",
+        description: "QR Code saved successfully!",
+      });
+      
+      console.log('QR Code data to save:', {
+        ...formData,
+        qrImageData: generatedQR
+      });
+      
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save QR Code. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -131,36 +176,54 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
               {/* Color Selection Row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <ColorPicker className="w-4 h-4" />
                     Select Foreground Color
                   </Label>
                   <div className="flex items-center space-x-2">
                     <div 
-                      className="w-full h-8 rounded border border-gray-300"
+                      className="w-full h-10 rounded border border-gray-300 cursor-pointer flex items-center justify-center"
                       style={{ backgroundColor: formData.foregroundColor || '#000000' }}
-                    />
+                      onClick={() => document.getElementById('foreground-color-input')?.click()}
+                    >
+                      <span className="text-xs font-medium" style={{ 
+                        color: formData.foregroundColor === '#000000' ? '#FFFFFF' : '#000000' 
+                      }}>
+                        {formData.foregroundColor || '#000000'}
+                      </span>
+                    </div>
                     <input
+                      id="foreground-color-input"
                       type="color"
                       value={formData.foregroundColor || '#000000'}
                       onChange={(e) => handleColorChange('foregroundColor', e.target.value)}
-                      className="w-8 h-8 rounded border border-gray-300"
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
+                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <ColorPicker className="w-4 h-4" />
                     Select Background Color
                   </Label>
                   <div className="flex items-center space-x-2">
                     <div 
-                      className="w-full h-8 rounded border border-gray-300"
+                      className="w-full h-10 rounded border border-gray-300 cursor-pointer flex items-center justify-center"
                       style={{ backgroundColor: formData.backgroundColor || '#FFFFFF' }}
-                    />
+                      onClick={() => document.getElementById('background-color-input')?.click()}
+                    >
+                      <span className="text-xs font-medium" style={{ 
+                        color: formData.backgroundColor === '#FFFFFF' ? '#000000' : '#FFFFFF' 
+                      }}>
+                        {formData.backgroundColor || '#FFFFFF'}
+                      </span>
+                    </div>
                     <input
+                      id="background-color-input"
                       type="color"
                       value={formData.backgroundColor || '#FFFFFF'}
                       onChange={(e) => handleColorChange('backgroundColor', e.target.value)}
-                      className="w-8 h-8 rounded border border-gray-300"
+                      className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -219,14 +282,15 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
               {/* QR Code Name */}
               <div className="space-y-2">
                 <Label htmlFor="qrName" className="text-sm font-medium text-gray-700">
-                  QRCode Name
+                  QRCode Name *
                 </Label>
                 <Input
                   id="qrName"
                   value={formData.qrName || ''}
                   onChange={(e) => onInputChange('qrName', e.target.value)}
-                  placeholder="QRCode Name"
+                  placeholder="Enter QRCode Name"
                   className="w-full"
+                  required
                 />
               </div>
 
@@ -238,7 +302,7 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
                   </Label>
                   <Select value={formData.listType || ''} onValueChange={(value) => onInputChange('listType', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select your Project" />
+                      <SelectValue placeholder="Select List Type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="type1">Type 1</SelectItem>
@@ -401,8 +465,12 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
 
               {/* Save Button */}
               <div className="flex justify-end pt-4">
-                <Button className="bg-green-600 hover:bg-green-700 text-white px-8">
-                  Save
+                <Button 
+                  onClick={handleSave}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save QR Code
                 </Button>
               </div>
             </div>
@@ -423,9 +491,23 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
                   />
                 )}
               </div>
-              <p className="text-sm text-gray-600 text-center max-w-xs">
-                Your QR code will appear here as you fill in the form fields
-              </p>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600 max-w-xs">
+                  Your QR code will appear here as you fill in the form fields
+                </p>
+                {formData.foregroundColor && formData.backgroundColor && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: formData.foregroundColor }}></div>
+                      Foreground
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded border" style={{ backgroundColor: formData.backgroundColor }}></div>
+                      Background
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </TabsContent>
