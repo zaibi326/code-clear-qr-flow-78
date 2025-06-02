@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -47,7 +46,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     {
       path: '/dashboard',
       icon: Home,
-      label: 'Home',
+      label: 'Overview',
     },
     {
       path: '/analytics',
