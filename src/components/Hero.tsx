@@ -1,10 +1,33 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Play, Sparkles, Users, TrendingUp, Shield, Zap, Globe } from 'lucide-react';
+import { ArrowRight, Check, Play, Sparkles, Users, TrendingUp, Shield, Zap, Globe, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const openPreviewInNewTab = () => {
+    // Open current page in new tab to simulate preview functionality
+    window.open(window.location.href, '_blank');
+  };
+
+  const handleScheduleDemo = () => {
+    // Scroll to contact section or open a demo scheduling modal
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Fallback: open a simple alert for demo
+      alert('Demo scheduling will be available soon. Please contact us at demo@clearqr.io');
+    }
+  };
+
   return (
     <div className="relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-24 pb-20 overflow-hidden">
       {/* Enhanced background decorations */}
@@ -77,9 +100,36 @@ const Hero = () => {
               variant="outline" 
               size="lg" 
               className="bg-white/95 backdrop-blur-sm border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 px-12 py-6 text-xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 h-auto group"
+              onClick={handleScheduleDemo}
             >
               <Play className="h-6 w-6 mr-3 group-hover:text-blue-600 transition-colors" />
               <span className="group-hover:text-blue-600 transition-colors">Schedule Demo</span>
+            </Button>
+          </div>
+
+          {/* Navigation buttons for sections */}
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <Button 
+              variant="ghost" 
+              className="text-slate-600 hover:text-blue-600 font-semibold"
+              onClick={() => scrollToSection('features')}
+            >
+              View Features
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="text-slate-600 hover:text-blue-600 font-semibold"
+              onClick={() => scrollToSection('how-it-works')}
+            >
+              How It Works
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2"
+              onClick={openPreviewInNewTab}
+            >
+              Open Preview
+              <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
 

@@ -5,8 +5,13 @@ import { ArrowRight, Calendar, Zap, Shield, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const CTAFooterSection = () => {
+  const handleContactSales = () => {
+    // Simple demo scheduling functionality
+    alert('Thank you for your interest! Our sales team will contact you soon. Email: sales@clearqr.io | Phone: 1-800-CLEARQR');
+  };
+
   return (
-    <section className="py-20 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
+    <section id="contact" className="py-20 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -82,6 +87,7 @@ const CTAFooterSection = () => {
               variant="outline" 
               size="lg" 
               className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-12 py-6 text-xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 h-auto group"
+              onClick={handleContactSales}
             >
               <Calendar className="h-6 w-6 mr-3" />
               <span>Contact Sales</span>

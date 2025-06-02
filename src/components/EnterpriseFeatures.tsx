@@ -50,7 +50,7 @@ const EnterpriseFeatures = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section id="features" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -106,7 +106,7 @@ const EnterpriseFeatures = () => {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16">
-          <div className="inline-flex items-center gap-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="inline-flex items-center gap-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer">
             <span className="font-bold text-lg">See All Features</span>
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           </div>
