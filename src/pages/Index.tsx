@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import Navigation from '@/components/Navigation';
 import Hero from '@/components/Hero';
-import Features from '@/components/Features';
+import EnterpriseFeatures from '@/components/EnterpriseFeatures';
 import HowItWorks from '@/components/HowItWorks';
+import UseCases from '@/components/UseCases';
 import About from '@/components/About';
-import Testimonials from '@/components/Testimonials';
+import TestimonialsStats from '@/components/TestimonialsStats';
 import Pricing from '@/components/Pricing';
-import CTABanner from '@/components/CTABanner';
+import CTAFooterSection from '@/components/CTAFooterSection';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -41,12 +42,13 @@ const Index = () => {
       <div className="min-h-screen">
         <Navigation />
         <Hero />
-        <Features />
+        <EnterpriseFeatures />
         <HowItWorks />
+        <UseCases />
         <About />
-        <Testimonials />
+        <TestimonialsStats />
         <Pricing />
-        <CTABanner />
+        <CTAFooterSection />
         <Footer />
       </div>
     );

@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Play, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { ArrowRight, Check, Play, Sparkles, Users, TrendingUp, Shield, Zap, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import DemoButton from './demo/DemoButton';
 
 const Hero = () => {
   return (
@@ -15,51 +14,48 @@ const Hero = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center">
-          {/* Enhanced trust indicator */}
+          {/* Enterprise Trust Badge */}
           <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-blue-200/50 rounded-full text-sm font-medium text-blue-700 shadow-lg">
-              <Users className="h-4 w-4" />
-              <span>Trusted by 50,000+ businesses worldwide</span>
-              <div className="flex -space-x-1 ml-2">
-                <div className="w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
-                <div className="w-6 h-6 bg-blue-500 rounded-full border-2 border-white"></div>
-                <div className="w-6 h-6 bg-purple-500 rounded-full border-2 border-white"></div>
-              </div>
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/90 backdrop-blur-sm border border-blue-200/50 rounded-full text-sm font-semibold text-blue-700 shadow-lg">
+              <Shield className="h-5 w-5 text-green-500" />
+              <span>Enterprise-Grade Security</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-slate-600">GDPR Compliant</span>
             </div>
           </div>
 
           {/* Enhanced main headline */}
-          <div className="mb-8">
+          <div className="mb-10">
             <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 leading-[1.1] tracking-tight">
-              Create
+              <span className="block">Smarter</span>
               <span className="block relative">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Smart QR Codes
+                  QR Codes
                 </span>
                 <div className="absolute -top-4 -right-8 hidden md:block">
                   <Sparkles className="h-8 w-8 text-yellow-400 animate-pulse" />
                 </div>
               </span>
-              <span className="block text-slate-800">That Drive Results</span>
+              <span className="block text-slate-800">for Smarter Engagement</span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-4xl mx-auto leading-relaxed font-medium">
-              Transform your marketing with <span className="text-blue-600 font-semibold">dynamic QR codes</span> that track engagement, 
-              boost conversions, and provide <span className="text-purple-600 font-semibold">deep insights</span> into customer behavior.
+            <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-4xl mx-auto leading-relaxed font-medium">
+              Create <span className="text-blue-600 font-bold">dynamic QR codes</span>, track performance, and personalize every scan — 
+              <span className="text-purple-600 font-bold"> no coding required</span>.
             </p>
           </div>
 
           {/* Enhanced key benefits */}
-          <div className="flex flex-wrap justify-center gap-8 mb-10">
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
             {[
-              { icon: "🎨", text: "Custom Design" },
-              { icon: "📊", text: "Real-time Analytics" },
-              { icon: "⚡", text: "Bulk Generation" }
+              { icon: <Zap className="h-5 w-5" />, text: "Dynamic Generation", color: "blue" },
+              { icon: <TrendingUp className="h-5 w-5" />, text: "Real-time Analytics", color: "green" },
+              { icon: <Globe className="h-5 w-5" />, text: "Global Reach", color: "purple" }
             ].map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg border border-slate-200/50">
-                <span className="text-2xl">{benefit.icon}</span>
+              <div key={index} className="flex items-center gap-3 bg-white/95 backdrop-blur-sm px-6 py-4 rounded-full shadow-xl border border-slate-200/50 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                <div className={`text-${benefit.color}-600`}>{benefit.icon}</div>
                 <Check className="h-5 w-5 text-green-500" />
-                <span className="font-semibold text-slate-700">{benefit.text}</span>
+                <span className="font-bold text-slate-700">{benefit.text}</span>
               </div>
             ))}
           </div>
@@ -68,11 +64,11 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 h-auto" 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border-0 h-auto" 
               asChild
             >
               <Link to="/register">
-                <span className="mr-3">Create QR Code</span>
+                <span className="mr-3">Start Free</span>
                 <ArrowRight className="h-6 w-6" />
               </Link>
             </Button>
@@ -80,32 +76,29 @@ const Hero = () => {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-white/90 backdrop-blur-sm border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 px-10 py-4 text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 h-auto group"
+              className="bg-white/95 backdrop-blur-sm border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 px-12 py-6 text-xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 h-auto group"
             >
               <Play className="h-6 w-6 mr-3 group-hover:text-blue-600 transition-colors" />
-              <span className="group-hover:text-blue-600 transition-colors">Watch Demo</span>
+              <span className="group-hover:text-blue-600 transition-colors">Schedule Demo</span>
             </Button>
           </div>
 
           {/* Enhanced trust benefits */}
-          <div className="flex flex-wrap justify-center gap-2 mb-16 text-sm">
+          <div className="flex flex-wrap justify-center gap-3 mb-16 text-sm">
             {[
-              "No credit card required",
-              "14-day free trial", 
-              "Cancel anytime",
-              "24/7 support"
-            ].map((benefit, index, arr) => (
-              <React.Fragment key={index}>
-                <span className="text-slate-600 font-medium bg-white/60 px-3 py-1 rounded-full">
-                  {benefit}
-                </span>
-                {index < arr.length - 1 && <span className="text-slate-400 self-center">•</span>}
-              </React.Fragment>
+              "✓ No credit card required",
+              "✓ 14-day free trial", 
+              "✓ Cancel anytime",
+              "✓ Enterprise support"
+            ].map((benefit, index) => (
+              <span key={index} className="text-slate-600 font-semibold bg-white/70 px-4 py-2 rounded-full border border-slate-200/50">
+                {benefit}
+              </span>
             ))}
           </div>
 
-          {/* Enhanced Dashboard Preview */}
-          <div className="max-w-5xl mx-auto mb-16">
+          {/* Enterprise Dashboard Preview with Stats */}
+          <div className="max-w-6xl mx-auto mb-16">
             <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200/50 transform hover:scale-[1.02] transition-all duration-500">
               {/* Browser chrome */}
               <div className="bg-gradient-to-r from-slate-100 to-slate-200 px-6 py-4 border-b border-slate-300/50">
@@ -117,10 +110,13 @@ const Hero = () => {
                       <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
                     </div>
                     <div className="bg-white/80 px-4 py-1 rounded-lg text-sm font-medium text-slate-600 shadow-sm">
-                      🔒 clearqr.io/dashboard
+                      🔒 enterprise.clearqr.io/dashboard
                     </div>
                   </div>
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-bold text-green-600">LIVE</span>
+                  </div>
                 </div>
               </div>
               
@@ -128,53 +124,72 @@ const Hero = () => {
               <div className="p-8 bg-gradient-to-br from-white to-slate-50">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                   {[
-                    { value: "12,847", label: "Total Scans", color: "blue", icon: "📊" },
-                    { value: "24", label: "Active Campaigns", color: "green", icon: "🚀" },
-                    { value: "18.4%", label: "Conversion Rate", color: "purple", icon: "📈" },
-                    { value: "$24.8K", label: "Revenue", color: "orange", icon: "💰" }
+                    { value: "2.4M", label: "Monthly Scans", color: "blue", icon: "📊", trend: "+24%" },
+                    { value: "1,847", label: "Active Campaigns", color: "green", icon: "🚀", trend: "+12%" },
+                    { value: "34.8%", label: "Engagement Rate", color: "purple", icon: "📈", trend: "+8%" },
+                    { value: "$847K", label: "Revenue Tracked", color: "orange", icon: "💰", trend: "+31%" }
                   ].map((stat, index) => (
-                    <div key={index} className="text-center bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-slate-100">
-                      <div className="text-2xl mb-2">{stat.icon}</div>
-                      <div className={`text-3xl font-bold text-${stat.color}-600 mb-1`}>{stat.value}</div>
-                      <div className="text-sm text-slate-600 font-medium">{stat.label}</div>
+                    <div key={index} className="text-center bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-slate-100 hover:shadow-2xl transition-all duration-300">
+                      <div className="text-3xl mb-3">{stat.icon}</div>
+                      <div className={`text-3xl font-bold text-${stat.color}-600 mb-2`}>{stat.value}</div>
+                      <div className="text-sm text-slate-600 font-medium mb-2">{stat.label}</div>
+                      <div className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        {stat.trend}
+                      </div>
                     </div>
                   ))}
                 </div>
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 px-6 py-3 rounded-full">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-emerald-700 font-bold">Live Analytics Dashboard</span>
+                  <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 px-8 py-4 rounded-full border border-blue-200/50">
+                    <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-slate-700 font-bold text-lg">Enterprise Analytics Dashboard</span>
+                    <Users className="h-5 w-5 text-blue-600" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Enhanced trust logos */}
-          <div className="mb-8">
-            <p className="text-slate-600 mb-8 font-medium text-lg">Trusted by industry leaders worldwide</p>
-            <div className="flex justify-center items-center space-x-12 opacity-80">
+          {/* Trusted by section with major brands */}
+          <div className="mb-12">
+            <p className="text-slate-600 mb-8 font-semibold text-lg">Trusted by 50,000+ businesses worldwide</p>
+            <div className="flex justify-center items-center space-x-16 opacity-70">
               <img 
                 src="/lovable-uploads/b4c3c62e-0d2e-40ad-b6b5-53c875ec53d1.png" 
                 alt="Amazon" 
-                className="h-10 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
+                className="h-12 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
               />
               <img 
                 src="/lovable-uploads/02a40581-58f3-4a8f-9289-addc9f13cab0.png" 
                 alt="KitKat" 
-                className="h-10 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
+                className="h-12 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
               />
               <img 
                 src="/lovable-uploads/be72ecde-71f8-48bc-bf62-2eca4a681d94.png" 
                 alt="Pepsi" 
-                className="h-10 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
+                className="h-12 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
               />
               <img 
                 src="/lovable-uploads/eaf3b04c-dd24-42ad-9c40-e965dcff4a0f.png" 
                 alt="Toyota" 
-                className="h-10 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
+                className="h-12 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110"
               />
             </div>
+          </div>
+
+          {/* Social proof stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              { stat: "5M+", label: "QR Scans Monthly", icon: "📱" },
+              { stat: "99.9%", label: "Uptime Guaranteed", icon: "⚡" },
+              { stat: "150+", label: "Countries Served", icon: "🌍" }
+            ].map((item, index) => (
+              <div key={index} className="text-center bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200/50">
+                <div className="text-3xl mb-2">{item.icon}</div>
+                <div className="text-3xl font-bold text-blue-600 mb-1">{item.stat}</div>
+                <div className="text-slate-600 font-medium">{item.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
