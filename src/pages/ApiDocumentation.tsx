@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Code, Database, Key, Globe, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Code, Database, Key, Globe, ArrowLeft, ExternalLink, Smartphone, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -12,8 +12,8 @@ const ApiDocumentation = () => {
     {
       method: 'POST',
       endpoint: '/api/qr/generate',
-      description: 'Generate a new QR code',
-      parameters: ['url', 'type', 'customization']
+      description: 'Generate a new QR code for mobile apps',
+      parameters: ['url', 'type', 'customization', 'app_metadata']
     },
     {
       method: 'GET',
@@ -30,21 +30,36 @@ const ApiDocumentation = () => {
     {
       method: 'GET',
       endpoint: '/api/analytics/{id}',
-      description: 'Get QR code analytics',
-      parameters: ['id', 'date_range']
+      description: 'Get QR code analytics for mobile tracking',
+      parameters: ['id', 'date_range', 'device_type']
+    },
+    {
+      method: 'POST',
+      endpoint: '/api/mobile/register',
+      description: 'Register mobile app for API access',
+      parameters: ['app_name', 'package_name', 'platform']
     }
   ];
 
   const handleGetApiKey = () => {
     toast.success('Redirecting to API key generation...');
-    // In a real app, this would redirect to the API key generation page
-    window.open('/settings', '_blank');
+    // Navigate to settings with API key section
+    window.open('/settings?tab=api', '_blank');
   };
 
   const handleViewExamples = () => {
-    toast.success('Opening code examples...');
-    // In a real app, this would open a documentation page with examples
-    window.open('/help-center', '_blank');
+    toast.success('Opening mobile SDK examples...');
+    // In a real app, this would open mobile-specific documentation
+    window.open('/help-center?section=mobile-sdk', '_blank');
+  };
+
+  const handleDownloadSDK = () => {
+    toast.success('Downloading Android SDK...');
+    // Mock download for Android SDK
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = 'clearqr-android-sdk.zip';
+    link.click();
   };
 
   return (
@@ -56,7 +71,7 @@ const ApiDocumentation = () => {
             Back to Home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">API Documentation</h1>
-          <p className="text-xl text-gray-600">Integrate ClearQR.io into your applications with our powerful API</p>
+          <p className="text-xl text-gray-600">Build APK applications with ClearQR.io's powerful mobile API</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -65,17 +80,36 @@ const ApiDocumentation = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Key className="h-5 w-5" />
-                  Authentication
+                  Authentication for Mobile Apps
                 </CardTitle>
                 <CardDescription>
-                  All API requests require authentication using API keys
+                  Secure your APK with API key authentication
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
-                  <p>curl -H "Authorization: Bearer YOUR_API_KEY"</p>
-                  <p>     -H "Content-Type: application/json"</p>
-                  <p>     https://api.clearqr.io/v1/</p>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Android Implementation</h4>
+                    <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
+                      <p>// Add to your build.gradle</p>
+                      <p>implementation 'io.clearqr:android-sdk:1.0.0'</p>
+                      <br />
+                      <p>// Initialize in your Application class</p>
+                      <p>ClearQR.initialize(this, "YOUR_API_KEY");</p>
+                      <br />
+                      <p>// Generate QR code</p>
+                      <p>ClearQR.generateQR(url, callback);</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h4 className="font-semibold text-yellow-900 mb-2">🔐 Security Best Practices</h4>
+                    <ul className="text-sm text-yellow-800 space-y-1">
+                      <li>• Store API keys in BuildConfig or encrypted preferences</li>
+                      <li>• Use ProGuard to obfuscate your API key</li>
+                      <li>• Implement certificate pinning for production apps</li>
+                      <li>• Rotate API keys regularly for security</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -84,7 +118,7 @@ const ApiDocumentation = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Database className="h-5 w-5" />
-                  API Endpoints
+                  Mobile API Endpoints
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -114,8 +148,8 @@ const ApiDocumentation = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Code className="h-5 w-5" />
-                  Quick Start
+                  <Smartphone className="h-5 w-5" />
+                  Mobile Development
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -134,14 +168,22 @@ const ApiDocumentation = () => {
                     onClick={handleViewExamples}
                   >
                     <Code className="h-4 w-4 mr-2" />
-                    View Examples
+                    View SDK Examples
                     <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleDownloadSDK}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Android SDK
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
@@ -161,6 +203,32 @@ const ApiDocumentation = () => {
                   <div className="flex justify-between">
                     <span>Enterprise:</span>
                     <span>Unlimited</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>APK Integration Guide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Step 1: Get API Key</h4>
+                    <p className="text-gray-600">Generate your API key from the settings page</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Step 2: Add SDK</h4>
+                    <p className="text-gray-600">Include our Android SDK in your project</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Step 3: Initialize</h4>
+                    <p className="text-gray-600">Configure the SDK with your API key</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Step 4: Generate QR</h4>
+                    <p className="text-gray-600">Start generating QR codes in your app</p>
                   </div>
                 </div>
               </CardContent>

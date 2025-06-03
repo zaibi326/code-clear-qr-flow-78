@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FileText, Plus, Eye, Download, Trash2, Search, Grid, List, Copy, Edit } from 'lucide-react';
 import { Template } from '@/types/template';
+import { toast } from 'sonner';
 
 interface TemplateManageTabProps {
   templates: Template[];
@@ -33,8 +34,28 @@ export const TemplateManageTab = ({
 
   const handlePreview = (template: Template) => {
     if (template.preview) {
-      window.open(template.preview, '_blank');
+      // Create a modal or new window for preview
+      const previewWindow = window.open('', '_blank', 'width=800,height=600');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <html>
+            <head><title>Template Preview - ${template.name}</title></head>
+            <body style="margin:0; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+              <img src="${template.preview}" alt="${template.name}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+            </body>
+          </html>
+        `);
+        previewWindow.document.close();
+      }
+      toast.success(`Opened preview for ${template.name}`);
+    } else {
+      toast.error('Preview not available for this template');
     }
+  };
+
+  const handleEdit = (template: Template) => {
+    onTemplateEdit(template);
+    toast.success(`Opening editor for ${template.name}`);
   };
 
   const handleDownload = (template: Template) => {
@@ -47,12 +68,28 @@ export const TemplateManageTab = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${template.name}`);
     } else {
       // For templates without files, create a download link for the preview
       const link = document.createElement('a');
       link.href = template.preview;
       link.download = `${template.name}.png`;
       link.click();
+      toast.success(`Downloaded ${template.name}`);
+    }
+  };
+
+  const handleDuplicate = (templateId: string) => {
+    onTemplateDuplicate(templateId);
+    const template = templates.find(t => t.id === templateId);
+    toast.success(`Duplicated ${template?.name || 'template'}`);
+  };
+
+  const handleDelete = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (confirm(`Are you sure you want to delete "${template?.name}"? This action cannot be undone.`)) {
+      onTemplateDelete(templateId);
+      toast.success(`Deleted ${template?.name || 'template'}`);
     }
   };
 
@@ -145,7 +182,8 @@ export const TemplateManageTab = ({
                   <img 
                     src={template.preview} 
                     alt={template.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-cover cursor-pointer"
+                    onClick={() => handlePreview(template)}
                   />
                 )}
                 
@@ -175,14 +213,14 @@ export const TemplateManageTab = ({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onTemplateEdit(template)}
+                    onClick={() => handleEdit(template)}
                   >
                     <Edit className="w-3 h-3" />
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => onTemplateDuplicate(template.id)}
+                    onClick={() => handleDuplicate(template.id)}
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
@@ -198,7 +236,7 @@ export const TemplateManageTab = ({
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-purple-100 rounded-lg">
+                    <div className="p-3 bg-purple-100 rounded-lg cursor-pointer" onClick={() => handlePreview(template)}>
                       <FileText className="h-6 w-6 text-purple-600" />
                     </div>
                     <div>
@@ -228,7 +266,7 @@ export const TemplateManageTab = ({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => onTemplateEdit(template)}
+                      onClick={() => handleEdit(template)}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -244,7 +282,7 @@ export const TemplateManageTab = ({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => onTemplateDuplicate(template.id)}
+                      onClick={() => handleDuplicate(template.id)}
                     >
                       <Copy className="h-4 w-4 mr-1" />
                       Duplicate
@@ -253,7 +291,7 @@ export const TemplateManageTab = ({
                       variant="outline" 
                       size="sm" 
                       className="text-red-600 hover:text-red-700"
-                      onClick={() => onTemplateDelete(template.id)}
+                      onClick={() => handleDelete(template.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
