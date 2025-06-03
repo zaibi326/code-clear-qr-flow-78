@@ -68,7 +68,11 @@ const TechFeatures = () => {
     <section ref={sectionRef} className="py-32 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-purple-900/50"></div>
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"><animate attributeName="r" values="1;2;1" dur="2s" repeatCount="indefinite"/></circle></svg>')] opacity-30"></div>
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-20 left-20 w-4 h-4 bg-white rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-40 w-2 h-2 bg-white rounded-full animate-ping"></div>
+        <div className="absolute bottom-32 left-1/3 w-3 h-3 bg-white rounded-full animate-bounce"></div>
+      </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}

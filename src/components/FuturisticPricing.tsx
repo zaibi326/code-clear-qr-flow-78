@@ -77,7 +77,11 @@ const FuturisticPricing = () => {
     <section className="py-32 relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,0 80,30 50,60 20,30" fill="white" opacity="0.03"><animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="20s" repeatCount="indefinite"/></polygon></svg>')] opacity-30"></div>
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-20 w-20 h-20 bg-purple-500/20 rounded-full animate-pulse"></div>
+          <div className="absolute top-40 right-32 w-16 h-16 bg-blue-500/20 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-32 left-1/3 w-24 h-24 bg-cyan-500/20 rounded-full animate-ping"></div>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -209,7 +213,7 @@ const FuturisticPricing = () => {
                       className={`w-full py-6 text-lg font-bold rounded-2xl transition-all duration-300 group-hover:scale-105 ${
                         plan.popular
                           ? `bg-gradient-to-r ${plan.gradient} hover:shadow-2xl hover:shadow-purple-500/25 text-white border-0`
-                          : `border-2 bg-gradient-to-r ${plan.bgGradient} hover:bg-gradient-to-r hover:${plan.bgGradient.replace('/10', '/20')} text-white border-white/20 hover:border-white/40`
+                          : `border-2 bg-gradient-to-r ${plan.bgGradient} hover:bg-gradient-to-r text-white border-white/20 hover:border-white/40`
                       }`}
                       asChild
                     >

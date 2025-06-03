@@ -43,7 +43,11 @@ const Index = () => {
       <div className="min-h-screen overflow-hidden relative">
         {/* Animated Background */}
         <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="g" cx="50%" cy="50%"><stop offset="0%" stop-color="rgb(59,130,246)" stop-opacity="0.3"/><stop offset="100%" stop-color="transparent"/></radialGradient></defs><circle cx="200" cy="200" r="100" fill="url(%23g)"><animate attributeName="cx" values="200;800;200" dur="20s" repeatCount="indefinite"/></circle><circle cx="800" cy="400" r="150" fill="url(%23g)"><animate attributeName="cy" values="400;100;400" dur="15s" repeatCount="indefinite"/></circle><circle cx="500" cy="700" r="120" fill="url(%23g)"><animate attributeName="r" values="120;200;120" dur="10s" repeatCount="indefinite"/></circle></svg>')] opacity-40"></div>
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute top-20 left-20 w-20 h-20 bg-blue-500/30 rounded-full animate-pulse"></div>
+            <div className="absolute top-40 right-32 w-16 h-16 bg-purple-500/30 rounded-full animate-bounce"></div>
+            <div className="absolute bottom-32 left-1/3 w-24 h-24 bg-cyan-500/30 rounded-full animate-ping"></div>
+          </div>
           
           {/* Particle Effects */}
           <div className="absolute inset-0">

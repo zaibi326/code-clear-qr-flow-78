@@ -29,19 +29,23 @@ const NextGenCTA = () => {
     <section className="py-32 relative overflow-hidden">
       {/* Dynamic Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(%23glow)"><circle cx="200" cy="200" r="2" fill="cyan" opacity="0.8"><animate attributeName="r" values="2;8;2" dur="4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,0;800,600;0,0" dur="20s" repeatCount="indefinite"/></circle><circle cx="800" cy="400" r="3" fill="purple" opacity="0.6"><animate attributeName="r" values="3;12;3" dur="6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,0;-600,200;0,0" dur="25s" repeatCount="indefinite"/></circle><circle cx="500" cy="700" r="2" fill="blue" opacity="0.7"><animate attributeName="r" values="2;10;2" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,0;200,-400;0,0" dur="15s" repeatCount="indefinite"/></circle></g></svg>')] opacity-40"></div>
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute top-20 left-20 w-20 h-20 bg-cyan-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute top-40 right-32 w-16 h-16 bg-purple-500/30 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-32 left-1/3 w-24 h-24 bg-blue-500/30 rounded-full animate-ping"></div>
+        </div>
         
         {/* Particle Network */}
         <div className="absolute inset-0">
           {mounted && Array.from({ length: 100 }).map((_, i) => (
             <div
               key={i}
-              className="absolute w-px h-px bg-white rounded-full opacity-30"
+              className="absolute w-px h-px bg-white rounded-full opacity-30 animate-pulse"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animation: `twinkle ${2 + Math.random() * 4}s infinite`,
-                animationDelay: `${Math.random() * 5}s`
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${2 + Math.random() * 3}s`
               }}
             />
           ))}
@@ -198,19 +202,6 @@ const NextGenCTA = () => {
           </div>
         </div>
       </div>
-
-      {/* Custom Animations */}
-      <style jsx>{`
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.5); }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: rotate(var(--rotation)) translateX(8rem) translateY(-50%) translateZ(0); }
-          50% { transform: rotate(var(--rotation)) translateX(10rem) translateY(-50%) translateZ(0); }
-        }
-      `}</style>
     </section>
   );
 };
