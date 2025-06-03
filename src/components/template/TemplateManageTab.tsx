@@ -24,11 +24,18 @@ export const TemplateManageTab = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [filterType, setFilterType] = useState<'all' | 'pdf' | 'image'>('all');
 
+  // Fixed filtering logic
   const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || 
-      (filterType === 'pdf' && template.file?.type === 'application/pdf') ||
-      (filterType === 'image' && template.file?.type !== 'application/pdf');
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (template.id && template.id.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    let matchesFilter = true;
+    if (filterType === 'pdf') {
+      matchesFilter = template.file?.type === 'application/pdf';
+    } else if (filterType === 'image') {
+      matchesFilter = template.file?.type !== 'application/pdf' && template.file?.type?.startsWith('image/');
+    }
+    
     return matchesSearch && matchesFilter;
   });
 
@@ -111,23 +118,33 @@ export const TemplateManageTab = ({
 
   return (
     <div className="space-y-6">
-      {/* Search and Filter Bar */}
+      {/* Search and Filter Bar with improved functionality */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Search templates..."
+            placeholder="Search templates by name or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+            >
+              ×
+            </Button>
+          )}
         </div>
         
         <div className="flex gap-2">
           <select 
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Types</option>
             <option value="pdf">PDF Only</option>
@@ -164,6 +181,11 @@ export const TemplateManageTab = ({
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
           Showing {filteredTemplates.length} of {templates.length} templates
+          {searchTerm && (
+            <span className="ml-2 text-blue-600">
+              for "{searchTerm}"
+            </span>
+          )}
         </div>
       </div>
 
@@ -307,7 +329,9 @@ export const TemplateManageTab = ({
         <div className="text-center py-12">
           <Search className="mx-auto h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
-          <p className="text-gray-600 mb-6">Try adjusting your search or filter criteria</p>
+          <p className="text-gray-600 mb-6">
+            No templates match your search "{searchTerm}". Try adjusting your search or filter criteria.
+          </p>
           <Button 
             variant="outline" 
             onClick={() => {

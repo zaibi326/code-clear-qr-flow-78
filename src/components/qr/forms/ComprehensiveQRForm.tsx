@@ -22,15 +22,17 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
 
   // Update QR config when form data changes
   useEffect(() => {
+    console.log('Form data changed:', formData);
     if (formData.url) {
       setConfig(prev => ({
         ...prev,
         content: formData.url,
         foregroundColor: formData.foregroundColor || '#000000',
-        backgroundColor: formData.backgroundColor || '#FFFFFF'
+        backgroundColor: formData.backgroundColor || '#FFFFFF',
+        logo: formData.logoUrl || undefined
       }));
     }
-  }, [formData.url, formData.foregroundColor, formData.backgroundColor, setConfig]);
+  }, [formData.url, formData.foregroundColor, formData.backgroundColor, formData.logoUrl, setConfig]);
 
   const handleColorChange = (field: string, color: string) => {
     console.log(`Color change: ${field} = ${color}`);
@@ -45,8 +47,8 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
   const handleSave = async () => {
     console.log('Save button clicked', formData);
     
-    // Validate required fields
-    if (!formData.url) {
+    // Enhanced validation
+    if (!formData.url || formData.url.trim() === '') {
       toast({
         title: "Validation Error",
         description: "Website URL is required",
@@ -55,7 +57,19 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
       return;
     }
 
-    if (!formData.qrName) {
+    // URL validation
+    try {
+      new URL(formData.url);
+    } catch {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid URL (e.g., https://example.com)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.qrName || formData.qrName.trim() === '') {
       toast({
         title: "Validation Error", 
         description: "QR Code Name is required",
@@ -74,7 +88,8 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
       
       console.log('QR Code data to save:', {
         ...formData,
-        qrImageData: generatedQR
+        qrImageData: generatedQR,
+        logoFile: logoFile?.name
       });
       
     } catch (error) {
@@ -88,6 +103,7 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
   };
 
   const handleInputChangeWithColorUpdate = (field: string, value: string) => {
+    console.log(`Input change: ${field} = ${value}`);
     onInputChange(field, value);
     if (field === 'foregroundColor' || field === 'backgroundColor') {
       handleColorChange(field, value);
@@ -95,6 +111,14 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
     if (field === 'url') {
       setConfig(prev => ({ ...prev, content: value }));
     }
+    if (field === 'logoUrl') {
+      setConfig(prev => ({ ...prev, logo: value || undefined }));
+    }
+  };
+
+  const handleLogoFileChange = (file: File) => {
+    console.log('Logo file changed in main form:', file.name);
+    setLogoFile(file);
   };
 
   return (
@@ -114,7 +138,7 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
                 formData={formData}
                 logoFile={logoFile}
                 onInputChange={handleInputChangeWithColorUpdate}
-                onLogoFileChange={setLogoFile}
+                onLogoFileChange={handleLogoFileChange}
                 onSave={handleSave}
               />
             </div>

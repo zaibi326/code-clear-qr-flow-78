@@ -1,8 +1,12 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileImage, Plus, Check } from 'lucide-react';
+import { FileImage, Plus, Check, Upload } from 'lucide-react';
 import { Template } from '@/types/template';
+import { useDropzone } from 'react-dropzone';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface TemplateSelectionProps {
   selectedTemplate: Template | null;
@@ -10,8 +14,7 @@ interface TemplateSelectionProps {
 }
 
 const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelectionProps) => {
-  // Mock templates for demo - in real app, this would come from props or API
-  const [templates] = useState<Template[]>([
+  const [templates, setTemplates] = useState<Template[]>([
     {
       id: 'template-1',
       name: 'Marketing Flyer',
@@ -31,6 +34,62 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
       updatedAt: new Date()
     }
   ]);
+  
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [templateName, setTemplateName] = useState('');
+  const [uploadPreview, setUploadPreview] = useState<string>('');
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (file) {
+        setUploadFile(file);
+        setTemplateName(file.name.split('.')[0]);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setUploadPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg'],
+      'application/pdf': ['.pdf']
+    },
+    maxSize: 10 * 1024 * 1024,
+    multiple: false
+  });
+
+  const handleUploadTemplate = () => {
+    if (!uploadFile || !templateName.trim()) return;
+
+    const newTemplate: Template = {
+      id: `template-${Date.now()}`,
+      name: templateName.trim(),
+      file: uploadFile,
+      preview: uploadPreview,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    setTemplates(prev => [newTemplate, ...prev]);
+    setShowUploadModal(false);
+    setUploadFile(null);
+    setTemplateName('');
+    setUploadPreview('');
+    
+    // Auto-select the newly uploaded template
+    onTemplateSelect(newTemplate);
+  };
+
+  const openUploadModal = () => {
+    setShowUploadModal(true);
+    setUploadFile(null);
+    setTemplateName('');
+    setUploadPreview('');
+  };
 
   return (
     <div>
@@ -46,7 +105,7 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
             <Plus className="w-12 h-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Create New Template</h3>
             <p className="text-sm text-gray-500 mb-4">Upload a new marketing template</p>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={openUploadModal}>
               Upload Template
             </Button>
           </CardContent>
@@ -110,6 +169,84 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
             <span className="text-blue-800 font-medium">
               Selected: {selectedTemplate.name}
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Upload New Template</h3>
+            
+            <div className="space-y-4">
+              {/* File Upload Area */}
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                  isDragActive 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">
+                  {isDragActive ? 'Drop file here' : 'Drag & drop or click to upload'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  PNG, JPG, PDF up to 10MB
+                </p>
+              </div>
+
+              {/* Preview */}
+              {uploadPreview && (
+                <div className="mt-4">
+                  {uploadFile?.type === 'application/pdf' ? (
+                    <div className="w-full h-32 bg-red-100 rounded flex items-center justify-center">
+                      <FileImage className="w-8 h-8 text-red-600" />
+                      <span className="ml-2 text-red-600 font-medium">PDF</span>
+                    </div>
+                  ) : (
+                    <img 
+                      src={uploadPreview} 
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded"
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Template Name */}
+              <div>
+                <Label htmlFor="templateName">Template Name</Label>
+                <Input
+                  id="templateName"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="Enter template name"
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUploadModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUploadTemplate}
+                  disabled={!uploadFile || !templateName.trim()}
+                  className="flex-1"
+                >
+                  Upload Template
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

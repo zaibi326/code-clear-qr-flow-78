@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Upload, X } from 'lucide-react';
 import { ColorSelector } from './ColorSelector';
 import { LogoUploader } from './LogoUploader';
 
@@ -28,34 +28,88 @@ export function SingleRecordForm({
   const zipCodes = ['10001', '90210', '60601', '77001', '85001', '19101'];
 
   const handleUrlChange = (value: string) => {
-    onInputChange('url', value);
+    // Ensure URL has proper protocol
+    let processedUrl = value;
+    if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+      processedUrl = `https://${value}`;
+    }
+    onInputChange('url', processedUrl);
+    console.log('URL updated:', processedUrl);
   };
 
   const handleLogoSelect = (file: File) => {
+    console.log('Logo file selected:', file.name, file.size);
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, JPEG)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const logoUrl = e.target?.result as string;
+      console.log('Logo converted to base64, length:', logoUrl?.length);
       onInputChange('logoUrl', logoUrl);
+    };
+    reader.onerror = () => {
+      console.error('Failed to read logo file');
+      alert('Failed to read logo file. Please try again.');
     };
     reader.readAsDataURL(file);
     onLogoFileChange(file);
   };
 
+  const removeLogo = () => {
+    onInputChange('logoUrl', '');
+    // Reset file input
+    const fileInput = document.getElementById('logo-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Website URL */}
+      {/* Website URL with validation */}
       <div className="space-y-2">
         <Label htmlFor="websiteUrl" className="text-sm font-medium text-gray-700">
-          Website Url
+          Website URL *
         </Label>
-        <Input
-          id="websiteUrl"
-          type="url"
-          value={formData.url || 'https://www.simplestreethomes.com'}
-          onChange={(e) => handleUrlChange(e.target.value)}
-          className="w-full bg-blue-50 border-blue-200"
-          placeholder="Enter website URL"
-        />
+        <div className="relative">
+          <Input
+            id="websiteUrl"
+            type="url"
+            value={formData.url || ''}
+            onChange={(e) => handleUrlChange(e.target.value)}
+            className="w-full bg-blue-50 border-blue-200 pr-10"
+            placeholder="Enter website URL (e.g., example.com)"
+            required
+          />
+          {formData.url && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(formData.url, '_blank')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+              title="Test URL"
+            >
+              ↗
+            </Button>
+          )}
+        </div>
+        {formData.url && (
+          <p className="text-xs text-gray-500">
+            Preview: {formData.url}
+          </p>
+        )}
       </div>
 
       {/* Color Selection Row */}
@@ -74,12 +128,61 @@ export function SingleRecordForm({
         />
       </div>
 
-      {/* Logo Upload and Project Selection */}
+      {/* Enhanced Logo Upload and Project Selection */}
       <div className="grid grid-cols-2 gap-4">
-        <LogoUploader
-          logoFile={logoFile}
-          onFileSelect={handleLogoSelect}
-        />
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">
+            Upload Logo
+          </Label>
+          <div className="space-y-2">
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/gif"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleLogoSelect(file);
+                  }
+                }}
+                className="hidden"
+                id="logo-upload"
+              />
+              <label
+                htmlFor="logo-upload"
+                className="flex items-center justify-center w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {logoFile ? logoFile.name : 'Choose Logo File'}
+              </label>
+            </div>
+            
+            {/* Logo Preview */}
+            {formData.logoUrl && (
+              <div className="relative inline-block">
+                <img 
+                  src={formData.logoUrl} 
+                  alt="Logo preview" 
+                  className="w-16 h-16 object-contain border border-gray-200 rounded"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={removeLogo}
+                  className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+            
+            <p className="text-xs text-gray-500">
+              PNG, JPG, GIF up to 5MB
+            </p>
+          </div>
+        </div>
+        
         <div className="space-y-2">
           <Label className="text-sm font-medium text-gray-700">
             Select Project
@@ -291,6 +394,7 @@ export function SingleRecordForm({
         <Button 
           onClick={onSave}
           className="bg-green-600 hover:bg-green-700 text-white px-8 flex items-center gap-2"
+          disabled={!formData.url || !formData.qrName}
         >
           <Save className="w-4 h-4" />
           Save QR Code
