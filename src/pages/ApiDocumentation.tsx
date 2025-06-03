@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Code, Database, Key, Globe, ArrowLeft } from 'lucide-react';
+import { Code, Database, Key, Globe, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const ApiDocumentation = () => {
   const endpoints = [
@@ -33,6 +34,18 @@ const ApiDocumentation = () => {
       parameters: ['id', 'date_range']
     }
   ];
+
+  const handleGetApiKey = () => {
+    toast.success('Redirecting to API key generation...');
+    // In a real app, this would redirect to the API key generation page
+    window.open('/settings', '_blank');
+  };
+
+  const handleViewExamples = () => {
+    toast.success('Opening code examples...');
+    // In a real app, this would open a documentation page with examples
+    window.open('/help-center', '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,11 +120,22 @@ const ApiDocumentation = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button className="w-full" asChild>
-                    <Link to="/register">Get API Key</Link>
+                  <Button 
+                    className="w-full" 
+                    onClick={handleGetApiKey}
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Get API Key
+                    <ExternalLink className="h-4 w-4 ml-2" />
                   </Button>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link to="/support">View Examples</Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleViewExamples}
+                  >
+                    <Code className="h-4 w-4 mr-2" />
+                    View Examples
+                    <ExternalLink className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </CardContent>
