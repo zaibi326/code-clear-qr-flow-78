@@ -3,15 +3,10 @@ import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
-import { AnalyticsStats } from '@/components/analytics/AnalyticsStats';
 import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
-import { QRCodeTable } from '@/components/analytics/QRCodeTable';
 import { UserInteractionLog } from '@/components/analytics/UserInteractionLog';
 import { CampaignInsights } from '@/components/analytics/CampaignInsights';
-import { ScanActivityChart } from '@/components/analytics/ScanActivityChart';
-import { CampaignPerformanceChart } from '@/components/analytics/CampaignPerformanceChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Analytics = () => {
@@ -22,26 +17,9 @@ const Analytics = () => {
         <main className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[240px] transition-all duration-300 max-w-full" style={{ boxSizing: 'border-box' }}>
           <DashboardTopbar />
           
-          {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Analytics</h1>
-                  <p className="text-sm text-gray-600 mt-2">Track your QR code performance and scan analytics</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Main Content */}
           <div className="flex-1 overflow-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-              {/* Filters */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <AnalyticsFilters />
-              </div>
-              
               {/* Tabs Content */}
               <Tabs defaultValue="overview" className="w-full">
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
