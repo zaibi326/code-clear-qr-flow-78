@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,11 +15,11 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
     console.log('Mode selected:', mode);
     
     if (mode === 'single') {
-      // Navigate to single QR code creation with URL type pre-selected
-      navigate('/create?type=url');
+      // Navigate to dedicated single QR code creation page
+      navigate('/create-single');
     } else {
-      // Navigate to bulk data selector for bulk creation
-      navigate('/bulk-data-selector');
+      // Navigate to dedicated bulk QR code creation page
+      navigate('/create-bulk');
     }
     
     onModeSelect?.(mode);
