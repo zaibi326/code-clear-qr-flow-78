@@ -1,104 +1,179 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Rocket, FileText, QrCode, BarChart3 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { CampaignWizard } from './CampaignWizard';
+import { CampaignTemplateSelector } from './CampaignTemplateSelector';
+import { CampaignScheduler } from './CampaignScheduler';
+import { Campaign } from '@/types/campaign';
+import { toast } from 'sonner';
+import { 
+  Wand2, 
+  Calendar, 
+  FileText, 
+  ArrowLeft,
+  Rocket
+} from 'lucide-react';
 
 interface CreateCampaignTabProps {
-  onStartCampaign?: () => void;
+  onCampaignCreate: (campaign: Campaign) => void;
 }
 
-export const CreateCampaignTab = ({ onStartCampaign }: CreateCampaignTabProps) => {
-  const features = [
-    {
-      icon: FileText,
-      title: 'Template Selection',
-      description: 'Choose from your uploaded templates or library templates'
-    },
-    {
-      icon: QrCode,
-      title: 'QR Code Assignment',
-      description: 'Assign unique QR codes with custom data to each material'
-    },
-    {
-      icon: Rocket,
-      title: 'Bulk Generation',
-      description: 'Generate hundreds of personalized materials at once'
-    },
-    {
-      icon: BarChart3,
-      title: 'Analytics Tracking',
-      description: 'Track scans and engagement for each generated material'
-    }
-  ];
+export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) => {
+  const [currentView, setCurrentView] = useState<'options' | 'wizard' | 'templates' | 'scheduler'>('options');
+
+  const handleCreateCampaign = (campaign: Campaign) => {
+    onCampaignCreate(campaign);
+    toast.success(`Campaign "${campaign.name}" created successfully!`);
+    setCurrentView('options');
+  };
+
+  const handleTemplateSelect = (template: any) => {
+    toast.success(`Template "${template.name}" selected. Redirecting to campaign wizard...`);
+    setTimeout(() => setCurrentView('wizard'), 1000);
+  };
+
+  const handleScheduleCampaign = (schedule: any) => {
+    toast.success(`Campaign "${schedule.name}" scheduled successfully!`);
+    setCurrentView('options');
+  };
+
+  const handleBackToOptions = () => {
+    setCurrentView('options');
+  };
+
+  if (currentView === 'wizard') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleBackToOptions}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Options
+          </Button>
+          <h2 className="text-2xl font-bold text-gray-900">Campaign Creation Wizard</h2>
+        </div>
+        <CampaignWizard onCampaignCreate={handleCreateCampaign} />
+      </div>
+    );
+  }
+
+  if (currentView === 'templates') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleBackToOptions}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Options
+          </Button>
+        </div>
+        <CampaignTemplateSelector onTemplateSelect={handleTemplateSelect} />
+      </div>
+    );
+  }
+
+  if (currentView === 'scheduler') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={handleBackToOptions}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Options
+          </Button>
+        </div>
+        <CampaignScheduler onScheduleCampaign={handleScheduleCampaign} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create New Campaign</CardTitle>
-          <p className="text-gray-600">Generate personalized marketing materials with QR codes</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-3 p-4 border rounded-lg">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <feature.icon className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">{feature.title}</h3>
-                  <p className="text-sm text-gray-600">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="text-center">
-            <Button 
-              onClick={onStartCampaign}
-              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
-              size="lg"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Start New Campaign
-            </Button>
-            <p className="text-sm text-gray-500 mt-3">
-              Create campaigns with custom QR codes and bulk generation
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">Create New Campaign</h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Choose how you'd like to create your QR code campaign. Each option provides different levels of customization and control.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign Process</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-medium">1</div>
-              <h4 className="font-medium mb-1">Choose Template</h4>
-              <p className="text-xs text-gray-600">Select your marketing template</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Quick Wizard */}
+        <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-blue-500">
+          <CardContent className="p-8 text-center">
+            <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl text-white mb-6 group-hover:scale-110 transition-transform">
+              <Wand2 className="h-12 w-12 mx-auto" />
             </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-medium">2</div>
-              <h4 className="font-medium mb-1">Assign QR Codes</h4>
-              <p className="text-xs text-gray-600">Configure QR codes and data</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Campaign Wizard</h3>
+            <p className="text-gray-600 mb-6">
+              Step-by-step guided process to create a complete campaign with templates and QR codes.
+            </p>
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => setCurrentView('wizard')}
+            >
+              <Rocket className="h-4 w-4 mr-2" />
+              Start Wizard
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Template Browser */}
+        <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-green-500">
+          <CardContent className="p-8 text-center">
+            <div className="p-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl text-white mb-6 group-hover:scale-110 transition-transform">
+              <FileText className="h-12 w-12 mx-auto" />
             </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-medium">3</div>
-              <h4 className="font-medium mb-1">Preview Campaign</h4>
-              <p className="text-xs text-gray-600">Review before generation</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Browse Templates</h3>
+            <p className="text-gray-600 mb-6">
+              Explore our collection of professional templates and start with a design you love.
+            </p>
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => setCurrentView('templates')}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Browse Templates
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Campaign Scheduler */}
+        <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-purple-500">
+          <CardContent className="p-8 text-center">
+            <div className="p-6 bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl text-white mb-6 group-hover:scale-110 transition-transform">
+              <Calendar className="h-12 w-12 mx-auto" />
             </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-medium">4</div>
-              <h4 className="font-medium mb-1">Generate & Download</h4>
-              <p className="text-xs text-gray-600">Create all materials</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Schedule Campaign</h3>
+            <p className="text-gray-600 mb-6">
+              Plan and schedule your campaign to launch at the perfect time with automated workflows.
+            </p>
+            <Button 
+              className="w-full bg-purple-600 hover:bg-purple-700"
+              onClick={() => setCurrentView('scheduler')}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Schedule Campaign
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-gray-50 rounded-2xl p-8">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Quick Actions</h3>
+        <div className="flex flex-wrap justify-center gap-4">
+          <Button variant="outline" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Import from CSV
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            Duplicate Last Campaign
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            View Scheduled Campaigns
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

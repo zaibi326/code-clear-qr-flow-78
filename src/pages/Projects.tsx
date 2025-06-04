@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -8,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ProjectSelector } from '@/components/dashboard/ProjectSelector';
+import { DataExportService } from '@/utils/dataExportService';
+import { CSVUploadService } from '@/utils/csvUploadService';
+import { databaseService } from '@/utils/databaseService';
+import { toast } from 'sonner';
 import { 
   FolderOpen, 
   Plus, 
@@ -20,7 +23,9 @@ import {
   Eye,
   Edit,
   Trash2,
-  Star
+  Star,
+  Download,
+  Upload
 } from 'lucide-react';
 
 interface Project {
@@ -39,6 +44,8 @@ interface Project {
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [isExporting, setIsExporting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const mockProjects: Project[] = [
     {
@@ -124,6 +131,71 @@ const Projects = () => {
     }
   ];
 
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await DataExportService.exportUserData('user-123', {
+        format: 'csv',
+        includeProjects: true,
+        includeCampaigns: true,
+        includeAnalytics: true
+      });
+      
+      const filename = `projects-export-${new Date().toISOString().split('T')[0]}.csv`;
+      DataExportService.downloadFile(blob, filename);
+      toast.success('Data exported successfully');
+    } catch (error) {
+      toast.error('Failed to export data');
+      console.error('Export error:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCSVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const csvData = await CSVUploadService.parseCSV(file);
+      const result = await CSVUploadService.uploadProjectData('user-123', csvData);
+      
+      if (result.success) {
+        toast.success(`Successfully uploaded ${result.recordsProcessed} projects`);
+      } else {
+        toast.error(`Upload completed with errors. Processed: ${result.recordsProcessed}`);
+        result.errors.forEach(error => toast.error(error));
+      }
+    } catch (error) {
+      toast.error('Failed to upload CSV file');
+      console.error('Upload error:', error);
+    } finally {
+      setIsUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    const project = mockProjects.find(p => p.id === projectId);
+    if (!project) return;
+
+    if (confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
+      try {
+        const result = await databaseService.delete('projects', projectId);
+        if (result.success) {
+          toast.success(`Deleted ${project.name}`);
+          // In a real app, you'd refresh the projects list here
+        } else {
+          toast.error(result.error || 'Failed to delete project');
+        }
+      } catch (error) {
+        toast.error('Failed to delete project');
+        console.error('Delete error:', error);
+      }
+    }
+  };
+
   const statusColors = {
     active: 'bg-green-100 text-green-800 border-green-200',
     paused: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -157,10 +229,32 @@ const Projects = () => {
                     <p className="text-lg text-gray-600">Organize and manage your QR campaign projects</p>
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <Search className="h-4 w-4" />
-                      Advanced Search
+                    <Button 
+                      variant="outline" 
+                      onClick={handleExportData}
+                      disabled={isExporting}
+                      className="flex items-center gap-2 hover:bg-gray-100"
+                    >
+                      <Download className="h-4 w-4" />
+                      {isExporting ? 'Exporting...' : 'Export Data'}
                     </Button>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCSVUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={isUploading}
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 hover:bg-gray-100"
+                        disabled={isUploading}
+                      >
+                        <Upload className="h-4 w-4" />
+                        {isUploading ? 'Uploading...' : 'Upload CSV'}
+                      </Button>
+                    </div>
                     <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2">
                       <Plus className="h-4 w-4" />
                       Create Project
@@ -297,7 +391,12 @@ const Projects = () => {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => handleDeleteProject(project.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

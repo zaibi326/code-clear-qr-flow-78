@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { databaseService } from '@/utils/databaseService';
+import { toast } from 'sonner';
 import { 
   Search, 
   Grid, 
@@ -13,7 +15,10 @@ import {
   Calendar,
   BarChart3,
   Plus,
-  Megaphone
+  Megaphone,
+  Play,
+  Pause,
+  Edit
 } from 'lucide-react';
 import { Campaign } from '@/types/campaign';
 
@@ -22,16 +27,87 @@ interface ManageCampaignsTabProps {
   onCreateNew: () => void;
 }
 
-export const ManageCampaignsTab = ({ campaigns, onCreateNew }: ManageCampaignsTabProps) => {
+export const ManageCampaignsTab = ({ campaigns: initialCampaigns, onCreateNew }: ManageCampaignsTabProps) => {
+  const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'completed'>('all');
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || campaign.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
+
+  const handleViewCampaign = (campaign: Campaign) => {
+    toast.success(`Opening campaign: ${campaign.name}`);
+    // In a real app, this would navigate to campaign details
+  };
+
+  const handleEditCampaign = (campaign: Campaign) => {
+    toast.success(`Editing campaign: ${campaign.name}`);
+    // In a real app, this would open the campaign editor
+  };
+
+  const handleToggleCampaign = async (campaign: Campaign) => {
+    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+    
+    try {
+      // Update in database
+      const result = await databaseService.update({
+        table: 'campaigns',
+        id: campaign.id,
+        data: { status: newStatus }
+      });
+
+      if (result.success) {
+        // Update local state
+        setCampaigns(prev => prev.map(c => 
+          c.id === campaign.id ? { ...c, status: newStatus as any } : c
+        ));
+        toast.success(`Campaign ${newStatus === 'active' ? 'activated' : 'paused'}`);
+      } else {
+        toast.error(result.error || 'Failed to update campaign');
+      }
+    } catch (error) {
+      toast.error('Failed to update campaign');
+      console.error('Toggle campaign error:', error);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaign: Campaign) => {
+    if (!confirm(`Are you sure you want to delete "${campaign.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingIds(prev => new Set(prev).add(campaign.id));
+    
+    try {
+      const result = await databaseService.delete('campaigns', campaign.id);
+      
+      if (result.success) {
+        setCampaigns(prev => prev.filter(c => c.id !== campaign.id));
+        toast.success(`Campaign "${campaign.name}" deleted successfully`);
+      } else {
+        toast.error(result.error || 'Failed to delete campaign');
+      }
+    } catch (error) {
+      toast.error('Failed to delete campaign');
+      console.error('Delete campaign error:', error);
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(campaign.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleViewAnalytics = (campaign: Campaign) => {
+    toast.success(`Opening analytics for: ${campaign.name}`);
+    // In a real app, this would navigate to analytics page
+  };
 
   return (
     <div className="space-y-6">
@@ -51,7 +127,7 @@ export const ManageCampaignsTab = ({ campaigns, onCreateNew }: ManageCampaignsTa
           <select 
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -105,59 +181,102 @@ export const ManageCampaignsTab = ({ campaigns, onCreateNew }: ManageCampaignsTa
             </CardContent>
           </Card>
         ) : (
-          filteredCampaigns.map((campaign) => (
-            <Card key={campaign.id} className="hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-orange-100 rounded-lg">
-                      <Megaphone className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{campaign.name}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-1" />
-                          <span>{campaign.qrCodes.length} QR Codes</span>
+          filteredCampaigns.map((campaign) => {
+            const isDeleting = deletingIds.has(campaign.id);
+            
+            return (
+              <Card key={campaign.id} className="hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-orange-100 rounded-lg">
+                        <Megaphone className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{campaign.name}</h3>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            <span>{campaign.qrCodes.length} QR Codes</span>
+                          </div>
+                          <span>•</span>
+                          <span>{campaign.scans || 0} scans</span>
+                          <span>•</span>
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            <span>{campaign.createdAt.toLocaleDateString()}</span>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            campaign.status === 'active' 
+                              ? 'bg-green-100 text-green-700'
+                              : campaign.status === 'draft'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : campaign.status === 'generating'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {campaign.status}
+                          </span>
                         </div>
-                        <span>•</span>
-                        <span>{campaign.scans || 0} scans</span>
-                        <span>•</span>
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          <span>{campaign.createdAt.toLocaleDateString()}</span>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          campaign.status === 'active' 
-                            ? 'bg-green-100 text-green-700'
-                            : campaign.status === 'draft'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : campaign.status === 'generating'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {campaign.status}
-                        </span>
                       </div>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewCampaign(campaign)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditCampaign(campaign)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleToggleCampaign(campaign)}
+                      >
+                        {campaign.status === 'active' ? (
+                          <>
+                            <Pause className="h-4 w-4 mr-1" />
+                            Pause
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-1" />
+                            Start
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewAnalytics(campaign)}
+                      >
+                        <BarChart3 className="h-4 w-4 mr-1" />
+                        Analytics
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteCampaign(campaign)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <BarChart3 className="h-4 w-4 mr-1" />
-                      Analytics
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

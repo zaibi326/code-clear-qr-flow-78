@@ -1,252 +1,202 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Database, Plus, Eye, Download, Trash2, FileDown } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { databaseService } from '@/utils/databaseService';
+import { toast } from 'sonner';
+import {
+  Database,
+  Calendar,
+  Trash2,
+  Download,
+  Eye,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  MoreHorizontal
+} from 'lucide-react';
 
 interface DataSet {
   id: number;
   name: string;
   rows: number;
   uploadDate: string;
-  status: string;
+  status: 'active' | 'processed' | 'error';
+  progress: number;
 }
 
 interface DataManageTabProps {
   mockDataSets: DataSet[];
 }
 
-export const DataManageTab = ({ mockDataSets }: DataManageTabProps) => {
-  const [selectedDataset, setSelectedDataset] = useState<DataSet | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
+export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabProps) => {
+  const [dataSets, setDataSets] = useState<DataSet[]>(initialDataSets);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
 
-  const mockData = [
-    { id: 1, name: "John Doe", email: "john@example.com", url: "https://johndoe.com", company: "Tech Corp" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", url: "https://janesmith.com", company: "Design LLC" },
-    { id: 3, name: "Bob Johnson", email: "bob@example.com", url: "https://bobjohnson.com", company: "Marketing Inc" },
-  ];
+  const handleDeleteDataSet = async (dataSetId: number) => {
+    const dataSet = dataSets.find(ds => ds.id === dataSetId);
+    if (!dataSet) return;
 
-  const handleUploadNew = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.csv';
-    fileInput.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        toast({
-          title: "Upload Started",
-          description: `Processing ${file.name}...`,
+    if (confirm(`Are you sure you want to delete "${dataSet.name}"? This action cannot be undone.`)) {
+      setDeletingIds(prev => new Set(prev).add(dataSetId));
+      
+      try {
+        // Simulate API call to delete dataset
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Remove from local state
+        setDataSets(prev => prev.filter(ds => ds.id !== dataSetId));
+        toast.success(`Successfully deleted ${dataSet.name}`);
+      } catch (error) {
+        toast.error('Failed to delete dataset');
+        console.error('Delete error:', error);
+      } finally {
+        setDeletingIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(dataSetId);
+          return newSet;
         });
-        // Here you would handle the actual upload
-        setTimeout(() => {
-          toast({
-            title: "Upload Complete",
-            description: `Successfully uploaded ${file.name}`,
-          });
-        }, 2000);
       }
-    };
-    fileInput.click();
-  };
-
-  const handleView = (dataset: DataSet) => {
-    setSelectedDataset(dataset);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleExport = (dataset: DataSet) => {
-    try {
-      // Create mock CSV data
-      const csvContent = [
-        'name,email,url,company',
-        ...mockData.map(row => `${row.name},${row.email},${row.url},${row.company}`)
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${dataset.name.replace(/\s+/g, '_')}_export.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Export Complete",
-        description: `${dataset.name} has been exported successfully`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Failed to export the dataset",
-        variant: "destructive"
-      });
     }
   };
 
-  const handleDelete = async (dataset: DataSet) => {
-    if (!confirm(`Are you sure you want to delete "${dataset.name}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleViewDataSet = (dataSet: DataSet) => {
+    toast.success(`Opening ${dataSet.name} for preview`);
+    // In a real app, this would open a modal or navigate to a detail view
+  };
 
-    setIsDeleting(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Dataset Deleted",
-        description: `${dataset.name} has been deleted successfully`,
-      });
-      
-      // Here you would remove the dataset from the list
-    } catch (error) {
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete the dataset",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleting(false);
+  const handleDownloadDataSet = (dataSet: DataSet) => {
+    toast.success(`Downloading ${dataSet.name}`);
+    // In a real app, this would trigger a file download
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'processed':
+        return <Database className="h-4 w-4 text-blue-600" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'processed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'error':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  if (dataSets.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <Database className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No data sets found</h3>
+          <p className="text-gray-600 mb-6">Upload your first CSV file to get started with data management</p>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            Upload Data Set
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Your Data Sets</h2>
-          <p className="text-gray-600">Manage your uploaded CSV files and campaign data</p>
-        </div>
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700"
-          onClick={handleUploadNew}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Upload New Data
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {mockDataSets.map((dataset) => (
-          <Card key={dataset.id} className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Database className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{dataset.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span>{dataset.rows.toLocaleString()} rows</span>
-                      <span>•</span>
-                      <span>Uploaded {dataset.uploadDate}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        dataset.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {dataset.status}
-                      </span>
+      <div className="grid gap-6">
+        {dataSets.map((dataSet) => {
+          const isDeleting = deletingIds.has(dataSet.id);
+          
+          return (
+            <Card key={dataSet.id} className="hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Database className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        {dataSet.name}
+                      </CardTitle>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span>{dataSet.rows.toLocaleString()} rows</span>
+                        <span>•</span>
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          <span>{dataSet.uploadDate}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={`${getStatusColor(dataSet.status)} border flex items-center gap-1`}>
+                      {getStatusIcon(dataSet.status)}
+                      {dataSet.status.charAt(0).toUpperCase() + dataSet.status.slice(1)}
+                    </Badge>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Processing Status</span>
+                    <span className="font-medium text-gray-900">{dataSet.progress}%</span>
+                  </div>
+                  <Progress value={dataSet.progress} className="h-2" />
+                </div>
+
+                <div className="flex gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleView(dataset)}
+                    onClick={() => handleViewDataSet(dataSet)}
+                    className="flex items-center gap-2"
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
+                    <Eye className="h-4 w-4" />
+                    View Data
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleExport(dataset)}
+                    onClick={() => handleDownloadDataSet(dataSet)}
+                    className="flex items-center gap-2"
                   >
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                    <Download className="h-4 w-4" />
+                    Download
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-red-600 hover:text-red-700"
-                    onClick={() => handleDelete(dataset)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2"
+                    onClick={() => handleDeleteDataSet(dataSet.id)}
                     disabled={isDeleting}
                   >
                     <Trash2 className="h-4 w-4" />
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
-
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Database className="h-5 w-5" />
-              <span>{selectedDataset?.name}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing sample data from {selectedDataset?.name}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => selectedDataset && handleExport(selectedDataset)}
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                Export Full Dataset
-              </Button>
-            </div>
-            
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead>Company</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockData.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium">{row.name}</TableCell>
-                      <TableCell>{row.email}</TableCell>
-                      <TableCell className="text-blue-600 hover:underline">
-                        <a href={row.url} target="_blank" rel="noopener noreferrer">
-                          {row.url}
-                        </a>
-                      </TableCell>
-                      <TableCell>{row.company}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            
-            <div className="text-sm text-gray-500 text-center">
-              Showing 3 of {selectedDataset?.rows} total rows
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
