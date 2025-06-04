@@ -29,5 +29,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  console.log('ProtectedRoute: User authenticated, rendering protected content');
   return <>{children}</>;
 };
