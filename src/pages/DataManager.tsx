@@ -1,15 +1,48 @@
 
 import React, { useState } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { DataManagerTabs } from '@/components/data/DataManagerTabs';
 import { DataUploadTab } from '@/components/data/DataUploadTab';
 import { DataManageTab } from '@/components/data/DataManageTab';
 import { DataTemplatesTab } from '@/components/data/DataTemplatesTab';
+import { Card, CardContent } from '@/components/ui/card';
+import { Database, Upload, FileSpreadsheet, Users } from 'lucide-react';
 
 const DataManager = () => {
   const [activeTab, setActiveTab] = useState('upload');
+
+  const dataStats = [
+    {
+      title: 'Total Projects',
+      value: '24',
+      icon: Database,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Data Records',
+      value: '12,847',
+      icon: FileSpreadsheet,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'Active Campaigns',
+      value: '8',
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    },
+    {
+      title: 'Recent Uploads',
+      value: '15',
+      icon: Upload,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    }
+  ];
 
   const mockDataSets = [
     {
@@ -37,27 +70,43 @@ const DataManager = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-green-50 to-blue-50">
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[240px] transition-all duration-300 max-w-full" style={{ boxSizing: 'border-box' }}>
+        
+        <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
           <DashboardTopbar />
           
-          {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Projects</h1>
-                  <p className="text-sm text-gray-600 mt-2">Upload, manage, and organize your campaign data with CSV files</p>
-                </div>
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              {/* Header Section */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Data Manager
+                </h1>
+                <p className="text-gray-600">Upload, manage, and organize your campaign data with CSV files</p>
               </div>
-            </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {dataStats.map((stat, index) => (
+                  <Card key={index} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                          <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                          <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Data Management */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
                 <div className="px-6 pt-6 pb-0">
                   <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
@@ -68,8 +117,8 @@ const DataManager = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

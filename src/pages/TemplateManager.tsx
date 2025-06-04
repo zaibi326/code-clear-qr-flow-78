@@ -1,150 +1,100 @@
 
 import React, { useState } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { TemplateManagerTabs } from '@/components/template/TemplateManagerTabs';
-import { TemplateUploadTab } from '@/components/template/TemplateUploadTab';
-import { TemplateManageTab } from '@/components/template/TemplateManageTab';
 import { TemplateLibraryTab } from '@/components/template/TemplateLibraryTab';
-import { Template } from '@/types/template';
-import { useToast } from '@/hooks/use-toast';
+import { TemplateManageTab } from '@/components/template/TemplateManageTab';
+import { TemplateUploadTab } from '@/components/template/TemplateUploadTab';
+import { Card, CardContent } from '@/components/ui/card';
+import { Template, FileText, Upload, Palette } from 'lucide-react';
 
 const TemplateManager = () => {
-  const [activeTab, setActiveTab] = useState('manage');
-  const [templates, setTemplates] = useState<Template[]>([
+  const [activeTab, setActiveTab] = useState('library');
+
+  const templateStats = [
     {
-      id: 'template-1',
-      name: 'Marketing Flyer Template',
-      file: null,
-      preview: '/placeholder.svg',
-      qrPosition: { x: 100, y: 200, width: 80, height: 80 },
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15')
+      title: 'Total Templates',
+      value: '45',
+      icon: Template,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
     },
     {
-      id: 'template-2',
-      name: 'Business Card Template',
-      file: null,
-      preview: '/placeholder.svg',
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-10')
+      title: 'Custom Templates',
+      value: '12',
+      icon: Palette,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
     },
     {
-      id: 'template-3',
-      name: 'Event Poster Template',
-      file: null,
-      preview: '/placeholder.svg',
-      qrPosition: { x: 150, y: 300, width: 100, height: 100 },
-      createdAt: new Date('2024-01-08'),
-      updatedAt: new Date('2024-01-08')
+      title: 'Shared Templates',
+      value: '33',
+      icon: FileText,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'Recent Uploads',
+      value: '8',
+      icon: Upload,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
     }
-  ]);
-  const { toast } = useToast();
-
-  const handleTemplateUpload = (newTemplate: Template) => {
-    setTemplates(prev => [newTemplate, ...prev]);
-    setActiveTab('manage');
-    toast({
-      title: "Template uploaded",
-      description: `${newTemplate.name} has been successfully uploaded.`,
-    });
-  };
-
-  const handleTemplateEdit = (template: Template) => {
-    console.log('Editing template:', template.name);
-    toast({
-      title: "Template selected",
-      description: `Selected ${template.name} for editing.`,
-    });
-  };
-
-  const handleTemplateDelete = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    setTemplates(prev => prev.filter(t => t.id !== templateId));
-    toast({
-      title: "Template deleted",
-      description: `${template?.name || 'Template'} has been deleted.`,
-      variant: "destructive",
-    });
-  };
-
-  const handleTemplateDuplicate = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      const duplicatedTemplate: Template = {
-        ...template,
-        id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: `${template.name} (Copy)`,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      setTemplates(prev => [duplicatedTemplate, ...prev]);
-      toast({
-        title: "Template duplicated",
-        description: `${duplicatedTemplate.name} has been created.`,
-      });
-    }
-  };
-
-  const handleTemplateUse = (template: Template) => {
-    console.log('Using template:', template.name);
-    toast({
-      title: "Template ready",
-      description: `${template.name} is ready to use in campaigns.`,
-    });
-  };
+  ];
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50">
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[240px] transition-all duration-300 max-w-full" style={{ boxSizing: 'border-box' }}>
+        
+        <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
           <DashboardTopbar />
           
-          {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Template Manager</h1>
-                  <p className="text-sm text-gray-600 mt-2">Upload, manage, and organize your marketing templates</p>
-                </div>
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              {/* Header Section */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                  Template Manager
+                </h1>
+                <p className="text-gray-600">Create, manage, and organize your QR code templates</p>
               </div>
-            </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {templateStats.map((stat, index) => (
+                  <Card key={index} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                          <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                          <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Template Management */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
                 <div className="px-6 pt-6 pb-0">
                   <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
-
                 <div className="p-6">
-                  {activeTab === 'upload' && (
-                    <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
-                  )}
-                  {activeTab === 'manage' && (
-                    <TemplateManageTab 
-                      templates={templates}
-                      onTemplateEdit={handleTemplateEdit}
-                      onTemplateDelete={handleTemplateDelete}
-                      onTemplateDuplicate={handleTemplateDuplicate}
-                    />
-                  )}
-                  {activeTab === 'library' && (
-                    <TemplateLibraryTab 
-                      templates={templates}
-                      onTemplateSelect={handleTemplateUse}
-                    />
-                  )}
+                  {activeTab === 'library' && <TemplateLibraryTab />}
+                  {activeTab === 'manage' && <TemplateManageTab />}
+                  {activeTab === 'upload' && <TemplateUploadTab />}
                 </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

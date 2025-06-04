@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { CampaignCreatorTabs } from '@/components/campaign/CampaignCreatorTabs';
@@ -10,12 +10,45 @@ import { CampaignAnalyticsTab } from '@/components/campaign/CampaignAnalyticsTab
 import CampaignWizard from '@/components/campaign/CampaignWizard';
 import { Campaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Megaphone, Target, TrendingUp, Users } from 'lucide-react';
 
 const CampaignCreator = () => {
   const [activeTab, setActiveTab] = useState('manage');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const { toast } = useToast();
+
+  const campaignStats = [
+    {
+      title: 'Active Campaigns',
+      value: '12',
+      icon: Megaphone,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Total Reach',
+      value: '45.2K',
+      icon: Users,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'Conversion Rate',
+      value: '8.4%',
+      icon: Target,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    },
+    {
+      title: 'Growth',
+      value: '+24%',
+      icon: TrendingUp,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    }
+  ];
 
   const handleCampaignCreate = (campaign: Campaign) => {
     setCampaigns(prev => [campaign, ...prev]);
@@ -34,27 +67,43 @@ const CampaignCreator = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-orange-50 to-red-50">
         <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[240px] transition-all duration-300 max-w-full" style={{ boxSizing: 'border-box' }}>
+        
+        <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
           <DashboardTopbar />
           
-          {/* Header Section */}
-          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Campaigns</h1>
-                  <p className="text-sm text-gray-600 mt-2">Create, manage, and track your marketing campaigns</p>
-                </div>
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              {/* Header Section */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  Campaign Manager
+                </h1>
+                <p className="text-gray-600">Create, manage, and track your marketing campaigns</p>
               </div>
-            </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {campaignStats.map((stat, index) => (
+                  <Card key={index} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                          <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                          <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Campaign Management */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
                 <div className="px-6 pt-6 pb-0">
                   <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
@@ -80,8 +129,8 @@ const CampaignCreator = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );
