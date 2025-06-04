@@ -1,9 +1,8 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/useSupabaseAuth';
 import { AdminAuthProvider } from '@/hooks/useAdminAuth';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 // Main app pages
 import Index from '@/pages/Index';

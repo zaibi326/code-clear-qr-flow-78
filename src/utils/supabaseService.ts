@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseUser, DatabaseQRCode, DatabaseScanEvent } from '@/types/database';
 
@@ -48,32 +49,7 @@ export const supabaseService = {
       throw error;
     }
 
-    return {
-      ...data,
-      id: userId,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined,
-      preferences: data.preferences || {
-        notifications: {
-          email: true,
-          scan_alerts: true,
-          weekly_reports: false,
-          marketing: false
-        },
-        dashboard: {
-          default_view: 'grid' as const,
-          items_per_page: 10
-        }
-      },
-      usage_stats: data.usage_stats || {
-        qr_codes_created: 0,
-        campaigns_created: 0,
-        total_scans: 0,
-        storage_used: 0
-      }
-    } as DatabaseUser;
+    return this.mapDatabaseRowToUser(data, userId);
   },
 
   async getUserProfile(userId: string): Promise<DatabaseUser | null> {
@@ -91,31 +67,7 @@ export const supabaseService = {
       throw error;
     }
 
-    return {
-      ...data,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined,
-      preferences: data.preferences || {
-        notifications: {
-          email: true,
-          scan_alerts: true,
-          weekly_reports: false,
-          marketing: false
-        },
-        dashboard: {
-          default_view: 'grid' as const,
-          items_per_page: 10
-        }
-      },
-      usage_stats: data.usage_stats || {
-        qr_codes_created: 0,
-        campaigns_created: 0,
-        total_scans: 0,
-        storage_used: 0
-      }
-    } as DatabaseUser;
+    return this.mapDatabaseRowToUser(data, userId);
   },
 
   async updateUserProfile(userId: string, updates: Partial<DatabaseUser>): Promise<DatabaseUser> {
@@ -142,13 +94,75 @@ export const supabaseService = {
       throw error;
     }
 
+    return this.mapDatabaseRowToUser(data, userId);
+  },
+
+  // Helper method to safely map database row to DatabaseUser
+  private mapDatabaseRowToUser(data: any, userId: string): DatabaseUser {
+    // Safely parse preferences
+    let preferences = {
+      notifications: {
+        email: true,
+        scan_alerts: true,
+        weekly_reports: false,
+        marketing: false
+      },
+      dashboard: {
+        default_view: 'grid' as const,
+        items_per_page: 10
+      }
+    };
+
+    if (data.preferences && typeof data.preferences === 'object') {
+      preferences = {
+        notifications: {
+          email: data.preferences.notifications?.email ?? true,
+          scan_alerts: data.preferences.notifications?.scan_alerts ?? true,
+          weekly_reports: data.preferences.notifications?.weekly_reports ?? false,
+          marketing: data.preferences.notifications?.marketing ?? false
+        },
+        dashboard: {
+          default_view: data.preferences.dashboard?.default_view === 'list' ? 'list' : 'grid',
+          items_per_page: data.preferences.dashboard?.items_per_page ?? 10
+        }
+      };
+    }
+
+    // Safely parse usage_stats
+    let usage_stats = {
+      qr_codes_created: 0,
+      campaigns_created: 0,
+      total_scans: 0,
+      storage_used: 0
+    };
+
+    if (data.usage_stats && typeof data.usage_stats === 'object') {
+      usage_stats = {
+        qr_codes_created: data.usage_stats.qr_codes_created ?? 0,
+        campaigns_created: data.usage_stats.campaigns_created ?? 0,
+        total_scans: data.usage_stats.total_scans ?? 0,
+        storage_used: data.usage_stats.storage_used ?? 0
+      };
+    }
+
     return {
-      ...data,
+      id: userId,
+      email: data.email,
+      name: data.name,
+      company: data.company || '',
+      phone: data.phone,
+      avatar_url: data.avatar_url,
+      plan: data.plan,
+      subscription_status: data.subscription_status,
+      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
       created_at: new Date(data.created_at),
       updated_at: new Date(data.updated_at),
-      trial_ends_at: data.trial_ends_at ? new Date(data.trial_ends_at) : undefined,
-      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined
-    } as DatabaseUser;
+      last_login_at: data.last_login_at ? new Date(data.last_login_at) : undefined,
+      timezone: data.timezone || 'UTC',
+      language: data.language || 'en',
+      preferences,
+      usage_stats
+    };
   },
 
   // QR Code Operations - Simplified for now since we don't have the qr_codes table
