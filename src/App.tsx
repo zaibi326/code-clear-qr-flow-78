@@ -96,6 +96,12 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/data-manager" element={
+                  <ProtectedRoute>
+                    <DataManager />
+                  </ProtectedRoute>
+                } />
+
                 <Route path="/projects" element={
                   <ProtectedRoute>
                     <Projects />
