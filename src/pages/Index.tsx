@@ -11,7 +11,6 @@ import FuturisticPricing from '@/components/FuturisticPricing';
 import NextGenCTA from '@/components/NextGenCTA';
 import Footer from '@/components/Footer';
 import Features from '@/components/Features';
-import About from '@/components/About';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -83,7 +82,7 @@ const Index = () => {
             <FuturisticPricing />
           </div>
           <div id="about">
-            <About />
+            <NextGenCTA />
           </div>
           <div id="support">
             <NextGenCTA />
