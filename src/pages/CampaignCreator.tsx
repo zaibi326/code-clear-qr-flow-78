@@ -4,26 +4,27 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { CampaignCreatorTabs } from '@/components/campaign/CampaignCreatorTabs';
+import { CreateCampaignTab } from '@/components/campaign/CreateCampaignTab';
+import { ManageCampaignsTab } from '@/components/campaign/ManageCampaignsTab';
+import { CampaignAnalyticsTab } from '@/components/campaign/CampaignAnalyticsTab';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Campaign } from '@/types/campaign';
 import { 
   Zap, 
   Target, 
   BarChart3, 
   Users, 
-  TrendingUp, 
-  Plus, 
-  Search,
-  Calendar
+  TrendingUp
 } from 'lucide-react';
 
 const CampaignCreator = () => {
   const [activeTab, setActiveTab] = useState('create');
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
   const campaignStats = [
     {
       title: 'Active Campaigns',
-      value: '24',
+      value: campaigns.filter(c => c.status === 'active').length.toString(),
       icon: Zap,
       color: 'text-blue-600',
       bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
@@ -31,8 +32,8 @@ const CampaignCreator = () => {
       change: '+8'
     },
     {
-      title: 'Total Reach',
-      value: '156k',
+      title: 'Total Campaigns',
+      value: campaigns.length.toString(),
       icon: Target,
       color: 'text-green-600',
       bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
@@ -40,8 +41,8 @@ const CampaignCreator = () => {
       change: '+23%'
     },
     {
-      title: 'Conversion Rate',
-      value: '12.4%',
+      title: 'Total QR Codes',
+      value: campaigns.reduce((sum, c) => sum + c.qrCodes.length, 0).toString(),
       icon: BarChart3,
       color: 'text-purple-600',
       bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
@@ -49,8 +50,8 @@ const CampaignCreator = () => {
       change: '+3.2%'
     },
     {
-      title: 'Engaged Users',
-      value: '19.3k',
+      title: 'Total Scans',
+      value: campaigns.reduce((sum, c) => sum + (c.scans || 0), 0).toString(),
       icon: Users,
       color: 'text-orange-600',
       bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
@@ -58,6 +59,41 @@ const CampaignCreator = () => {
       change: '+15%'
     }
   ];
+
+  const handleCampaignCreate = (campaign: Campaign) => {
+    setCampaigns(prev => [campaign, ...prev]);
+  };
+
+  const handleCampaignUpdate = (updatedCampaign: Campaign) => {
+    setCampaigns(prev => 
+      prev.map(campaign => 
+        campaign.id === updatedCampaign.id ? updatedCampaign : campaign
+      )
+    );
+  };
+
+  const handleCampaignDelete = (campaignId: string) => {
+    setCampaigns(prev => prev.filter(campaign => campaign.id !== campaignId));
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'create':
+        return <CreateCampaignTab onCampaignCreate={handleCampaignCreate} />;
+      case 'manage':
+        return (
+          <ManageCampaignsTab 
+            campaigns={campaigns}
+            onCampaignUpdate={handleCampaignUpdate}
+            onCampaignDelete={handleCampaignDelete}
+          />
+        );
+      case 'analytics':
+        return <CampaignAnalyticsTab campaigns={campaigns} />;
+      default:
+        return <CreateCampaignTab onCampaignCreate={handleCampaignCreate} />;
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -77,23 +113,6 @@ const CampaignCreator = () => {
                       Campaign Creator
                     </h1>
                     <p className="text-lg text-gray-600">Design, launch, and manage powerful QR code campaigns</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <Search className="h-4 w-4" />
-                      Browse Templates
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <Calendar className="h-4 w-4" />
-                      Schedule Campaign
-                    </Button>
-                    <Button 
-                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2"
-                      onClick={() => setActiveTab('create')}
-                    >
-                      <Plus className="h-4 w-4" />
-                      New Campaign
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -125,6 +144,9 @@ const CampaignCreator = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                 <div className="px-8 pt-8 pb-0">
                   <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                </div>
+                <div className="p-8">
+                  {renderTabContent()}
                 </div>
               </div>
             </div>

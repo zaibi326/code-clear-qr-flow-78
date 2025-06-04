@@ -12,7 +12,9 @@ import {
   Calendar, 
   FileText, 
   ArrowLeft,
-  Rocket
+  Rocket,
+  Search,
+  Upload
 } from 'lucide-react';
 
 interface CreateCampaignTabProps {
@@ -34,6 +36,18 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
   };
 
   const handleScheduleCampaign = (schedule: any) => {
+    // Create a scheduled campaign
+    const scheduledCampaign: Campaign = {
+      id: `campaign-${Date.now()}`,
+      name: schedule.name,
+      status: 'draft',
+      qrCodes: [],
+      template: null,
+      createdAt: new Date(),
+      scans: 0
+    };
+    
+    onCampaignCreate(scheduledCampaign);
     toast.success(`Campaign "${schedule.name}" scheduled successfully!`);
     setCurrentView('options');
   };
@@ -129,7 +143,7 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => setCurrentView('templates')}
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <Search className="h-4 w-4 mr-2" />
               Browse Templates
             </Button>
           </CardContent>
@@ -161,7 +175,7 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
         <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Quick Actions</h3>
         <div className="flex flex-wrap justify-center gap-4">
           <Button variant="outline" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+            <Upload className="h-4 w-4" />
             Import from CSV
           </Button>
           <Button variant="outline" className="flex items-center gap-2">
