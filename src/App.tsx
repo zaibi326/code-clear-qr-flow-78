@@ -84,6 +84,12 @@ function App() {
                   </ProtectedRoute>
                 } />
 
+                <Route path="/template-manager" element={
+                  <ProtectedRoute>
+                    <TemplateManager />
+                  </ProtectedRoute>
+                } />
+
                 <Route path="/data" element={
                   <ProtectedRoute>
                     <DataManager />
