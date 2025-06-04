@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +55,7 @@ const CampaignWizard = ({ onCampaignCreate }: CampaignWizardProps) => {
       const campaign: Campaign = {
         id: `campaign-${Date.now()}`,
         name: campaignName || 'Untitled Campaign',
+        type: qrCodes.length > 1 ? 'bulk' : 'single',
         template: selectedTemplate,
         qrCodes,
         createdAt: new Date(),

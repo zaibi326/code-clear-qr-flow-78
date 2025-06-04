@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,6 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
         qrCodes: [],
         scans: 0,
         createdAt: new Date(),
-        updatedAt: new Date(),
         template: null
       };
 
