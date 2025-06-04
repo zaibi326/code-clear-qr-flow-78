@@ -14,7 +14,7 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
 
   const handleModeSelect = (mode: 'single' | 'bulk') => {
     if (mode === 'single') {
-      navigate('/create-qr-code');
+      navigate('/create');
     } else {
       navigate('/bulk-data-selector');
     }
@@ -44,46 +44,42 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
 
   return (
     <div className="space-y-6">
-      <div className="text-center space-y-3">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Choose Creation Mode
-        </h2>
-        <p className="text-slate-600 font-medium">
-          Select how you'd like to create your QR codes
-        </p>
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-gray-900">Choose Creation Mode</h2>
+        <p className="text-gray-600">Select how you'd like to create your QR codes</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
         {modes.map((mode) => (
           <Card 
             key={mode.id}
-            className="cursor-pointer hover:shadow-xl transition-all duration-300 hover:border-indigo-300 hover:scale-105 group bg-white/95 backdrop-blur-lg border border-indigo-100/50 shadow-lg shadow-indigo-500/10"
+            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-gray-300 group bg-white border border-gray-200"
             onClick={() => handleModeSelect(mode.id as 'single' | 'bulk')}
           >
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between mb-4">
-                <div className={`p-4 rounded-xl ${mode.color} text-white group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                  <mode.icon className="h-8 w-8" />
+                <div className={`p-3 rounded-lg ${mode.color} text-white group-hover:scale-105 transition-transform duration-200`}>
+                  <mode.icon className="h-6 w-6" />
                 </div>
                 {mode.badge && (
                   <Badge 
                     variant={mode.badge === 'Popular' ? 'default' : 'secondary'} 
                     className={`text-xs ${
                       mode.badge === 'Popular' 
-                        ? 'bg-blue-100 text-blue-700 border-blue-200' 
-                        : 'bg-green-100 text-green-700 border-green-200'
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-green-100 text-green-700'
                     }`}
                   >
                     {mode.badge}
                   </Badge>
                 )}
               </div>
-              <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+              <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                 {mode.title}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-gray-600">
                 {mode.description}
               </p>
               
@@ -94,18 +90,18 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
                 </h4>
                 <ul className="space-y-1">
                   {mode.benefits.map((benefit, index) => (
-                    <li key={index} className="text-sm text-slate-600 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                    <li key={index} className="text-sm text-gray-600 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                       {benefit}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-indigo-100">
+              <div className="pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Best for:</span>
-                  <span className="font-medium text-indigo-600 flex items-center gap-1">
+                  <span className="text-gray-500">Best for:</span>
+                  <span className="font-medium text-blue-600 flex items-center gap-1">
                     {mode.id === 'single' ? (
                       <>
                         <QrCode className="h-4 w-4" />
@@ -125,8 +121,8 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
         ))}
       </div>
 
-      <div className="text-center p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-        <p className="text-indigo-700 font-medium text-sm">
+      <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200 max-w-4xl mx-auto">
+        <p className="text-blue-700 font-medium text-sm">
           💡 Tip: You can switch between modes anytime. Start with single QR codes to get familiar, then scale up with bulk creation.
         </p>
       </div>
