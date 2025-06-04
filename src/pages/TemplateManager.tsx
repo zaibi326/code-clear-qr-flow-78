@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -34,6 +33,40 @@ const TemplateManager = () => {
       title: "Template selected!",
       description: `You can now use ${template.name} for your QR campaigns.`,
     });
+  };
+
+  const handleTemplateEdit = (template: Template) => {
+    console.log('Editing template:', template);
+    toast({
+      title: "Template editor opened",
+      description: `Opening editor for ${template.name}`,
+    });
+  };
+
+  const handleTemplateDelete = (templateId: string) => {
+    setTemplates(prev => prev.filter(template => template.id !== templateId));
+    toast({
+      title: "Template deleted",
+      description: "Template has been removed from your library",
+    });
+  };
+
+  const handleTemplateDuplicate = (templateId: string) => {
+    const templateToDuplicate = templates.find(t => t.id === templateId);
+    if (templateToDuplicate) {
+      const duplicatedTemplate: Template = {
+        ...templateToDuplicate,
+        id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: `${templateToDuplicate.name} (Copy)`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      setTemplates(prev => [...prev, duplicatedTemplate]);
+      toast({
+        title: "Template duplicated",
+        description: `Created a copy of ${templateToDuplicate.name}`,
+      });
+    }
   };
 
   const templateStats = [
@@ -174,7 +207,12 @@ const TemplateManager = () => {
                       </TabsContent>
                       
                       <TabsContent value="manage" className="mt-0">
-                        <TemplateManageTab templates={templates} />
+                        <TemplateManageTab 
+                          templates={templates}
+                          onTemplateEdit={handleTemplateEdit}
+                          onTemplateDelete={handleTemplateDelete}
+                          onTemplateDuplicate={handleTemplateDuplicate}
+                        />
                       </TabsContent>
                     </div>
                   </Tabs>
