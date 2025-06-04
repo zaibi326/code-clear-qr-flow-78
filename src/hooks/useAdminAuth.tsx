@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface AdminUser {
@@ -27,6 +28,8 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   const adminLogin = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      console.log('Attempting admin login for:', email);
+      
       const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-login`, {
         method: 'POST',
         headers: {
@@ -37,6 +40,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       });
 
       const data = await response.json();
+      console.log('Admin login response:', data);
 
       if (data.success && data.user) {
         const adminUserData: AdminUser = {
@@ -51,9 +55,11 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
         
         setAdminUser(adminUserData);
         localStorage.setItem('adminUser', JSON.stringify(adminUserData));
+        console.log('Admin login successful');
         return true;
       }
       
+      console.log('Admin login failed:', data.error);
       return false;
     } catch (error) {
       console.error('Admin login error:', error);
@@ -66,6 +72,8 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   const adminRegister = async (name: string, email: string, password: string, role: 'admin' | 'super_admin'): Promise<boolean> => {
     setIsLoading(true);
     try {
+      console.log('Attempting admin registration for:', email);
+      
       const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-signup`, {
         method: 'POST',
         headers: {
@@ -76,6 +84,8 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       });
 
       const data = await response.json();
+      console.log('Admin registration response:', data);
+      
       return data.success;
     } catch (error) {
       console.error('Admin registration error:', error);
@@ -86,6 +96,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const adminLogout = async (): Promise<void> => {
+    console.log('Admin logout');
     setAdminUser(null);
     localStorage.removeItem('adminUser');
   };
@@ -96,6 +107,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     if (storedAdminUser) {
       try {
         const parsedUser = JSON.parse(storedAdminUser);
+        console.log('Restored admin session:', parsedUser.email);
         setAdminUser(parsedUser);
       } catch (error) {
         console.error('Error parsing stored admin user:', error);

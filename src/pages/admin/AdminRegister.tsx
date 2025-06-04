@@ -75,9 +75,15 @@ const AdminRegister = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('Admin registration form submitted');
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     try {
+      console.log('Attempting admin registration...');
       const success = await adminRegister(
         formData.name,
         formData.email,
@@ -86,15 +92,17 @@ const AdminRegister = () => {
       );
       
       if (success) {
+        console.log('Admin registration successful');
         toast({
-          title: "Registration submitted!",
-          description: "Your admin account request has been submitted for approval.",
+          title: "Registration successful!",
+          description: "Your admin account has been created successfully.",
         });
         navigate('/admin/login');
       } else {
+        console.log('Admin registration failed');
         toast({
           title: "Registration failed",
-          description: "There was an error submitting your request. Please try again.",
+          description: "There was an error creating your account. Please try again.",
           variant: "destructive"
         });
       }

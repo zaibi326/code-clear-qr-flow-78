@@ -25,6 +25,7 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (adminUser) {
+      console.log('Admin user detected, redirecting to dashboard');
       navigate('/admin/dashboard');
     }
   }, [adminUser, navigate]);
@@ -53,18 +54,26 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('Admin login form submitted');
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
     try {
+      console.log('Attempting admin login...');
       const success = await adminLogin(formData.email, formData.password);
       
       if (success) {
+        console.log('Admin login successful');
         toast({
           title: "Login successful!",
           description: "Welcome to the admin dashboard.",
         });
         navigate('/admin/dashboard');
       } else {
+        console.log('Admin login failed');
         toast({
           title: "Login failed",
           description: "Invalid email or password.",

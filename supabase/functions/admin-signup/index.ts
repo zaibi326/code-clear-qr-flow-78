@@ -26,21 +26,26 @@ serve(async (req) => {
 
     const { name, email, password, role } = await req.json()
 
+    console.log('Admin signup request:', { name, email, role })
+
     // Create user in auth.users
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name }
+      user_metadata: { name, role }
     })
 
     if (authError) {
+      console.error('Auth user creation error:', authError)
       throw authError
     }
 
     if (!authUser.user) {
       throw new Error('Failed to create user')
     }
+
+    console.log('Auth user created:', authUser.user.id)
 
     // Hash password for admin_users table
     const encoder = new TextEncoder()
@@ -64,10 +69,13 @@ serve(async (req) => {
       })
 
     if (adminError) {
+      console.error('Admin user creation error:', adminError)
       // If admin user creation fails, delete the auth user
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       throw adminError
     }
+
+    console.log('Admin user created successfully')
 
     return new Response(
       JSON.stringify({ 

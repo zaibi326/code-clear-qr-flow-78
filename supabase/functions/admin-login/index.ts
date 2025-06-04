@@ -26,6 +26,8 @@ serve(async (req) => {
 
     const { email, password } = await req.json()
 
+    console.log('Admin login attempt for:', email)
+
     // First verify the user exists in admin_users table
     const { data: adminUser, error: adminError } = await supabaseAdmin
       .from('admin_users')
@@ -35,8 +37,11 @@ serve(async (req) => {
       .single()
 
     if (adminError || !adminUser) {
+      console.error('Admin user not found or inactive:', adminError)
       throw new Error('Invalid admin credentials')
     }
+
+    console.log('Admin user found:', adminUser.id)
 
     // Verify password
     const encoder = new TextEncoder()
@@ -46,8 +51,11 @@ serve(async (req) => {
     const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
     if (passwordHash !== adminUser.password_hash) {
+      console.error('Password mismatch')
       throw new Error('Invalid admin credentials')
     }
+
+    console.log('Password verified')
 
     // Update last login
     await supabaseAdmin
@@ -55,15 +63,18 @@ serve(async (req) => {
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', adminUser.id)
 
-    // Create auth session
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: email
+    // Create auth session using signInWithPassword
+    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+      email: email,
+      password: password
     })
 
     if (authError) {
+      console.error('Auth session creation error:', authError)
       throw authError
     }
+
+    console.log('Auth session created successfully')
 
     return new Response(
       JSON.stringify({ 
@@ -77,7 +88,7 @@ serve(async (req) => {
           last_login_at: adminUser.last_login_at,
           created_at: adminUser.created_at
         },
-        session: authData
+        session: authData.session
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
