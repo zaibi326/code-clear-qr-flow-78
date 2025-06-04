@@ -113,6 +113,12 @@ function App() {
                     <CampaignCreator />
                   </ProtectedRoute>
                 } />
+
+                <Route path="/campaign-creator" element={
+                  <ProtectedRoute>
+                    <CampaignCreator />
+                  </ProtectedRoute>
+                } />
                 
                 <Route path="/integrations" element={
                   <ProtectedRoute>
