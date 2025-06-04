@@ -11,13 +11,27 @@ interface CSVUploadSectionProps {
   csvData: any[];
   onCSVDataChange: (data: any[]) => void;
   onCSVFileChange: (file: File | null) => void;
+  onBulkSave: () => void;
+  styling: {
+    foregroundColor: string;
+    backgroundColor: string;
+    logoUrl: string;
+  };
+  onStyleChange: (field: string, value: string) => void;
+  logoFile: File | null;
+  onLogoFileChange: (file: File) => void;
 }
 
 export function CSVUploadSection({ 
   csvFile, 
   csvData, 
   onCSVDataChange, 
-  onCSVFileChange 
+  onCSVFileChange,
+  onBulkSave,
+  styling,
+  onStyleChange,
+  logoFile,
+  onLogoFileChange
 }: CSVUploadSectionProps) {
   const { toast } = useToast();
 
@@ -151,7 +165,10 @@ export function CSVUploadSection({
                     </div>
                   ))}
                 </div>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  onClick={onBulkSave}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
                   Generate QR Codes for All Records
                 </Button>
               </div>
