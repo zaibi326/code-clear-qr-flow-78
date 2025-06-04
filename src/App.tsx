@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ import BestPractices from './pages/BestPractices';
 import HelpCenter from './pages/HelpCenter';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
+import About from './pages/About';
 import Marketing from './pages/solutions/Marketing';
 import Events from './pages/solutions/Events';
 import Restaurants from './pages/solutions/Restaurants';
@@ -66,6 +68,7 @@ function App() {
                 {/* Public content pages */}
                 <Route path="/features" element={<Features />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/about" element={<About />} />
                 <Route path="/api-documentation" element={<ApiDocumentation />} />
                 <Route path="/integrations" element={<Integrations />} />
                 <Route path="/changelog" element={<Changelog />} />

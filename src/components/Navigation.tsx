@@ -29,30 +29,30 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <button 
-              onClick={() => scrollToSection('features')} 
+            <Link 
+              to="/features" 
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
             >
               Features
-            </button>
+            </Link>
             <button 
               onClick={() => scrollToSection('how-it-works')} 
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
             >
               How it Works
             </button>
-            <button 
-              onClick={() => scrollToSection('pricing')} 
+            <Link 
+              to="/pricing" 
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
             >
               Pricing
-            </button>
-            <button 
-              onClick={() => scrollToSection('about')} 
+            </Link>
+            <Link 
+              to="/about" 
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
             >
               About
-            </button>
+            </Link>
             <Link 
               to="/support"
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
@@ -87,30 +87,33 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-              <button
-                onClick={() => scrollToSection('features')}
+              <Link
+                to="/features"
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
               >
                 Features
-              </button>
+              </Link>
               <button
                 onClick={() => scrollToSection('how-it-works')}
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
               >
                 How it Works
               </button>
-              <button
-                onClick={() => scrollToSection('pricing')}
+              <Link
+                to="/pricing"
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
-              </button>
-              <button
-                onClick={() => scrollToSection('about')}
+              </Link>
+              <Link
+                to="/about"
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
+                onClick={() => setIsMenuOpen(false)}
               >
                 About
-              </button>
+              </Link>
               <Link
                 to="/support"
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
