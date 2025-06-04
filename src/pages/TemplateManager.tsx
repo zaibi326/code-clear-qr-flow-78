@@ -1,125 +1,79 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { TemplateManagerTabs } from '@/components/template/TemplateManagerTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateLibraryTab } from '@/components/template/TemplateLibraryTab';
-import { TemplateManageTab } from '@/components/template/TemplateManageTab';
 import { TemplateUploadTab } from '@/components/template/TemplateUploadTab';
+import { TemplateManageTab } from '@/components/template/TemplateManageTab';
+import { Template } from '@/types/template';
+import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Layout, FileText, Upload, Palette, Plus, Download, Eye } from 'lucide-react';
-import { Template } from '@/types/template';
+import { FileText, Upload, FolderOpen, Plus, TrendingUp, Download } from 'lucide-react';
 
 const TemplateManager = () => {
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTab, setActiveTab] = useState('library');
-  const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: '1',
-      name: 'Modern Business Card',
-      type: 'business',
-      category: 'Professional',
-      description: 'Clean and modern business card template',
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15'),
-      isPublic: true,
-      tags: ['business', 'modern', 'professional'],
-      preview: '/placeholder.svg'
-    },
-    {
-      id: '2',
-      name: 'Restaurant Menu',
-      type: 'menu',
-      category: 'Food & Beverage',
-      description: 'Elegant restaurant menu template',
-      createdAt: new Date('2024-01-12'),
-      updatedAt: new Date('2024-01-12'),
-      isPublic: true,
-      tags: ['restaurant', 'menu', 'food'],
-      preview: '/placeholder.svg'
-    },
-    {
-      id: '3',
-      name: 'Event Registration',
-      type: 'event',
-      category: 'Events',
-      description: 'Professional event registration template',
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-10'),
-      isPublic: false,
-      tags: ['event', 'registration', 'form'],
-      preview: '/placeholder.svg'
-    }
-  ]);
+
+  const handleTemplateUpload = (template: Template) => {
+    console.log('Template uploaded:', template);
+    setTemplates(prev => [...prev, template]);
+    
+    toast({
+      title: "Template uploaded successfully!",
+      description: `${template.name} has been added to your library.`,
+    });
+  };
+
+  const handleTemplateSelect = (template: Template) => {
+    console.log('Template selected:', template);
+    
+    toast({
+      title: "Template selected!",
+      description: `You can now use ${template.name} for your QR campaigns.`,
+    });
+  };
 
   const templateStats = [
     {
       title: 'Total Templates',
-      value: '45',
-      icon: Layout,
+      value: templates.length.toString(),
+      icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
       lightBg: 'bg-blue-50',
-      change: '+12%'
-    },
-    {
-      title: 'Custom Templates',
-      value: '12',
-      icon: Palette,
-      color: 'text-purple-600',
-      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
-      lightBg: 'bg-purple-50',
-      change: '+8%'
-    },
-    {
-      title: 'Shared Templates',
-      value: '33',
-      icon: FileText,
-      color: 'text-green-600',
-      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-      lightBg: 'bg-green-50',
-      change: '+24%'
+      change: '+3'
     },
     {
       title: 'Recent Uploads',
-      value: '8',
+      value: '12',
       icon: Upload,
+      color: 'text-green-600',
+      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
+      lightBg: 'bg-green-50',
+      change: '+5'
+    },
+    {
+      title: 'Most Used',
+      value: 'Business Card',
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
+      lightBg: 'bg-purple-50',
+      change: '89%'
+    },
+    {
+      title: 'Downloads',
+      value: '1.2k',
+      icon: Download,
       color: 'text-orange-600',
       bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
       lightBg: 'bg-orange-50',
-      change: '+5%'
+      change: '+24%'
     }
   ];
-
-  const handleTemplateSelect = (template: Template) => {
-    console.log('Template selected:', template);
-  };
-
-  const handleTemplateUpload = (template: Template) => {
-    setTemplates(prev => [template, ...prev]);
-  };
-
-  const handleTemplateEdit = (template: Template) => {
-    console.log('Edit template:', template);
-  };
-
-  const handleTemplateDelete = (templateId: string) => {
-    setTemplates(prev => prev.filter(t => t.id !== templateId));
-  };
-
-  const handleTemplateDuplicate = (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      const duplicated: Template = {
-        ...template,
-        id: `${template.id}-copy-${Date.now()}`,
-        name: `${template.name} (Copy)`,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      setTemplates(prev => [duplicated, ...prev]);
-    }
-  };
 
   return (
     <SidebarProvider>
@@ -135,19 +89,22 @@ const TemplateManager = () => {
               <div className="mb-8 animate-fade-in">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Template Manager
                     </h1>
                     <p className="text-lg text-gray-600">Create, manage, and organize your QR code templates</p>
                   </div>
                   <div className="flex gap-3">
                     <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <Download className="h-4 w-4" />
-                      Export All
+                      <FolderOpen className="h-4 w-4" />
+                      Browse Library
                     </Button>
-                    <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white flex items-center gap-2">
+                    <Button 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2"
+                      onClick={() => setActiveTab('upload')}
+                    >
                       <Plus className="h-4 w-4" />
-                      Create Template
+                      Upload Template
                     </Button>
                   </div>
                 </div>
@@ -162,8 +119,9 @@ const TemplateManager = () => {
                         <div className={`p-4 rounded-2xl ${stat.bgColor} text-white shadow-lg group-hover:scale-110 transition-transform`}>
                           <stat.icon className="h-6 w-6" />
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-medium text-green-600">{stat.change}</span>
+                        <div className={`flex items-center gap-1 ${stat.change.includes('+') || stat.change.includes('%') ? 'text-green-600' : 'text-blue-600'}`}>
+                          <TrendingUp className="h-4 w-4" />
+                          <span className="text-sm font-medium">{stat.change}</span>
                         </div>
                       </div>
                       <div>
@@ -175,29 +133,51 @@ const TemplateManager = () => {
                 ))}
               </div>
 
-              {/* Template Management */}
+              {/* Template Management Content */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                 <div className="px-8 pt-8 pb-0">
-                  <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                </div>
-                <div className="p-8">
-                  {activeTab === 'library' && (
-                    <TemplateLibraryTab 
-                      templates={templates}
-                      onTemplateSelect={handleTemplateSelect}
-                    />
-                  )}
-                  {activeTab === 'manage' && (
-                    <TemplateManageTab 
-                      templates={templates}
-                      onTemplateEdit={handleTemplateEdit}
-                      onTemplateDelete={handleTemplateDelete}
-                      onTemplateDuplicate={handleTemplateDuplicate}
-                    />
-                  )}
-                  {activeTab === 'upload' && (
-                    <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
-                  )}
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-100/50 rounded-2xl p-2">
+                      <TabsTrigger 
+                        value="library" 
+                        className="flex items-center gap-2 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Template Library
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="upload" 
+                        className="flex items-center gap-2 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Template
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="manage" 
+                        className="flex items-center gap-2 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
+                      >
+                        <FolderOpen className="h-4 w-4" />
+                        Manage Templates
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <div className="pb-8">
+                      <TabsContent value="library" className="mt-0">
+                        <TemplateLibraryTab 
+                          templates={templates} 
+                          onTemplateSelect={handleTemplateSelect} 
+                        />
+                      </TabsContent>
+                      
+                      <TabsContent value="upload" className="mt-0">
+                        <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
+                      </TabsContent>
+                      
+                      <TabsContent value="manage" className="mt-0">
+                        <TemplateManageTab templates={templates} />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
                 </div>
               </div>
             </div>

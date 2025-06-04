@@ -4,75 +4,60 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { CampaignCreatorTabs } from '@/components/campaign/CampaignCreatorTabs';
-import { CreateCampaignTab } from '@/components/campaign/CreateCampaignTab';
-import { ManageCampaignsTab } from '@/components/campaign/ManageCampaignsTab';
-import { CampaignAnalyticsTab } from '@/components/campaign/CampaignAnalyticsTab';
-import CampaignWizard from '@/components/campaign/CampaignWizard';
-import { Campaign } from '@/types/campaign';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Megaphone, Target, TrendingUp, Users, Plus, Eye, BarChart3 } from 'lucide-react';
+import { 
+  Zap, 
+  Target, 
+  BarChart3, 
+  Users, 
+  TrendingUp, 
+  Plus, 
+  Search,
+  Calendar
+} from 'lucide-react';
 
 const CampaignCreator = () => {
-  const [activeTab, setActiveTab] = useState('manage');
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [showWizard, setShowWizard] = useState(false);
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('create');
 
   const campaignStats = [
     {
       title: 'Active Campaigns',
-      value: '12',
-      icon: Megaphone,
+      value: '24',
+      icon: Zap,
       color: 'text-blue-600',
       bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
       lightBg: 'bg-blue-50',
-      change: '+18%'
+      change: '+8'
     },
     {
       title: 'Total Reach',
-      value: '45.2K',
-      icon: Users,
+      value: '156k',
+      icon: Target,
       color: 'text-green-600',
       bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
       lightBg: 'bg-green-50',
-      change: '+28%'
+      change: '+23%'
     },
     {
       title: 'Conversion Rate',
-      value: '8.4%',
-      icon: Target,
+      value: '12.4%',
+      icon: BarChart3,
       color: 'text-purple-600',
       bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
       lightBg: 'bg-purple-50',
-      change: '+5.2%'
+      change: '+3.2%'
     },
     {
-      title: 'Growth',
-      value: '+24%',
-      icon: TrendingUp,
+      title: 'Engaged Users',
+      value: '19.3k',
+      icon: Users,
       color: 'text-orange-600',
       bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
       lightBg: 'bg-orange-50',
-      change: '+12%'
+      change: '+15%'
     }
   ];
-
-  const handleCampaignCreate = (campaign: Campaign) => {
-    setCampaigns(prev => [campaign, ...prev]);
-    setShowWizard(false);
-    setActiveTab('manage');
-    toast({
-      title: "Campaign created successfully",
-      description: `${campaign.name} has been created and is ready to launch.`,
-    });
-  };
-
-  const handleStartNewCampaign = () => {
-    setShowWizard(true);
-    setActiveTab('create');
-  };
 
   return (
     <SidebarProvider>
@@ -88,19 +73,23 @@ const CampaignCreator = () => {
               <div className="mb-8 animate-fade-in">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                      Campaign Manager
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                      Campaign Creator
                     </h1>
-                    <p className="text-lg text-gray-600">Create, manage, and track your marketing campaigns</p>
+                    <p className="text-lg text-gray-600">Design, launch, and manage powerful QR code campaigns</p>
                   </div>
                   <div className="flex gap-3">
                     <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <BarChart3 className="h-4 w-4" />
-                      View Analytics
+                      <Search className="h-4 w-4" />
+                      Browse Templates
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
+                      <Calendar className="h-4 w-4" />
+                      Schedule Campaign
                     </Button>
                     <Button 
-                      onClick={handleStartNewCampaign}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white flex items-center gap-2"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2"
+                      onClick={() => setActiveTab('create')}
                     >
                       <Plus className="h-4 w-4" />
                       New Campaign
@@ -118,7 +107,7 @@ const CampaignCreator = () => {
                         <div className={`p-4 rounded-2xl ${stat.bgColor} text-white shadow-lg group-hover:scale-110 transition-transform`}>
                           <stat.icon className="h-6 w-6" />
                         </div>
-                        <div className="flex items-center gap-1 text-green-600">
+                        <div className={`flex items-center gap-1 ${stat.change.includes('+') || stat.change.includes('%') ? 'text-green-600' : 'text-blue-600'}`}>
                           <TrendingUp className="h-4 w-4" />
                           <span className="text-sm font-medium">{stat.change}</span>
                         </div>
@@ -132,30 +121,10 @@ const CampaignCreator = () => {
                 ))}
               </div>
 
-              {/* Campaign Management */}
+              {/* Campaign Creator Content */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                 <div className="px-8 pt-8 pb-0">
                   <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                </div>
-                <div className="p-8">
-                  {activeTab === 'create' && !showWizard && (
-                    <CreateCampaignTab onStartCampaign={handleStartNewCampaign} />
-                  )}
-                  
-                  {activeTab === 'create' && showWizard && (
-                    <CampaignWizard onCampaignCreate={handleCampaignCreate} />
-                  )}
-                  
-                  {activeTab === 'manage' && (
-                    <ManageCampaignsTab 
-                      campaigns={campaigns}
-                      onCreateNew={handleStartNewCampaign}
-                    />
-                  )}
-                  
-                  {activeTab === 'analytics' && (
-                    <CampaignAnalyticsTab campaigns={campaigns} />
-                  )}
                 </div>
               </div>
             </div>
