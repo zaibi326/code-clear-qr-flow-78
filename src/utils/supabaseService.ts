@@ -108,7 +108,7 @@ export const supabaseService = {
         marketing: false
       },
       dashboard: {
-        default_view: 'grid' as const,
+        default_view: 'grid' as 'grid' | 'list',
         items_per_page: 10
       }
     };
