@@ -16,6 +16,7 @@ import DataManager from './pages/DataManager';
 import Projects from './pages/Projects';
 import CampaignCreator from './pages/CampaignCreator';
 import Integrations from './pages/Integrations';
+import DashboardIntegrationsPage from './pages/DashboardIntegrationsPage';
 import Monitoring from './pages/Monitoring';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
@@ -123,6 +124,12 @@ function App() {
                 <Route path="/integrations" element={
                   <ProtectedRoute>
                     <Integrations />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/dashboard/integrations" element={
+                  <ProtectedRoute>
+                    <DashboardIntegrationsPage />
                   </ProtectedRoute>
                 } />
 
