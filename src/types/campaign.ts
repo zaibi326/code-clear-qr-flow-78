@@ -2,6 +2,7 @@
 export interface Campaign {
   id: string;
   name: string;
+  description?: string;
   status: 'active' | 'draft' | 'completed' | 'generating';
   qrCodes: QRData[];
   template: any;
