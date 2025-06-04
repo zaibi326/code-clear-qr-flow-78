@@ -1,6 +1,4 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AdminUser {
   id: string;
@@ -29,27 +27,30 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   const adminLogin = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // This would typically call an edge function for admin authentication
-      // For now, we'll simulate the login process
-      console.log('Admin login attempt:', email);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful login for demo purposes
-      if (email === 'admin@example.com' && password === 'password') {
-        const mockAdminUser: AdminUser = {
-          id: 'admin-1',
-          email: email,
-          name: 'Super Admin',
-          role: 'super_admin',
-          is_active: true,
-          created_at: new Date(),
-          last_login_at: new Date()
+      const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYXh5bmtkdWl4ZWt6cXpzZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MDQwMjMsImV4cCI6MjA2Mzk4MDAyM30.pLiy2dtIssgVsP-_UnP7nepo1WSui7SqExU0dWctPpY`
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        const adminUserData: AdminUser = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
+          is_active: data.user.is_active,
+          created_at: new Date(data.user.created_at),
+          last_login_at: data.user.last_login_at ? new Date(data.user.last_login_at) : undefined
         };
         
-        setAdminUser(mockAdminUser);
-        localStorage.setItem('adminUser', JSON.stringify(mockAdminUser));
+        setAdminUser(adminUserData);
+        localStorage.setItem('adminUser', JSON.stringify(adminUserData));
         return true;
       }
       
@@ -65,14 +66,17 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   const adminRegister = async (name: string, email: string, password: string, role: 'admin' | 'super_admin'): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // This would typically call an edge function to create admin user
-      console.log('Admin registration attempt:', { name, email, role });
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, always return true
-      return true;
+      const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYXh5bmtkdWl4ZWt6cXpzZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MDQwMjMsImV4cCI6MjA2Mzk4MDAyM30.pLiy2dtIssgVsP-_UnP7nepo1WSui7SqExU0dWctPpY`
+        },
+        body: JSON.stringify({ name, email, password, role })
+      });
+
+      const data = await response.json();
+      return data.success;
     } catch (error) {
       console.error('Admin registration error:', error);
       return false;
