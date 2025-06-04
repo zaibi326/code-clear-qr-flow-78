@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,8 +59,8 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
-          <p className="text-gray-600">Manage your QR codes and campaigns</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Overview</h2>
+          <p className="text-gray-600">Manage your QR codes and campaigns from here</p>
         </div>
 
         {/* Quick Stats */}
