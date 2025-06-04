@@ -1,268 +1,306 @@
 
-import React, { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/dashboard/AppSidebar';
-import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plug, Check, ExternalLink, Settings, Zap, Globe, Mail, Database, TrendingUp, Plus } from 'lucide-react';
+import { 
+  Zap, 
+  Database, 
+  Mail, 
+  MessageSquare, 
+  BarChart3, 
+  CreditCard,
+  Calendar,
+  Users,
+  Webhook,
+  Api
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import Footer from '@/components/Footer';
 
 const Integrations = () => {
-  const [connectedIntegrations, setConnectedIntegrations] = useState<string[]>(['google-analytics']);
-
-  const integrationStats = [
+  const integrations = [
     {
-      title: 'Connected Apps',
-      value: '4',
-      icon: Plug,
-      color: 'text-blue-600',
-      bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
-      lightBg: 'bg-blue-50',
-      change: '+2'
-    },
-    {
-      title: 'API Calls',
-      value: '1.2K',
+      name: 'Zapier',
+      description: 'Connect with 5,000+ apps to automate your QR code workflows',
       icon: Zap,
-      color: 'text-green-600',
-      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-      lightBg: 'bg-green-50',
-      change: '+24%'
-    },
-    {
-      title: 'Active Webhooks',
-      value: '3',
-      icon: Globe,
-      color: 'text-purple-600',
-      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
-      lightBg: 'bg-purple-50',
-      change: '+1'
-    },
-    {
-      title: 'Data Synced',
-      value: '98%',
-      icon: Database,
+      category: 'Automation',
+      status: 'Available',
       color: 'text-orange-600',
-      bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
-      lightBg: 'bg-orange-50',
-      change: '+2%'
-    }
-  ];
-
-  const availableIntegrations = [
+      bgColor: 'bg-orange-50'
+    },
     {
-      id: 'google-analytics',
       name: 'Google Analytics',
       description: 'Track QR code performance with detailed analytics and insights',
-      icon: '📊',
+      icon: BarChart3,
       category: 'Analytics',
-      features: ['Real-time tracking', 'Custom events', 'Goal conversion', 'Advanced reports'],
-      rating: 4.8,
-      popularity: 'Very Popular'
+      status: 'Available',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
     },
     {
-      id: 'mailchimp',
       name: 'Mailchimp',
-      description: 'Sync QR code scans with your email marketing campaigns',
-      icon: '📧',
+      description: 'Integrate QR codes into your email marketing campaigns',
+      icon: Mail,
       category: 'Marketing',
-      features: ['Audience sync', 'Campaign tracking', 'Automation triggers', 'Segmentation'],
-      rating: 4.6,
-      popularity: 'Popular'
+      status: 'Available',
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
     },
     {
-      id: 'slack',
       name: 'Slack',
-      description: 'Get real-time notifications about QR code activity in your workspace',
-      icon: '💬',
+      description: 'Get real-time notifications about QR code scans and campaigns',
+      icon: MessageSquare,
       category: 'Communication',
-      features: ['Real-time alerts', 'Custom channels', 'Team notifications', 'Bot integration'],
-      rating: 4.7,
-      popularity: 'Popular'
+      status: 'Available',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
     },
     {
-      id: 'zapier',
-      name: 'Zapier',
-      description: 'Connect with 3000+ apps through automated workflows',
-      icon: '⚡',
-      category: 'Automation',
-      features: ['3000+ app connections', 'Custom workflows', 'Trigger actions', 'Multi-step zaps'],
-      rating: 4.9,
-      popularity: 'Very Popular'
+      name: 'Stripe',
+      description: 'Accept payments through QR codes with secure payment processing',
+      icon: CreditCard,
+      category: 'Payments',
+      status: 'Available',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50'
     },
     {
-      id: 'hubspot',
-      name: 'HubSpot',
-      description: 'Sync leads and track customer interactions seamlessly',
-      icon: '🎯',
+      name: 'Salesforce',
+      description: 'Sync QR code data with your CRM for better customer insights',
+      icon: Database,
       category: 'CRM',
-      features: ['Lead tracking', 'Contact sync', 'Pipeline management', 'Deal automation'],
-      rating: 4.5,
-      popularity: 'Growing'
+      status: 'Available',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
     },
     {
-      id: 'shopify',
-      name: 'Shopify',
-      description: 'Integrate QR codes with your e-commerce store',
-      icon: '🛒',
-      category: 'E-commerce',
-      features: ['Product links', 'Order tracking', 'Customer insights', 'Inventory sync'],
-      rating: 4.4,
-      popularity: 'Popular'
+      name: 'Calendly',
+      description: 'Enable appointment booking through QR codes',
+      icon: Calendar,
+      category: 'Scheduling',
+      status: 'Available',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      name: 'HubSpot',
+      description: 'Integrate QR codes with your marketing automation platform',
+      icon: Users,
+      category: 'Marketing',
+      status: 'Available',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    },
+    {
+      name: 'Webhooks',
+      description: 'Real-time data sync with custom webhook integrations',
+      icon: Webhook,
+      category: 'Developer',
+      status: 'Available',
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50'
+    },
+    {
+      name: 'REST API',
+      description: 'Full API access for custom integrations and development',
+      icon: Api,
+      category: 'Developer',
+      status: 'Available',
+      color: 'text-red-600',
+      bgColor: 'bg-red-50'
     }
   ];
 
-  const toggleIntegration = (integrationId: string) => {
-    setConnectedIntegrations(prev => 
-      prev.includes(integrationId) 
-        ? prev.filter(id => id !== integrationId)
-        : [...prev, integrationId]
-    );
-  };
+  const categories = ['All', 'Automation', 'Analytics', 'Marketing', 'Communication', 'Payments', 'CRM', 'Scheduling', 'Developer'];
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
-          <DashboardTopbar />
-          
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-6 py-8">
-              {/* Header Section */}
-              <div className="mb-8 animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                      Integrations
-                    </h1>
-                    <p className="text-lg text-gray-600">Connect your favorite tools and automate your QR code workflows</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <Badge className="mb-4 bg-purple-100 text-purple-800">Integrations</Badge>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Connect with Your Favorite Tools
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Seamlessly integrate ClearQR with the tools you already use to streamline your workflow
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg">
+                <Link to="/register">Get Started Free</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/api-documentation">View API Docs</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Integrations Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {integrations.map((integration, index) => (
+            <Card key={index} className="group hover:shadow-xl transition-all duration-300 cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 ${integration.bgColor} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <integration.icon className={`h-6 w-6 ${integration.color}`} />
                   </div>
-                  <div className="flex gap-3">
-                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                      <ExternalLink className="h-4 w-4" />
-                      Browse All
-                    </Button>
-                    <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Request Integration
-                    </Button>
+                  <Badge variant="secondary" className="text-xs">
+                    {integration.status}
+                  </Badge>
+                </div>
+                <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
+                  {integration.name}
+                </CardTitle>
+                <Badge variant="outline" className="w-fit">
+                  {integration.category}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">{integration.description}</p>
+                <Button variant="outline" size="sm" className="w-full group-hover:bg-blue-50 group-hover:border-blue-300 transition-colors">
+                  Connect
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* API Section */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Powerful API for Developers
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Build custom integrations with our comprehensive REST API
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">What You Can Build</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Zap className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Automated QR Generation</h4>
+                    <p className="text-gray-600">Generate QR codes programmatically in your applications</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
-                {integrationStats.map((stat, index) => (
-                  <Card key={index} className="group border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`p-4 rounded-2xl ${stat.bgColor} text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                          <stat.icon className="h-6 w-6" />
-                        </div>
-                        <div className="flex items-center gap-1 text-green-600">
-                          <TrendingUp className="h-4 w-4" />
-                          <span className="text-sm font-medium">{stat.change}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Available Integrations */}
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-8 animate-fade-in">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="h-4 w-4 text-green-600" />
+                  </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Available Integrations</h2>
-                    <p className="text-gray-600">Connect with the tools you already use to supercharge your workflow</p>
+                    <h4 className="font-semibold text-gray-900">Real-time Analytics</h4>
+                    <p className="text-gray-600">Access scan data and analytics in real-time</p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {availableIntegrations.map((integration) => {
-                    const isConnected = connectedIntegrations.includes(integration.id);
-                    
-                    return (
-                      <Card key={integration.id} className="group hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-blue-300 bg-white/80 backdrop-blur-sm hover:bg-white">
-                        <CardHeader className="pb-4">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center space-x-4">
-                              <div className="text-3xl bg-gray-50 p-3 rounded-2xl group-hover:scale-110 transition-transform">
-                                {integration.icon}
-                              </div>
-                              <div>
-                                <CardTitle className="text-xl font-bold text-gray-900 mb-1">{integration.name}</CardTitle>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="text-xs">{integration.category}</Badge>
-                                  <Badge variant="outline" className="text-xs text-blue-600">{integration.popularity}</Badge>
-                                </div>
-                              </div>
-                            </div>
-                            {isConnected && (
-                              <div className="flex items-center text-green-600 bg-green-50 rounded-full p-2">
-                                <Check className="h-4 w-4" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 leading-relaxed">{integration.description}</p>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-blue-500" />
-                                Key Features
-                              </h4>
-                              <div className="grid grid-cols-2 gap-2">
-                                {integration.features.map((feature, index) => (
-                                  <div key={index} className="text-xs text-gray-600 flex items-center gap-2 bg-gray-50 px-2 py-1 rounded-lg">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                                    {feature}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                              <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium text-gray-700">★ {integration.rating}</span>
-                                <span className="text-xs text-gray-500">rating</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant={isConnected ? "outline" : "default"}
-                                  size="sm"
-                                  onClick={() => toggleIntegration(integration.id)}
-                                  className={isConnected ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"}
-                                >
-                                  {isConnected ? "Disconnect" : "Connect"}
-                                </Button>
-                                {isConnected && (
-                                  <Button variant="ghost" size="sm" className="hover:bg-gray-100">
-                                    <Settings className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Webhook className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Webhook Notifications</h4>
+                    <p className="text-gray-600">Get instant notifications when QR codes are scanned</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Database className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Data Management</h4>
+                    <p className="text-gray-600">Manage QR codes and campaigns programmatically</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </main>
+            <div className="bg-gray-900 p-8 rounded-lg">
+              <h4 className="text-white font-semibold mb-4">Quick Example</h4>
+              <pre className="text-green-400 text-sm overflow-x-auto">
+                <code>{`curl -X POST https://api.clearqr.io/v1/qr \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "https://example.com",
+    "type": "url",
+    "customization": {
+      "color": "#1f2937",
+      "logo": "https://example.com/logo.png"
+    }
+  }'`}</code>
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
-    </SidebarProvider>
+
+      {/* Benefits Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Why Choose Our Integrations?</h2>
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+              Built for scale, security, and simplicity
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Easy Setup</h3>
+              <p className="text-blue-100">Connect your tools in minutes with our simple setup process</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Database className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Reliable Sync</h3>
+              <p className="text-blue-100">99.9% uptime ensures your data is always in sync</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Expert Support</h3>
+              <p className="text-blue-100">Dedicated support team to help with custom integrations</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Connect?</h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Start integrating ClearQR with your favorite tools today
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg">
+              <Link to="/register">Get Started Free</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/support">Contact Support</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
   );
 };
 

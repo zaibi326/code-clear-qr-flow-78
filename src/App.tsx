@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -30,6 +29,13 @@ import Blog from './pages/Blog';
 import CaseStudies from './pages/CaseStudies';
 import BestPractices from './pages/BestPractices';
 import HelpCenter from './pages/HelpCenter';
+import Features from './pages/Features';
+import Pricing from './pages/Pricing';
+import Marketing from './pages/Solutions/Marketing';
+import Events from './pages/Solutions/Events';
+import Restaurants from './pages/Solutions/Restaurants';
+import Retail from './pages/Solutions/Retail';
+import Healthcare from './pages/Solutions/Healthcare';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
@@ -57,12 +63,22 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 
                 {/* Public content pages */}
+                <Route path="/features" element={<Features />} />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/api-documentation" element={<ApiDocumentation />} />
+                <Route path="/integrations" element={<Integrations />} />
                 <Route path="/changelog" element={<Changelog />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/case-studies" element={<CaseStudies />} />
                 <Route path="/best-practices" element={<BestPractices />} />
                 <Route path="/help-center" element={<HelpCenter />} />
+                
+                {/* Solutions pages */}
+                <Route path="/solutions/marketing" element={<Marketing />} />
+                <Route path="/solutions/events" element={<Events />} />
+                <Route path="/solutions/restaurants" element={<Restaurants />} />
+                <Route path="/solutions/retail" element={<Retail />} />
+                <Route path="/solutions/healthcare" element={<Healthcare />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />

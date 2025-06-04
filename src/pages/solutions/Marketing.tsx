@@ -1,189 +1,188 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Megaphone, Target, BarChart3, Users, Zap, CheckCircle } from 'lucide-react';
+import { 
+  Target, 
+  TrendingUp, 
+  Users, 
+  Share2, 
+  BarChart3, 
+  Megaphone,
+  Globe,
+  Smartphone
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Footer from '@/components/Footer';
 
 const Marketing = () => {
-  const features = [
+  const benefits = [
     {
       icon: Target,
-      title: 'Campaign Targeting',
-      description: 'Create targeted QR campaigns for specific demographics and locations'
+      title: 'Targeted Campaigns',
+      description: 'Create personalized QR code campaigns that deliver the right message to the right audience at the right time.'
     },
     {
-      icon: BarChart3,
-      title: 'Performance Analytics',
-      description: 'Track engagement, conversion rates, and ROI in real-time'
+      icon: TrendingUp,
+      title: 'Boost Engagement',
+      description: 'Increase customer engagement with interactive QR codes that bridge offline and online experiences.'
     },
     {
       icon: Users,
-      title: 'Audience Insights',
-      description: 'Understand your audience behavior and preferences'
+      title: 'Customer Insights',
+      description: 'Gain valuable insights into customer behavior and preferences through detailed scan analytics.'
     },
     {
-      icon: Zap,
-      title: 'A/B Testing',
-      description: 'Test different QR designs and destinations for optimal results'
+      icon: Share2,
+      title: 'Social Integration',
+      description: 'Seamlessly integrate with social media platforms to amplify your marketing reach.'
     }
   ];
 
   const useCases = [
-    'Print advertising campaigns',
-    'Product packaging',
-    'Event marketing',
-    'Social media integration',
-    'Email marketing',
-    'Direct mail campaigns',
-    'Outdoor advertising',
-    'In-store promotions'
-  ];
-
-  const results = [
-    { metric: '300%', description: 'Increase in engagement rates' },
-    { metric: '150%', description: 'Higher conversion rates' },
-    { metric: '60%', description: 'Reduction in marketing costs' },
-    { metric: '24/7', description: 'Real-time campaign monitoring' }
+    {
+      title: 'Print Advertising',
+      description: 'Add QR codes to flyers, posters, and magazine ads to drive traffic to landing pages.',
+      image: '/lovable-uploads/02a40581-58f3-4a8f-9289-addc9f13cab0.png'
+    },
+    {
+      title: 'Product Packaging',
+      description: 'Include QR codes on packaging for product information, reviews, and promotions.',
+      image: '/lovable-uploads/5a18dce6-2917-4c31-af16-17e4c3ac2cf1.png'
+    },
+    {
+      title: 'Event Marketing',
+      description: 'Use QR codes for event check-ins, schedules, and attendee networking.',
+      image: '/lovable-uploads/7044a335-27b6-407a-8043-23c1c5995404.png'
+    }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="flex items-center gap-3 mb-4">
-            <Megaphone className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">Marketing Solutions</h1>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <Badge className="mb-4 bg-white/20 text-white">Marketing Solutions</Badge>
+            <h1 className="text-4xl font-bold mb-4">
+              Supercharge Your Marketing with QR Codes
+            </h1>
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8">
+              Transform your marketing campaigns with dynamic QR codes that connect offline and online experiences
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                <Link to="/register">Start Free Trial</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600">
+                <Link to="/quick-generate">Try QR Generator</Link>
+              </Button>
+            </div>
           </div>
-          <p className="text-xl text-gray-600">Transform your marketing campaigns with intelligent QR codes that track, analyze, and optimize performance</p>
+        </div>
+      </div>
+
+      {/* Benefits Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Why Choose QR Codes for Marketing?
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            QR codes provide a seamless bridge between your physical and digital marketing efforts
+          </p>
         </div>
 
-        {/* Hero Section */}
-        <Card className="mb-12 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-4">Bridge Digital and Physical Marketing</h2>
-                <p className="text-gray-600 mb-6">
-                  Connect your offline campaigns to digital experiences with QR codes that provide 
-                  detailed analytics and insights into customer behavior.
-                </p>
-                <div className="flex gap-4">
-                  <Button size="lg">Start Free Trial</Button>
-                  <Button size="lg" variant="outline">View Demo</Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {benefits.map((benefit, index) => (
+            <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <benefit.icon className="h-8 w-8 text-blue-600" />
                 </div>
-              </div>
-              <div className="bg-white rounded-lg p-6 shadow-lg">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Campaign Performance</span>
-                    <Badge>Live</Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {results.map((result, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <span className="text-gray-600">{result.description}</span>
-                        <span className="font-bold text-blue-600">{result.metric}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <CardTitle className="text-xl">{benefit.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">{benefit.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
-        {/* Features */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-center mb-8">Powerful Marketing Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <Card key={index}>
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <h4 className="font-semibold mb-2">{feature.title}</h4>
-                  <p className="text-sm text-gray-600">{feature.description}</p>
+      {/* Use Cases Section */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Marketing Use Cases
+            </h2>
+            <p className="text-xl text-gray-600">
+              Discover how businesses use QR codes to enhance their marketing
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {useCases.map((useCase, index) => (
+              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-gray-200">
+                  <img 
+                    src={useCase.image} 
+                    alt={useCase.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardHeader>
+                  <CardTitle>{useCase.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{useCase.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-
-        {/* Use Cases */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Marketing Use Cases</CardTitle>
-              <CardDescription>
-                Discover how QR codes can enhance your marketing strategy
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {useCases.map((useCase, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm">{useCase}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Case Study: Retail Campaign</CardTitle>
-              <CardDescription>
-                Fashion retailer increases engagement by 300%
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  A major fashion retailer used ClearQR.io to connect print ads to 
-                  personalized landing pages, resulting in unprecedented engagement rates.
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-600">300%</div>
-                      <div className="text-xs text-gray-600">Engagement Increase</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-600">45%</div>
-                      <div className="text-xs text-gray-600">Conversion Rate</div>
-                    </div>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full">Read Full Case Study</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* CTA */}
-        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold mb-4">Ready to Transform Your Marketing?</h3>
-            <p className="mb-6 opacity-90">
-              Join thousands of marketers who are already using ClearQR.io to drive better results
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button size="lg" variant="secondary">Get Started Free</Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                Schedule Demo
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Stats Section */}
+      <div className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-blue-400 mb-2">85%</div>
+              <div className="text-gray-300">Increase in engagement</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-green-400 mb-2">3x</div>
+              <div className="text-gray-300">Higher conversion rates</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-purple-400 mb-2">60%</div>
+              <div className="text-gray-300">Reduction in print costs</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-orange-400 mb-2">24/7</div>
+              <div className="text-gray-300">Campaign tracking</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Marketing?</h2>
+          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+            Join thousands of marketers using QR codes to create engaging campaigns
+          </p>
+          <Button asChild size="lg" className="bg-white text-green-600 hover:bg-gray-100">
+            <Link to="/register">Get Started Today</Link>
+          </Button>
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 };
