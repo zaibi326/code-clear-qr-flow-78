@@ -10,7 +10,6 @@ import InteractiveStats from '@/components/InteractiveStats';
 import FuturisticPricing from '@/components/FuturisticPricing';
 import NextGenCTA from '@/components/NextGenCTA';
 import Footer from '@/components/Footer';
-import Features from '@/components/Features';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -72,7 +71,6 @@ const Index = () => {
           <InteractiveHero />
           <div id="features">
             <TechFeatures />
-            <Features />
           </div>
           <div id="how-it-works">
             <AnimatedHowItWorks />
