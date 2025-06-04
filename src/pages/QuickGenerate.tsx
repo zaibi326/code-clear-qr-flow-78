@@ -4,12 +4,12 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRTypeSelector } from '@/components/qr/QRTypeSelector';
-import { QRGeneratorStepper } from '@/components/qr/QRGeneratorStepper';
+import { QRGeneratorStepper, QRCodeType } from '@/components/qr/QRGeneratorStepper';
 import { Card, CardContent } from '@/components/ui/card';
 import { QrCode, Zap, FileText, Smartphone } from 'lucide-react';
 
 const QuickGenerate = () => {
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
 
   const quickActions = [
     {
@@ -46,6 +46,23 @@ const QuickGenerate = () => {
     }
   ];
 
+  const handleTypeSelect = (type: QRCodeType) => {
+    setSelectedType(type);
+  };
+
+  const handleQuickActionClick = (actionId: string) => {
+    // Create a basic QRCodeType object for quick actions
+    const qrType: QRCodeType = {
+      id: actionId,
+      title: quickActions.find(a => a.id === actionId)?.title || '',
+      description: quickActions.find(a => a.id === actionId)?.description || '',
+      icon: quickActions.find(a => a.id === actionId)?.icon || QrCode,
+      color: quickActions.find(a => a.id === actionId)?.color || 'bg-blue-500',
+      category: 'dynamic'
+    };
+    setSelectedType(qrType);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -74,7 +91,7 @@ const QuickGenerate = () => {
                         <Card 
                           key={action.id}
                           className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-white/80 backdrop-blur-sm"
-                          onClick={() => setSelectedType(action.id)}
+                          onClick={() => handleQuickActionClick(action.id)}
                         >
                           <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -96,14 +113,13 @@ const QuickGenerate = () => {
                   {/* Full QR Type Selector */}
                   <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6">All QR Code Types</h2>
-                    <QRTypeSelector onTypeSelect={setSelectedType} />
+                    <QRTypeSelector onTypeSelect={handleTypeSelect} />
                   </div>
                 </>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
                   <QRGeneratorStepper 
-                    selectedType={selectedType}
-                    onBack={() => setSelectedType(null)}
+                    initialType={selectedType.id}
                   />
                 </div>
               )}

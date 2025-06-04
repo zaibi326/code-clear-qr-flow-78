@@ -4,8 +4,6 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { SupportTabs } from '@/components/support/SupportTabs';
-import { HelpCenter } from '@/components/support/HelpCenter';
-import { SupportTicketSystem } from '@/components/support/SupportTicketSystem';
 import { Card, CardContent } from '@/components/ui/card';
 import { HelpCircle, MessageCircle, Book, Phone } from 'lucide-react';
 
@@ -84,10 +82,6 @@ const Support = () => {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-lg">
                 <div className="px-6 pt-6 pb-0">
                   <SupportTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                </div>
-                <div className="p-6">
-                  {activeTab === 'help' && <HelpCenter />}
-                  {activeTab === 'tickets' && <SupportTicketSystem />}
                 </div>
               </div>
             </div>

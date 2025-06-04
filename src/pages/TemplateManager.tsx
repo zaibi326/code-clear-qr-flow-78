@@ -8,16 +8,18 @@ import { TemplateLibraryTab } from '@/components/template/TemplateLibraryTab';
 import { TemplateManageTab } from '@/components/template/TemplateManageTab';
 import { TemplateUploadTab } from '@/components/template/TemplateUploadTab';
 import { Card, CardContent } from '@/components/ui/card';
-import { Template, FileText, Upload, Palette } from 'lucide-react';
+import { Layout, FileText, Upload, Palette } from 'lucide-react';
+import { Template } from '@/types/template';
 
 const TemplateManager = () => {
   const [activeTab, setActiveTab] = useState('library');
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   const templateStats = [
     {
       title: 'Total Templates',
       value: '45',
-      icon: Template,
+      icon: Layout,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
@@ -43,6 +45,33 @@ const TemplateManager = () => {
       bgColor: 'bg-orange-50'
     }
   ];
+
+  const handleTemplateSelect = (template: Template) => {
+    console.log('Template selected:', template);
+  };
+
+  const handleTemplateUpload = (template: Template) => {
+    setTemplates(prev => [template, ...prev]);
+  };
+
+  const handleTemplateEdit = (template: Template) => {
+    console.log('Edit template:', template);
+  };
+
+  const handleTemplateDelete = (templateId: string) => {
+    setTemplates(prev => prev.filter(t => t.id !== templateId));
+  };
+
+  const handleTemplateDuplicate = (template: Template) => {
+    const duplicated: Template = {
+      ...template,
+      id: `${template.id}-copy-${Date.now()}`,
+      name: `${template.name} (Copy)`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    setTemplates(prev => [duplicated, ...prev]);
+  };
 
   return (
     <SidebarProvider>
@@ -87,9 +116,23 @@ const TemplateManager = () => {
                   <TemplateManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
                 <div className="p-6">
-                  {activeTab === 'library' && <TemplateLibraryTab />}
-                  {activeTab === 'manage' && <TemplateManageTab />}
-                  {activeTab === 'upload' && <TemplateUploadTab />}
+                  {activeTab === 'library' && (
+                    <TemplateLibraryTab 
+                      templates={templates}
+                      onTemplateSelect={handleTemplateSelect}
+                    />
+                  )}
+                  {activeTab === 'manage' && (
+                    <TemplateManageTab 
+                      templates={templates}
+                      onTemplateEdit={handleTemplateEdit}
+                      onTemplateDelete={handleTemplateDelete}
+                      onTemplateDuplicate={handleTemplateDuplicate}
+                    />
+                  )}
+                  {activeTab === 'upload' && (
+                    <TemplateUploadTab onTemplateUpload={handleTemplateUpload} />
+                  )}
                 </div>
               </div>
             </div>
