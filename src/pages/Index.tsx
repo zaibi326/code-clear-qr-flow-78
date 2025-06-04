@@ -72,6 +72,7 @@ const Index = () => {
           <Navigation />
           <InteractiveHero />
           <div id="features">
+            <TechFeatures />
             <Features />
           </div>
           <div id="how-it-works">
