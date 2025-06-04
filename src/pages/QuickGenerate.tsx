@@ -4,14 +4,14 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRTypeSelector } from '@/components/qr/QRTypeSelector';
-import { QRGeneratorStepper } from '@/components/qr/QRGeneratorStepper';
+import { QRGeneratorStepper, QRCodeType } from '@/components/qr/QRGeneratorStepper';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { QrCode, Zap, FileText, Smartphone, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const QuickGenerate = () => {
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
   const navigate = useNavigate();
 
   const quickActions = [
@@ -57,13 +57,22 @@ const QuickGenerate = () => {
     }
   ];
 
-  const handleTypeSelect = (typeId: string) => {
-    setSelectedType(typeId);
-    console.log('QR Type selected:', typeId);
+  const handleTypeSelect = (type: QRCodeType) => {
+    setSelectedType(type);
+    console.log('QR Type selected:', type);
   };
 
   const handleQuickActionClick = (actionId: string) => {
-    setSelectedType(actionId);
+    // Create a QRCodeType object from the actionId
+    const qrType: QRCodeType = {
+      id: actionId,
+      title: quickActions.find(a => a.id === actionId)?.title || '',
+      description: quickActions.find(a => a.id === actionId)?.description || '',
+      icon: quickActions.find(a => a.id === actionId)?.icon || QrCode,
+      color: 'bg-blue-500',
+      category: 'dynamic'
+    };
+    setSelectedType(qrType);
     console.log('Quick action selected:', actionId);
   };
 
@@ -153,8 +162,7 @@ const QuickGenerate = () => {
               ) : (
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                   <QRGeneratorStepper 
-                    initialType={selectedType}
-                    onBack={handleBack}
+                    initialType={selectedType.id}
                   />
                 </div>
               )}

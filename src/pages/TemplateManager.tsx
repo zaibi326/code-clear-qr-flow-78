@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -24,7 +23,8 @@ const TemplateManager = () => {
       createdAt: new Date('2024-01-15'),
       updatedAt: new Date('2024-01-15'),
       isPublic: true,
-      tags: ['business', 'modern', 'professional']
+      tags: ['business', 'modern', 'professional'],
+      preview: '/placeholder.svg'
     },
     {
       id: '2',
@@ -35,7 +35,8 @@ const TemplateManager = () => {
       createdAt: new Date('2024-01-12'),
       updatedAt: new Date('2024-01-12'),
       isPublic: true,
-      tags: ['restaurant', 'menu', 'food']
+      tags: ['restaurant', 'menu', 'food'],
+      preview: '/placeholder.svg'
     },
     {
       id: '3',
@@ -46,7 +47,8 @@ const TemplateManager = () => {
       createdAt: new Date('2024-01-10'),
       updatedAt: new Date('2024-01-10'),
       isPublic: false,
-      tags: ['event', 'registration', 'form']
+      tags: ['event', 'registration', 'form'],
+      preview: '/placeholder.svg'
     }
   ]);
 
