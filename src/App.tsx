@@ -10,9 +10,13 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import CreateQRCode from './pages/CreateQRCode';
+import QuickGenerate from './pages/QuickGenerate';
 import TemplateManager from './pages/TemplateManager';
+import DataManager from './pages/DataManager';
+import Projects from './pages/Projects';
 import CampaignCreator from './pages/CampaignCreator';
 import Integrations from './pages/Integrations';
+import Monitoring from './pages/Monitoring';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -67,10 +71,28 @@ function App() {
                     <CreateQRCode />
                   </ProtectedRoute>
                 } />
+
+                <Route path="/quick-generate" element={
+                  <ProtectedRoute>
+                    <QuickGenerate />
+                  </ProtectedRoute>
+                } />
                 
                 <Route path="/templates" element={
                   <ProtectedRoute>
                     <TemplateManager />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/data" element={
+                  <ProtectedRoute>
+                    <DataManager />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/projects" element={
+                  <ProtectedRoute>
+                    <Projects />
                   </ProtectedRoute>
                 } />
                 
@@ -83,6 +105,12 @@ function App() {
                 <Route path="/integrations" element={
                   <ProtectedRoute>
                     <Integrations />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/monitoring" element={
+                  <ProtectedRoute>
+                    <Monitoring />
                   </ProtectedRoute>
                 } />
                 
