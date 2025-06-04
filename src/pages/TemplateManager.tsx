@@ -62,15 +62,18 @@ const TemplateManager = () => {
     setTemplates(prev => prev.filter(t => t.id !== templateId));
   };
 
-  const handleTemplateDuplicate = (template: Template) => {
-    const duplicated: Template = {
-      ...template,
-      id: `${template.id}-copy-${Date.now()}`,
-      name: `${template.name} (Copy)`,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    setTemplates(prev => [duplicated, ...prev]);
+  const handleTemplateDuplicate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      const duplicated: Template = {
+        ...template,
+        id: `${template.id}-copy-${Date.now()}`,
+        name: `${template.name} (Copy)`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      setTemplates(prev => [duplicated, ...prev]);
+    }
   };
 
   return (
