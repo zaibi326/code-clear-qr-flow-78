@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 
@@ -12,12 +12,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
 
   console.log('ProtectedRoute: user =', user?.email, 'loading =', loading, 'path =', location.pathname);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log('ProtectedRoute: No user found after loading, will redirect to login');
-    }
-  }, [loading, user]);
 
   if (loading) {
     return (

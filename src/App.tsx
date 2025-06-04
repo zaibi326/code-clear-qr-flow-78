@@ -8,6 +8,13 @@ import Index from './pages/Index';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
+import CreateQRCode from './pages/CreateQRCode';
+import TemplateManager from './pages/TemplateManager';
+import CampaignCreator from './pages/CampaignCreator';
+import Integrations from './pages/Integrations';
+import Settings from './pages/Settings';
+import Support from './pages/Support';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -15,39 +22,90 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AdminAuthProvider>
-        <AuthProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              {/* Main routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              {/* Admin routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/register" element={<AdminRegister />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              
-              {/* Protected routes */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </AdminAuthProvider>
+      <BrowserRouter>
+        <AdminAuthProvider>
+          <AuthProvider>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Admin routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/register" element={<AdminRegister />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                
+                {/* Protected user routes */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/analytics" element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/create" element={
+                  <ProtectedRoute>
+                    <CreateQRCode />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/templates" element={
+                  <ProtectedRoute>
+                    <TemplateManager />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/campaigns" element={
+                  <ProtectedRoute>
+                    <CampaignCreator />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/integrations" element={
+                  <ProtectedRoute>
+                    <Integrations />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/support" element={
+                  <ProtectedRoute>
+                    <Support />
+                  </ProtectedRoute>
+                } />
+                
+                {/* 404 Route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+            <Toaster />
+          </AuthProvider>
+        </AdminAuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
