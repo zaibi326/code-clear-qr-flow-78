@@ -71,6 +71,9 @@ export const TemplateUploadTab = ({ onTemplateUpload }: TemplateUploadTabProps) 
       const template: Template = {
         id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: name.trim(),
+        type: 'custom',
+        category: 'Custom',
+        description: 'Custom uploaded template',
         file,
         preview,
         createdAt: new Date(),
@@ -99,6 +102,9 @@ export const TemplateUploadTab = ({ onTemplateUpload }: TemplateUploadTabProps) 
         const template: Template = {
           id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}`,
           name: name.trim(),
+          type: 'custom',
+          category: 'Custom',
+          description: 'Custom uploaded template',
           file,
           preview,
           createdAt: new Date(),

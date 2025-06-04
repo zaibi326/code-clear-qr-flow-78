@@ -48,6 +48,9 @@ const TemplateUpload = ({ onTemplateUpload }: TemplateUploadProps) => {
     const template: Template = {
       id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: file.name.split('.')[0],
+      type: 'custom',
+      category: 'Custom',
+      description: 'Custom uploaded template',
       file,
       preview,
       createdAt: new Date(),

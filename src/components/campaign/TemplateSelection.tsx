@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +17,9 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
     {
       id: 'template-1',
       name: 'Marketing Flyer',
+      type: 'marketing',
+      category: 'Marketing',
+      description: 'Professional marketing flyer template',
       file: null,
       preview: '/placeholder.svg',
       qrPosition: { x: 100, y: 200, width: 80, height: 80 },
@@ -27,6 +29,9 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
     {
       id: 'template-2',
       name: 'Product Catalog',
+      type: 'catalog',
+      category: 'Business',
+      description: 'Professional product catalog template',
       file: null,
       preview: '/placeholder.svg',
       qrPosition: { x: 150, y: 300, width: 100, height: 100 },
@@ -68,6 +73,9 @@ const TemplateSelection = ({ selectedTemplate, onTemplateSelect }: TemplateSelec
     const newTemplate: Template = {
       id: `template-${Date.now()}`,
       name: templateName.trim(),
+      type: 'custom',
+      category: 'Custom',
+      description: 'Custom uploaded template',
       file: uploadFile,
       preview: uploadPreview,
       createdAt: new Date(),

@@ -58,6 +58,9 @@ export const TemplateLibraryTab = ({ templates, onTemplateSelect }: TemplateLibr
     const newTemplate: Template = {
       id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: templateData.name,
+      type: templateData.category.toLowerCase(),
+      category: templateData.category,
+      description: templateData.description,
       file: null,
       preview: templateData.preview,
       createdAt: new Date(),

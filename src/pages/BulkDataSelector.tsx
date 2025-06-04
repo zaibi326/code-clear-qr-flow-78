@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -66,6 +67,9 @@ const BulkDataSelector = () => {
     {
       id: 'template-1',
       name: 'Business Card Template',
+      type: 'business',
+      category: 'Business',
+      description: 'Professional business card template',
       file: null,
       preview: '/placeholder.svg',
       qrPosition: { x: 75, y: 25, width: 80, height: 80 },
@@ -75,6 +79,9 @@ const BulkDataSelector = () => {
     {
       id: 'template-2',
       name: 'Flyer Template',
+      type: 'marketing',
+      category: 'Marketing',
+      description: 'Professional marketing flyer template',
       file: null,
       preview: '/placeholder.svg',
       qrPosition: { x: 50, y: 80, width: 100, height: 100 },
@@ -84,6 +91,9 @@ const BulkDataSelector = () => {
     {
       id: 'template-3',
       name: 'Poster Template',
+      type: 'poster',
+      category: 'Marketing',
+      description: 'Eye-catching poster template',
       file: null,
       preview: '/placeholder.svg',
       qrPosition: { x: 20, y: 20, width: 120, height: 120 },
