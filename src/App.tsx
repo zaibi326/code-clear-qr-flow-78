@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/useSupabaseAuth';
 import { AdminAuthProvider } from './hooks/useAdminAuth';
 import Index from './pages/Index';
@@ -9,14 +11,15 @@ import Dashboard from './pages/Dashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import NotFound from './pages/NotFound';
-import { QueryClient } from 'react-query';
 import { Toaster } from '@/components/ui/toaster';
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AdminAuthProvider>
         <AuthProvider>
           <Toaster />
@@ -40,13 +43,12 @@ function App() {
               } />
               
               {/* 404 Route */}
-              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
       </AdminAuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
