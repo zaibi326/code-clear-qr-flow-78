@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
@@ -9,9 +9,18 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ScanActivityChart } from '@/components/dashboard/ScanActivityChart';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { QRCodeGrid } from '@/components/dashboard/QRCodeGrid';
+import { QRCodeFilters } from '@/components/dashboard/QRCodeFilters';
 import { PerformanceMetrics } from '@/components/dashboard/PerformanceMetrics';
 
 const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -49,7 +58,22 @@ const Dashboard = () => {
             {/* Activity and QR Codes Row */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
               <RecentActivity />
-              <QRCodeGrid />
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <QRCodeFilters
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  onSearch={handleSearch}
+                />
+                <div className="mt-6">
+                  <QRCodeGrid
+                    activeTab={activeTab}
+                    viewMode={viewMode}
+                    searchQuery={searchQuery}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Quick Actions */}
