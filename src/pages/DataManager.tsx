@@ -59,7 +59,7 @@ const DataManager = () => {
       name: 'Summer Campaign 2024',
       rows: 2847,
       uploadDate: '2024-01-15',
-      status: 'active',
+      status: 'active' as const,
       progress: 85
     },
     {
@@ -67,7 +67,7 @@ const DataManager = () => {
       name: 'Product Launch List',
       rows: 1203,
       uploadDate: '2024-01-10',
-      status: 'processed',
+      status: 'processed' as const,
       progress: 100
     },
     {
@@ -75,7 +75,7 @@ const DataManager = () => {
       name: 'Customer Database',
       rows: 5621,
       uploadDate: '2024-01-08',
-      status: 'active',
+      status: 'active' as const,
       progress: 92
     }
   ];
