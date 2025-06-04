@@ -18,7 +18,7 @@ export const useQRGenerator = () => {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [config, setConfig] = useState<QRCodeConfig>({
-    content: 'https://clearqr.io',
+    content: 'https://www.example.com',
     type: 'url',
     size: 256,
     errorCorrection: 'M',
@@ -32,18 +32,37 @@ export const useQRGenerator = () => {
 
   const generateQRCode = async () => {
     if (!config.content.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter content for the QR code",
-        variant: "destructive"
-      });
+      console.log('No content provided for QR generation');
       return;
     }
 
     setIsGenerating(true);
+    console.log('Starting QR generation with config:', config);
+    
     try {
       const canvas = canvasRef.current;
-      if (!canvas) throw new Error('Canvas not found');
+      if (!canvas) {
+        console.log('Canvas not found, creating temporary canvas');
+        // Create a temporary canvas if ref is not available
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = config.size;
+        tempCanvas.height = config.size;
+        
+        await QRCodeLib.toCanvas(tempCanvas, config.content, {
+          width: config.size,
+          margin: Math.floor(config.borderSize / 4),
+          color: {
+            dark: config.foregroundColor,
+            light: config.backgroundColor,
+          },
+          errorCorrectionLevel: config.errorCorrection,
+        });
+
+        const dataURL = tempCanvas.toDataURL('image/png');
+        setGeneratedQR(dataURL);
+        console.log('QR code generated successfully with temporary canvas');
+        return;
+      }
 
       await QRCodeLib.toCanvas(canvas, config.content, {
         width: config.size,
@@ -57,11 +76,8 @@ export const useQRGenerator = () => {
 
       const dataURL = canvas.toDataURL('image/png');
       setGeneratedQR(dataURL);
+      console.log('QR code generated successfully');
       
-      toast({
-        title: "Success",
-        description: "QR code generated successfully!"
-      });
     } catch (error) {
       console.error('QR generation error:', error);
       toast({
@@ -76,6 +92,7 @@ export const useQRGenerator = () => {
 
   useEffect(() => {
     if (config.content.trim()) {
+      console.log('Config changed, regenerating QR code:', config);
       generateQRCode();
     }
   }, [config]);

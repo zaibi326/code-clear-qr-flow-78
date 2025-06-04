@@ -25,7 +25,7 @@ const CreateSingleQR = () => {
     console.log(`Input change: ${field} = ${value}`);
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Update QR config
+    // Update QR config immediately for live preview
     if (field === 'url') {
       setConfig(prev => ({ ...prev, content: value }));
     } else if (field === 'foregroundColor') {
@@ -114,7 +114,7 @@ const CreateSingleQR = () => {
                     Create Single QR Code
                   </h1>
                   <p className="text-base text-slate-600 font-medium">
-                    Design and generate a professional QR code with custom styling
+                    Design and generate a professional QR code with custom styling and live preview
                   </p>
                 </div>
               </div>
@@ -143,12 +143,18 @@ const CreateSingleQR = () => {
                     </div>
 
                     {/* Right Column - QR Code Preview */}
-                    <QRPreviewDisplay
-                      generatedQR={generatedQR}
-                      canvasRef={canvasRef}
-                      foregroundColor={formData.foregroundColor}
-                      backgroundColor={formData.backgroundColor}
-                    />
+                    <div className="space-y-6">
+                      <div className="mb-6 pb-4 border-b border-slate-100">
+                        <h2 className="text-xl font-semibold text-slate-900 mb-2">Live Preview & Download</h2>
+                        <p className="text-slate-600">See your QR code update in real-time and download in multiple formats.</p>
+                      </div>
+                      <QRPreviewDisplay
+                        generatedQR={generatedQR}
+                        canvasRef={canvasRef}
+                        foregroundColor={formData.foregroundColor}
+                        backgroundColor={formData.backgroundColor}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
