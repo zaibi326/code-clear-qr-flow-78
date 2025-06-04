@@ -98,7 +98,7 @@ export const supabaseService = {
   },
 
   // Helper method to safely map database row to DatabaseUser
-  private mapDatabaseRowToUser(data: any, userId: string): DatabaseUser {
+  mapDatabaseRowToUser(data: any, userId: string): DatabaseUser {
     // Safely parse preferences
     let preferences = {
       notifications: {
@@ -122,7 +122,7 @@ export const supabaseService = {
           marketing: data.preferences.notifications?.marketing ?? false
         },
         dashboard: {
-          default_view: data.preferences.dashboard?.default_view === 'list' ? 'list' : 'grid',
+          default_view: (data.preferences.dashboard?.default_view === 'list' ? 'list' : 'grid') as 'grid' | 'list',
           items_per_page: data.preferences.dashboard?.items_per_page ?? 10
         }
       };
