@@ -13,7 +13,7 @@ import {
   Calendar,
   Users,
   Webhook,
-  Api
+  Code
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '@/components/Footer';
@@ -104,7 +104,7 @@ const Integrations = () => {
     {
       name: 'REST API',
       description: 'Full API access for custom integrations and development',
-      icon: Api,
+      icon: Code,
       category: 'Developer',
       status: 'Available',
       color: 'text-red-600',

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -31,11 +32,11 @@ import BestPractices from './pages/BestPractices';
 import HelpCenter from './pages/HelpCenter';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
-import Marketing from './pages/Solutions/Marketing';
-import Events from './pages/Solutions/Events';
-import Restaurants from './pages/Solutions/Restaurants';
-import Retail from './pages/Solutions/Retail';
-import Healthcare from './pages/Solutions/Healthcare';
+import Marketing from './pages/solutions/Marketing';
+import Events from './pages/solutions/Events';
+import Restaurants from './pages/solutions/Restaurants';
+import Retail from './pages/solutions/Retail';
+import Healthcare from './pages/solutions/Healthcare';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
