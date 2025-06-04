@@ -55,6 +55,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
         
         setAdminUser(adminUserData);
         localStorage.setItem('adminUser', JSON.stringify(adminUserData));
+        localStorage.setItem('adminSession', JSON.stringify(data.session));
         console.log('Admin login successful');
         return true;
       }
@@ -99,19 +100,37 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     console.log('Admin logout');
     setAdminUser(null);
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('adminSession');
   };
 
   useEffect(() => {
     // Check for existing admin session
     const storedAdminUser = localStorage.getItem('adminUser');
-    if (storedAdminUser) {
+    const storedSession = localStorage.getItem('adminSession');
+    
+    if (storedAdminUser && storedSession) {
       try {
         const parsedUser = JSON.parse(storedAdminUser);
-        console.log('Restored admin session:', parsedUser.email);
-        setAdminUser(parsedUser);
+        const parsedSession = JSON.parse(storedSession);
+        
+        // Check if session is still valid
+        const sessionData = JSON.parse(atob(parsedSession.access_token));
+        if (sessionData.exp > Date.now()) {
+          console.log('Restored admin session:', parsedUser.email);
+          setAdminUser({
+            ...parsedUser,
+            created_at: new Date(parsedUser.created_at),
+            last_login_at: parsedUser.last_login_at ? new Date(parsedUser.last_login_at) : undefined
+          });
+        } else {
+          console.log('Admin session expired, clearing storage');
+          localStorage.removeItem('adminUser');
+          localStorage.removeItem('adminSession');
+        }
       } catch (error) {
-        console.error('Error parsing stored admin user:', error);
+        console.error('Error parsing stored admin session:', error);
         localStorage.removeItem('adminUser');
+        localStorage.removeItem('adminSession');
       }
     }
   }, []);

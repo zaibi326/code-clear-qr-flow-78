@@ -76,7 +76,7 @@ const AdminLogin = () => {
         console.log('Admin login failed');
         toast({
           title: "Login failed",
-          description: "Invalid email or password.",
+          description: "Invalid email or password. Please check your credentials.",
           variant: "destructive"
         });
       }

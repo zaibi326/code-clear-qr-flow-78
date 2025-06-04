@@ -60,21 +60,21 @@ serve(async (req) => {
     // Update last login
     await supabaseAdmin
       .from('admin_users')
-      .update({ last_login_at: new Date().toISOString() })
+      .update({ 
+        last_login_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .eq('id', adminUser.id)
 
-    // Create auth session using signInWithPassword
-    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
-      email: email,
-      password: password
-    })
+    // Create session token manually (simplified approach)
+    const sessionToken = btoa(JSON.stringify({
+      user_id: adminUser.id,
+      email: adminUser.email,
+      role: adminUser.role,
+      exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+    }))
 
-    if (authError) {
-      console.error('Auth session creation error:', authError)
-      throw authError
-    }
-
-    console.log('Auth session created successfully')
+    console.log('Admin session created successfully')
 
     return new Response(
       JSON.stringify({ 
@@ -88,7 +88,11 @@ serve(async (req) => {
           last_login_at: adminUser.last_login_at,
           created_at: adminUser.created_at
         },
-        session: authData.session
+        session: {
+          access_token: sessionToken,
+          token_type: 'bearer',
+          expires_in: 86400
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -28,12 +28,12 @@ serve(async (req) => {
 
     console.log('Admin signup request:', { name, email, role })
 
-    // Create user in auth.users
+    // Create user in auth.users first
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role }
+      user_metadata: { name, role: role || 'admin' }
     })
 
     if (authError) {
@@ -42,7 +42,7 @@ serve(async (req) => {
     }
 
     if (!authUser.user) {
-      throw new Error('Failed to create user')
+      throw new Error('Failed to create auth user')
     }
 
     console.log('Auth user created:', authUser.user.id)
@@ -55,7 +55,7 @@ serve(async (req) => {
     const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
     // Insert into admin_users table
-    const { error: adminError } = await supabaseAdmin
+    const { data: adminUserData, error: adminError } = await supabaseAdmin
       .from('admin_users')
       .insert({
         id: authUser.user.id,
@@ -67,10 +67,12 @@ serve(async (req) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
+      .select()
+      .single()
 
     if (adminError) {
       console.error('Admin user creation error:', adminError)
-      // If admin user creation fails, delete the auth user
+      // Clean up auth user if admin user creation fails
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       throw adminError
     }
@@ -85,7 +87,7 @@ serve(async (req) => {
           id: authUser.user.id,
           email,
           name,
-          role
+          role: role || 'admin'
         }
       }),
       {
