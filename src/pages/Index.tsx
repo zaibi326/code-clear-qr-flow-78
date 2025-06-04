@@ -10,6 +10,8 @@ import InteractiveStats from '@/components/InteractiveStats';
 import FuturisticPricing from '@/components/FuturisticPricing';
 import NextGenCTA from '@/components/NextGenCTA';
 import Footer from '@/components/Footer';
+import Features from '@/components/Features';
+import About from '@/components/About';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -69,11 +71,22 @@ const Index = () => {
         <div className="relative z-10">
           <Navigation />
           <InteractiveHero />
-          <TechFeatures />
-          <AnimatedHowItWorks />
+          <div id="features">
+            <Features />
+          </div>
+          <div id="how-it-works">
+            <AnimatedHowItWorks />
+          </div>
           <InteractiveStats />
-          <FuturisticPricing />
-          <NextGenCTA />
+          <div id="pricing">
+            <FuturisticPricing />
+          </div>
+          <div id="about">
+            <About />
+          </div>
+          <div id="support">
+            <NextGenCTA />
+          </div>
           <Footer />
         </div>
       </div>
