@@ -7,6 +7,9 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { QRCodeStats } from '@/components/dashboard/QRCodeStats';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ScanActivityChart } from '@/components/dashboard/ScanActivityChart';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { QRCodeGrid } from '@/components/dashboard/QRCodeGrid';
+import { PerformanceMetrics } from '@/components/dashboard/PerformanceMetrics';
 
 const Dashboard = () => {
   return (
@@ -27,38 +30,26 @@ const Dashboard = () => {
             {/* Stats Grid */}
             <DashboardStats />
 
-            {/* QR Code Stats */}
+            {/* QR Code Overview */}
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">QR Code Overview</h2>
               <QRCodeStats />
             </div>
 
-            {/* Charts and Activity */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-              <ScanActivityChart />
-              <div className="bg-white rounded-xl shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  {[
-                    { action: 'New QR code created', time: '2 minutes ago', type: 'create' },
-                    { action: 'Campaign "Summer Sale" updated', time: '1 hour ago', type: 'update' },
-                    { action: 'Analytics report generated', time: '3 hours ago', type: 'report' },
-                    { action: '50 new scans recorded', time: '5 hours ago', type: 'scan' }
-                  ].map((activity, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className={`w-2 h-2 rounded-full ${
-                        activity.type === 'create' ? 'bg-green-500' :
-                        activity.type === 'update' ? 'bg-blue-500' :
-                        activity.type === 'report' ? 'bg-purple-500' : 'bg-orange-500'
-                      }`}></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* Charts and Analytics Row */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+              <div className="xl:col-span-2">
+                <ScanActivityChart />
               </div>
+              <div className="xl:col-span-1">
+                <PerformanceMetrics />
+              </div>
+            </div>
+
+            {/* Activity and QR Codes Row */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+              <RecentActivity />
+              <QRCodeGrid />
             </div>
 
             {/* Quick Actions */}
