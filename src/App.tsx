@@ -1,107 +1,144 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import QuickGenerate from "./pages/QuickGenerate";
-import CreateQRCode from "./pages/CreateQRCode";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import Support from "./pages/Support";
-import HelpCenter from "./pages/HelpCenter";
-import CampaignCreator from "./pages/CampaignCreator";
-import TemplateManager from "./pages/TemplateManager";
-import DataManager from "./pages/DataManager";
-import Integrations from "./pages/Integrations";
-import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
-import ApiDocumentation from "./pages/ApiDocumentation";
-import Monitoring from "./pages/Monitoring";
-import Testing from "./pages/Testing";
-import BulkDataSelector from "./pages/BulkDataSelector";
-import NotFound from "./pages/NotFound";
-import Blog from "./pages/Blog";
-import CaseStudies from "./pages/CaseStudies";
-import BestPractices from "./pages/BestPractices";
-import Changelog from "./pages/Changelog";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/hooks/useSupabaseAuth';
+import { AdminAuthProvider } from '@/hooks/useAdminAuth';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-// Solutions pages
-import Marketing from "./pages/solutions/Marketing";
-import Events from "./pages/solutions/Events";
-import Restaurants from "./pages/solutions/Restaurants";
-import Retail from "./pages/solutions/Retail";
-import Healthcare from "./pages/solutions/Healthcare";
+// Main app pages
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import Dashboard from '@/pages/Dashboard';
+import CreateQRCode from '@/pages/CreateQRCode';
+import Analytics from '@/pages/Analytics';
+import Settings from '@/pages/Settings';
+import CampaignCreator from '@/pages/CampaignCreator';
+import TemplateManager from '@/pages/TemplateManager';
+import DataManager from '@/pages/DataManager';
+import Support from '@/pages/Support';
+
+// Admin pages
+import AdminLogin from '@/pages/admin/AdminLogin';
+import AdminRegister from '@/pages/admin/AdminRegister';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
 
 // Company pages
-import About from "./pages/company/About";
-import Careers from "./pages/company/Careers";
-import Contact from "./pages/company/Contact";
-import Privacy from "./pages/company/Privacy";
-import Terms from "./pages/company/Terms";
+import About from '@/pages/company/About';
+import Contact from '@/pages/company/Contact';
+import Privacy from '@/pages/company/Privacy';
+import Terms from '@/pages/company/Terms';
 
-const queryClient = new QueryClient();
+// Solution pages
+import Marketing from '@/pages/solutions/Marketing';
+import Restaurants from '@/pages/solutions/Restaurants';
+import Events from '@/pages/solutions/Events';
+import Healthcare from '@/pages/solutions/Healthcare';
+import Retail from '@/pages/solutions/Retail';
+
+import './App.css';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+    <AuthProvider>
+      <AdminAuthProvider>
+        <Router>
+          <div className="App">
             <Routes>
+              {/* Main application routes */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/quick-generate" element={<QuickGenerate />} />
-              <Route path="/create-qr-code" element={<CreateQRCode />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/help-center" element={<HelpCenter />} />
-              <Route path="/campaign-creator" element={<CampaignCreator />} />
-              <Route path="/template-manager" element={<TemplateManager />} />
-              <Route path="/data-manager" element={<DataManager />} />
-              <Route path="/integrations" element={<Integrations />} />
-              <Route path="/dashboard-integrations" element={<DashboardIntegrationsPage />} />
-              <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
-              <Route path="/api-documentation" element={<ApiDocumentation />} />
-              <Route path="/monitoring" element={<Monitoring />} />
-              <Route path="/testing" element={<Testing />} />
-              <Route path="/bulk-data-selector" element={<BulkDataSelector />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/case-studies" element={<CaseStudies />} />
-              <Route path="/best-practices" element={<BestPractices />} />
-              <Route path="/changelog" element={<Changelog />} />
               
-              {/* Solutions Routes */}
+              {/* Protected main app routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/create" 
+                element={
+                  <ProtectedRoute>
+                    <CreateQRCode />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/campaigns" 
+                element={
+                  <ProtectedRoute>
+                    <CampaignCreator />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/templates" 
+                element={
+                  <ProtectedRoute>
+                    <TemplateManager />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/data" 
+                element={
+                  <ProtectedRoute>
+                    <DataManager />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/support" 
+                element={
+                  <ProtectedRoute>
+                    <Support />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/register" element={<AdminRegister />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+              {/* Company pages */}
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+
+              {/* Solution pages */}
               <Route path="/solutions/marketing" element={<Marketing />} />
-              <Route path="/solutions/events" element={<Events />} />
               <Route path="/solutions/restaurants" element={<Restaurants />} />
-              <Route path="/solutions/retail" element={<Retail />} />
+              <Route path="/solutions/events" element={<Events />} />
               <Route path="/solutions/healthcare" element={<Healthcare />} />
-              
-              {/* Company Routes */}
-              <Route path="/company/about" element={<About />} />
-              <Route path="/company/careers" element={<Careers />} />
-              <Route path="/company/contact" element={<Contact />} />
-              <Route path="/company/privacy" element={<Privacy />} />
-              <Route path="/company/terms" element={<Terms />} />
-              
-              <Route path="*" element={<NotFound />} />
+              <Route path="/solutions/retail" element={<Retail />} />
             </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+            <Toaster />
+          </div>
+        </Router>
+      </AdminAuthProvider>
+    </AuthProvider>
   );
 }
 
