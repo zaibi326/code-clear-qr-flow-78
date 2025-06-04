@@ -24,6 +24,12 @@ import Support from './pages/Support';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminRegister from './pages/admin/AdminRegister';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ApiDocumentation from './pages/ApiDocumentation';
+import Changelog from './pages/Changelog';
+import Blog from './pages/Blog';
+import CaseStudies from './pages/CaseStudies';
+import BestPractices from './pages/BestPractices';
+import HelpCenter from './pages/HelpCenter';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
@@ -49,6 +55,14 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                
+                {/* Public content pages */}
+                <Route path="/api-documentation" element={<ApiDocumentation />} />
+                <Route path="/changelog" element={<Changelog />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/case-studies" element={<CaseStudies />} />
+                <Route path="/best-practices" element={<BestPractices />} />
+                <Route path="/help-center" element={<HelpCenter />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />

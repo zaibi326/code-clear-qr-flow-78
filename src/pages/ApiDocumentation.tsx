@@ -1,132 +1,195 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Code, Database, Key, Globe, ArrowLeft, ExternalLink, Smartphone, Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Code, Copy, ExternalLink, Key, Book, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
+import Footer from '@/components/Footer';
 
 const ApiDocumentation = () => {
-  const endpoints = [
+  const apiEndpoints = [
     {
       method: 'POST',
-      endpoint: '/api/qr/generate',
-      description: 'Generate a new QR code for mobile apps',
-      parameters: ['url', 'type', 'customization', 'app_metadata']
+      endpoint: '/api/qr/create',
+      description: 'Create a new QR code',
+      params: ['content', 'type', 'color', 'logo']
     },
     {
       method: 'GET',
       endpoint: '/api/qr/{id}',
-      description: 'Retrieve QR code details',
-      parameters: ['id']
+      description: 'Get QR code details',
+      params: ['id']
     },
     {
       method: 'PUT',
       endpoint: '/api/qr/{id}',
-      description: 'Update QR code destination',
-      parameters: ['id', 'url', 'enabled']
+      description: 'Update QR code',
+      params: ['id', 'content', 'color']
+    },
+    {
+      method: 'DELETE',
+      endpoint: '/api/qr/{id}',
+      description: 'Delete QR code',
+      params: ['id']
     },
     {
       method: 'GET',
       endpoint: '/api/analytics/{id}',
-      description: 'Get QR code analytics for mobile tracking',
-      parameters: ['id', 'date_range', 'device_type']
-    },
-    {
-      method: 'POST',
-      endpoint: '/api/mobile/register',
-      description: 'Register mobile app for API access',
-      parameters: ['app_name', 'package_name', 'platform']
+      description: 'Get QR code analytics',
+      params: ['id', 'timeframe']
     }
   ];
 
-  const handleGetApiKey = () => {
-    toast.success('Redirecting to API key generation...');
-    // Navigate to settings with API key section
-    window.open('/settings?tab=api', '_blank');
-  };
+  const codeExamples = {
+    javascript: `// Create QR Code
+fetch('https://api.clearqr.io/v1/qr/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    content: 'https://example.com',
+    type: 'url',
+    color: '#000000'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));`,
+    python: `import requests
 
-  const handleViewExamples = () => {
-    toast.success('Opening mobile SDK examples...');
-    // In a real app, this would open mobile-specific documentation
-    window.open('/help-center?section=mobile-sdk', '_blank');
-  };
-
-  const handleDownloadSDK = () => {
-    toast.success('Downloading Android SDK...');
-    // Mock download for Android SDK
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = 'clearqr-android-sdk.zip';
-    link.click();
+# Create QR Code
+response = requests.post(
+    'https://api.clearqr.io/v1/qr/create',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'content': 'https://example.com',
+        'type': 'url',
+        'color': '#000000'
+    }
+)
+print(response.json())`,
+    curl: `curl -X POST https://api.clearqr.io/v1/qr/create \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "https://example.com",
+    "type": "url",
+    "color": "#000000"
+  }'`
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">API Documentation</h1>
-          <p className="text-xl text-gray-600">Build APK applications with ClearQR.io's powerful mobile API</p>
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">API Documentation</h1>
+              <p className="text-gray-600 mt-2">Complete guide to integrate ClearQR API into your applications</p>
+            </div>
+            <Button asChild>
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Card className="mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar Navigation */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Links</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <a href="#getting-started" className="block p-2 rounded hover:bg-gray-100 transition-colors">
+                  Getting Started
+                </a>
+                <a href="#authentication" className="block p-2 rounded hover:bg-gray-100 transition-colors">
+                  Authentication
+                </a>
+                <a href="#endpoints" className="block p-2 rounded hover:bg-gray-100 transition-colors">
+                  API Endpoints
+                </a>
+                <a href="#examples" className="block p-2 rounded hover:bg-gray-100 transition-colors">
+                  Code Examples
+                </a>
+                <a href="#rate-limits" className="block p-2 rounded hover:bg-gray-100 transition-colors">
+                  Rate Limits
+                </a>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Getting Started */}
+            <Card id="getting-started">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
-                  Authentication for Mobile Apps
+                  <Book className="h-5 w-5 text-blue-600" />
+                  Getting Started
                 </CardTitle>
-                <CardDescription>
-                  Secure your APK with API key authentication
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Android Implementation</h4>
-                    <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
-                      <p>// Add to your build.gradle</p>
-                      <p>implementation 'io.clearqr:android-sdk:1.0.0'</p>
-                      <br />
-                      <p>// Initialize in your Application class</p>
-                      <p>ClearQR.initialize(this, "YOUR_API_KEY");</p>
-                      <br />
-                      <p>// Generate QR code</p>
-                      <p>ClearQR.generateQR(url, callback);</p>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <h4 className="font-semibold text-yellow-900 mb-2">🔐 Security Best Practices</h4>
-                    <ul className="text-sm text-yellow-800 space-y-1">
-                      <li>• Store API keys in BuildConfig or encrypted preferences</li>
-                      <li>• Use ProGuard to obfuscate your API key</li>
-                      <li>• Implement certificate pinning for production apps</li>
-                      <li>• Rotate API keys regularly for security</li>
-                    </ul>
-                  </div>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">
+                  The ClearQR API allows you to programmatically create, manage, and track QR codes. 
+                  Get started by obtaining your API key from the dashboard.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">Base URL</h4>
+                  <code className="text-blue-800">https://api.clearqr.io/v1</code>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="mb-8">
+            {/* Authentication */}
+            <Card id="authentication">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Mobile API Endpoints
+                  <Key className="h-5 w-5 text-green-600" />
+                  Authentication
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">
+                  All API requests require authentication using your API key in the Authorization header.
+                </p>
+                <div className="bg-gray-900 p-4 rounded-lg">
+                  <code className="text-green-400">
+                    Authorization: Bearer YOUR_API_KEY
+                  </code>
+                </div>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  Get API Key
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* API Endpoints */}
+            <Card id="endpoints">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-purple-600" />
+                  API Endpoints
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {endpoints.map((endpoint, index) => (
+                  {apiEndpoints.map((endpoint, index) => (
                     <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={endpoint.method === 'GET' ? 'secondary' : 'default'}>
+                      <div className="flex items-center gap-4 mb-2">
+                        <Badge variant={endpoint.method === 'GET' ? 'secondary' : 
+                                      endpoint.method === 'POST' ? 'default' : 
+                                      endpoint.method === 'PUT' ? 'secondary' : 'destructive'}>
                           {endpoint.method}
                         </Badge>
                         <code className="text-sm bg-gray-100 px-2 py-1 rounded">
@@ -135,100 +198,65 @@ const ApiDocumentation = () => {
                       </div>
                       <p className="text-gray-600 mb-2">{endpoint.description}</p>
                       <div className="text-sm text-gray-500">
-                        Parameters: {endpoint.parameters.join(', ')}
+                        Parameters: {endpoint.params.join(', ')}
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          <div>
-            <Card className="mb-6">
+            {/* Code Examples */}
+            <Card id="examples">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Smartphone className="h-5 w-5" />
-                  Mobile Development
+                  <Code className="h-5 w-5 text-orange-600" />
+                  Code Examples
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Button 
-                    className="w-full" 
-                    onClick={handleGetApiKey}
-                  >
-                    <Key className="h-4 w-4 mr-2" />
-                    Get API Key
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleViewExamples}
-                  >
-                    <Code className="h-4 w-4 mr-2" />
-                    View SDK Examples
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleDownloadSDK}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Android SDK
-                  </Button>
+                <div className="space-y-6">
+                  {Object.entries(codeExamples).map(([language, code]) => (
+                    <div key={language}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold capitalize">{language}</h4>
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </Button>
+                      </div>
+                      <div className="bg-gray-900 p-4 rounded-lg overflow-x-auto">
+                        <pre className="text-sm text-gray-100">
+                          <code>{code}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="mb-6">
+            {/* Rate Limits */}
+            <Card id="rate-limits">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Rate Limits
-                </CardTitle>
+                <CardTitle>Rate Limits</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Free Plan:</span>
-                    <span>100 req/hour</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">1,000</div>
+                    <div className="text-sm text-gray-600">requests/hour</div>
+                    <div className="text-xs text-gray-500 mt-1">Free Plan</div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Pro Plan:</span>
-                    <span>1,000 req/hour</span>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">10,000</div>
+                    <div className="text-sm text-gray-600">requests/hour</div>
+                    <div className="text-xs text-gray-500 mt-1">Pro Plan</div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Enterprise:</span>
-                    <span>Unlimited</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>APK Integration Guide</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Step 1: Get API Key</h4>
-                    <p className="text-gray-600">Generate your API key from the settings page</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Step 2: Add SDK</h4>
-                    <p className="text-gray-600">Include our Android SDK in your project</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Step 3: Initialize</h4>
-                    <p className="text-gray-600">Configure the SDK with your API key</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Step 4: Generate QR</h4>
-                    <p className="text-gray-600">Start generating QR codes in your app</p>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">Unlimited</div>
+                    <div className="text-sm text-gray-600">requests/hour</div>
+                    <div className="text-xs text-gray-500 mt-1">Enterprise Plan</div>
                   </div>
                 </div>
               </CardContent>
@@ -236,6 +264,8 @@ const ApiDocumentation = () => {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

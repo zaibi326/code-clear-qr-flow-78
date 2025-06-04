@@ -5,6 +5,7 @@ import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { AnalyticsFilters } from '@/components/analytics/AnalyticsFilters';
 import { AnalyticsStats } from '@/components/analytics/AnalyticsStats';
+import { AnalyticsOverview } from '@/components/analytics/AnalyticsOverview';
 import { AdvancedAnalytics } from '@/components/analytics/AdvancedAnalytics';
 import { QRCodeTable } from '@/components/analytics/QRCodeTable';
 import { UserInteractionLog } from '@/components/analytics/UserInteractionLog';
@@ -55,14 +56,7 @@ const Analytics = () => {
                   
                   <div className="p-6">
                     <TabsContent value="overview" className="space-y-6 m-0">
-                      <AnalyticsStats />
-                      
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <ScanActivityChart />
-                        <CampaignPerformanceChart />
-                      </div>
-                      
-                      <QRCodeTable />
+                      <AnalyticsOverview />
                     </TabsContent>
 
                     <TabsContent value="insights" className="m-0">
