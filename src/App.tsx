@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import CreateQRCode from './pages/CreateQRCode';
 import QuickGenerate from './pages/QuickGenerate';
+import QRCodes from './pages/QRCodes';
 import TemplateManager from './pages/TemplateManager';
 import DataManager from './pages/DataManager';
 import Projects from './pages/Projects';
@@ -76,6 +77,12 @@ function App() {
                 <Route path="/quick-generate" element={
                   <ProtectedRoute>
                     <QuickGenerate />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/qr-codes" element={
+                  <ProtectedRoute>
+                    <QRCodes />
                   </ProtectedRoute>
                 } />
                 
