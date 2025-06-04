@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SingleRecordForm } from './components/SingleRecordForm';
 import { QRPreviewDisplay } from './components/QRPreviewDisplay';
 import { CSVUploadSection } from './components/CSVUploadSection';
+import { useSearchParams } from 'react-router-dom';
 
 interface ComprehensiveQRFormProps {
   formData: any;
@@ -13,7 +14,11 @@ interface ComprehensiveQRFormProps {
 }
 
 export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQRFormProps) {
+  const [searchParams] = useSearchParams();
+  const qrType = searchParams.get('type') || 'url';
+  
   const { config, setConfig, generatedQR, canvasRef } = useQRGenerator();
+  // Default to single mode, but can be changed by user
   const [activeTab, setActiveTab] = useState('single');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<any[]>([]);
@@ -83,13 +88,14 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
       // For now, we'll just show a success message
       toast({
         title: "Success",
-        description: "QR Code saved successfully!",
+        description: `${activeTab === 'single' ? 'Single' : 'Bulk'} QR Code saved successfully!`,
       });
       
       console.log('QR Code data to save:', {
         ...formData,
         qrImageData: generatedQR,
-        logoFile: logoFile?.name
+        logoFile: logoFile?.name,
+        mode: activeTab
       });
       
     } catch (error) {
@@ -97,6 +103,44 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
       toast({
         title: "Error",
         description: "Failed to save QR Code. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleBulkSave = async () => {
+    console.log('Bulk save clicked', { csvData, formData });
+    
+    if (!csvData || csvData.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please upload CSV data first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Success",
+        description: `Bulk QR Codes generated successfully for ${csvData.length} records!`,
+      });
+      
+      console.log('Bulk QR Code data to save:', {
+        csvData,
+        styling: {
+          foregroundColor: formData.foregroundColor,
+          backgroundColor: formData.backgroundColor,
+          logoUrl: formData.logoUrl
+        },
+        logoFile: logoFile?.name
+      });
+      
+    } catch (error) {
+      console.error('Bulk save error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate bulk QR Codes. Please try again.",
         variant: "destructive"
       });
     }
@@ -159,6 +203,15 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
             csvData={csvData}
             onCSVDataChange={setCsvData}
             onCSVFileChange={setCsvFile}
+            onBulkSave={handleBulkSave}
+            styling={{
+              foregroundColor: formData.foregroundColor,
+              backgroundColor: formData.backgroundColor,
+              logoUrl: formData.logoUrl
+            }}
+            onStyleChange={handleInputChangeWithColorUpdate}
+            logoFile={logoFile}
+            onLogoFileChange={handleLogoFileChange}
           />
         </TabsContent>
       </Tabs>

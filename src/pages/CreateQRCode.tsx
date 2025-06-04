@@ -1,18 +1,39 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { ComprehensiveQRForm } from '@/components/qr/forms/ComprehensiveQRForm';
 
 const CreateQRCode = () => {
+  const [searchParams] = useSearchParams();
+  const qrType = searchParams.get('type') || 'url';
+  
   const [formData, setFormData] = React.useState<any>({
-    url: 'https://www.simplestreethomes.com',
+    url: '',
+    qrName: '',
     foregroundColor: '#000000',
-    backgroundColor: '#FFFFFF'
+    backgroundColor: '#FFFFFF',
+    logoUrl: ''
   });
 
+  // Initialize form data based on QR type
+  useEffect(() => {
+    console.log('QR Type from URL:', qrType);
+    
+    // Set default values based on type
+    if (qrType === 'url') {
+      setFormData(prev => ({
+        ...prev,
+        url: 'https://www.example.com',
+        qrName: 'My Website QR Code'
+      }));
+    }
+  }, [qrType]);
+
   const handleInputChange = (field: string, value: string) => {
+    console.log(`Input change: ${field} = ${value}`);
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
@@ -28,14 +49,21 @@ const CreateQRCode = () => {
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">Create QR Code</h1>
-                  <p className="text-base text-slate-600 font-medium">Design and generate professional QR codes with custom styling</p>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
+                    Create {qrType === 'url' ? 'Single' : 'Bulk'} QR Code
+                  </h1>
+                  <p className="text-base text-slate-600 font-medium">
+                    {qrType === 'url' 
+                      ? 'Design and generate a professional QR code with custom styling' 
+                      : 'Generate multiple QR codes with custom styling'
+                    }
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Main Content with improved spacing and layout */}
+          {/* Main Content */}
           <div className="flex-1 overflow-auto bg-gradient-to-br from-slate-50/50 via-white to-blue-50/30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="bg-white/98 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 transition-all duration-500">

@@ -13,11 +13,16 @@ export function QRCreationModeSelector({ onModeSelect }: QRCreationModeSelectorP
   const navigate = useNavigate();
 
   const handleModeSelect = (mode: 'single' | 'bulk') => {
+    console.log('Mode selected:', mode);
+    
     if (mode === 'single') {
-      navigate('/create');
+      // Navigate to single QR code creation with URL type pre-selected
+      navigate('/create?type=url');
     } else {
+      // Navigate to bulk data selector for bulk creation
       navigate('/bulk-data-selector');
     }
+    
     onModeSelect?.(mode);
   };
 
