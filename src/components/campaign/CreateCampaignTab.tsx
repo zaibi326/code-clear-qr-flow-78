@@ -20,7 +20,7 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
     name: '',
     description: '',
     type: 'single' as 'single' | 'bulk',
-    status: 'draft' as 'draft' | 'active' | 'paused'
+    status: 'draft' as 'draft' | 'active' | 'completed' | 'generating'
   });
   
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -53,7 +53,8 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
         qrCodes: [],
         scans: 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        template: null
       };
 
       onCampaignCreate(newCampaign);
@@ -91,21 +92,27 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
       
       // Create campaign from CSV data
       const campaignName = csvFile.name.replace('.csv', '') + ' Campaign';
+      const campaignId = `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const currentTime = new Date().toISOString();
+      
       const newCampaign: Campaign = {
-        id: `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: campaignId,
         name: campaignName,
         description: `Imported from ${csvFile.name}`,
         type: 'bulk',
         status: 'draft',
         qrCodes: csvData.map((row, index) => ({
           id: `qr_${Date.now()}_${index}`,
-          name: row.name || `QR Code ${index + 1}`,
           url: row.url || row.website || '',
-          scans: 0
+          scans: 0,
+          createdAt: currentTime,
+          campaignId: campaignId,
+          content: row.url || row.website || '',
+          customData: row
         })),
         scans: 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        template: null
       };
 
       onCampaignCreate(newCampaign);
@@ -274,7 +281,8 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
               <SelectContent>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="generating">Generating</SelectItem>
               </SelectContent>
             </Select>
           </div>
