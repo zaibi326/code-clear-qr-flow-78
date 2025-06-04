@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { databaseService } from '@/utils/databaseService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DataExportService } from '@/utils/dataExportService';
 import { toast } from 'sonner';
 import {
   Database,
@@ -15,7 +16,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  MoreHorizontal
+  MoreHorizontal,
+  FileText
 } from 'lucide-react';
 
 interface DataSet {
@@ -34,6 +36,8 @@ interface DataManageTabProps {
 export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabProps) => {
   const [dataSets, setDataSets] = useState<DataSet[]>(initialDataSets);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+  const [selectedDataSet, setSelectedDataSet] = useState<DataSet | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   const handleDeleteDataSet = async (dataSetId: number) => {
     const dataSet = dataSets.find(ds => ds.id === dataSetId);
@@ -63,13 +67,53 @@ export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabPr
   };
 
   const handleViewDataSet = (dataSet: DataSet) => {
+    console.log('Opening dataset for preview:', dataSet);
+    setSelectedDataSet(dataSet);
+    setViewDialogOpen(true);
     toast.success(`Opening ${dataSet.name} for preview`);
-    // In a real app, this would open a modal or navigate to a detail view
   };
 
-  const handleDownloadDataSet = (dataSet: DataSet) => {
-    toast.success(`Downloading ${dataSet.name}`);
-    // In a real app, this would trigger a file download
+  const handleDownloadDataSet = async (dataSet: DataSet) => {
+    try {
+      console.log('Downloading dataset:', dataSet);
+      
+      // Create mock data for the dataset
+      const mockData = Array.from({ length: Math.min(dataSet.rows, 100) }, (_, index) => ({
+        id: index + 1,
+        name: `Record ${index + 1}`,
+        email: `user${index + 1}@example.com`,
+        url: `https://example.com/page${index + 1}`,
+        date_added: new Date().toISOString()
+      }));
+
+      // Export as CSV
+      const exportData = await DataExportService.exportUserData('mock-user', {
+        format: 'csv',
+        includeProjects: true,
+        includeCampaigns: true,
+        includeQRCodes: true
+      });
+
+      // Create and download file
+      const fileName = `${dataSet.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      DataExportService.downloadFile(exportData, fileName);
+      
+      toast.success(`Downloaded ${dataSet.name} successfully`);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download dataset');
+    }
+  };
+
+  const generateMockTableData = (dataSet: DataSet) => {
+    return Array.from({ length: Math.min(dataSet.rows, 10) }, (_, index) => ({
+      id: index + 1,
+      name: `Record ${index + 1}`,
+      email: `user${index + 1}@example.com`,
+      url: `https://example.com/page${index + 1}`,
+      status: ['active', 'inactive', 'pending'][index % 3],
+      created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+    }));
   };
 
   const getStatusIcon = (status: string) => {
@@ -197,6 +241,87 @@ export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabPr
           );
         })}
       </div>
+
+      {/* View Data Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {selectedDataSet?.name} - Data Preview
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedDataSet && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Total Rows:</span>
+                  <span className="ml-2">{selectedDataSet.rows.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="font-medium">Status:</span>
+                  <span className="ml-2">{selectedDataSet.status}</span>
+                </div>
+                <div>
+                  <span className="font-medium">Upload Date:</span>
+                  <span className="ml-2">{selectedDataSet.uploadDate}</span>
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-4 py-2 border-b">
+                  <h4 className="font-medium">Data Preview (First 10 rows)</h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left">ID</th>
+                        <th className="px-4 py-2 text-left">Name</th>
+                        <th className="px-4 py-2 text-left">Email</th>
+                        <th className="px-4 py-2 text-left">URL</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generateMockTableData(selectedDataSet).map((row) => (
+                        <tr key={row.id} className="border-t">
+                          <td className="px-4 py-2">{row.id}</td>
+                          <td className="px-4 py-2">{row.name}</td>
+                          <td className="px-4 py-2">{row.email}</td>
+                          <td className="px-4 py-2 text-blue-600">{row.url}</td>
+                          <td className="px-4 py-2">
+                            <Badge variant="outline" className="text-xs">
+                              {row.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2">{row.created_at}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleDownloadDataSet(selectedDataSet)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Full Dataset
+                </Button>
+                <Button onClick={() => setViewDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
