@@ -6,6 +6,7 @@ import { QRCustomizePanel } from './QRCustomizePanel';
 import { QRFinalPanel } from './QRFinalPanel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check } from 'lucide-react';
+import { dynamicQRTypes, staticQRTypes } from './qrTypeData';
 
 export interface QRCodeType {
   id: string;
@@ -22,7 +23,8 @@ interface QRGeneratorStepperProps {
 }
 
 export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+  // Start at step 2 if initialType is provided, otherwise start at step 1
+  const [currentStep, setCurrentStep] = useState(initialType ? 2 : 1);
   const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
   const [setupData, setSetupData] = useState<any>(null);
   const [customizeData, setCustomizeData] = useState<any>(null);
@@ -30,6 +32,18 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
   console.log('QRGeneratorStepper: initialType received:', initialType);
   console.log('QRGeneratorStepper: currentStep:', currentStep);
   console.log('QRGeneratorStepper: selectedType:', selectedType);
+
+  // Set the selected type based on initialType
+  useEffect(() => {
+    if (initialType && !selectedType) {
+      const allTypes = [...dynamicQRTypes, ...staticQRTypes];
+      const foundType = allTypes.find(type => type.id === initialType);
+      if (foundType) {
+        console.log('QRGeneratorStepper: Setting type from initialType:', foundType);
+        setSelectedType(foundType);
+      }
+    }
+  }, [initialType, selectedType]);
 
   const steps = [
     { number: 1, title: 'Select type', description: 'Choose your QR code type' },
