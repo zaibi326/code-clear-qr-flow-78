@@ -50,6 +50,21 @@ const Support = () => {
     }
   ];
 
+  const handleSearchHelp = () => {
+    setActiveTab('help');
+    // Focus on search input after tab change
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[placeholder*="Search help"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  };
+
+  const handleNewTicket = () => {
+    setActiveTab('submit');
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -70,11 +85,18 @@ const Support = () => {
                     <p className="text-lg text-gray-600">Get help, browse documentation, and contact our support team</p>
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2 hover:bg-gray-100"
+                      onClick={handleSearchHelp}
+                    >
                       <Search className="h-4 w-4" />
                       Search Help
                     </Button>
-                    <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2">
+                    <Button 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white flex items-center gap-2"
+                      onClick={handleNewTicket}
+                    >
                       <Plus className="h-4 w-4" />
                       New Ticket
                     </Button>

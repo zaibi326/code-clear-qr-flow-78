@@ -12,6 +12,10 @@ interface SupportTabsProps {
 }
 
 export function SupportTabs({ activeTab, setActiveTab }: SupportTabsProps) {
+  const handleNewTicket = () => {
+    setActiveTab('submit');
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto p-1">
@@ -42,7 +46,7 @@ export function SupportTabs({ activeTab, setActiveTab }: SupportTabsProps) {
       </TabsList>
       
       <TabsContent value="help" className="mt-0">
-        <HelpCenter />
+        <HelpCenter onNewTicket={handleNewTicket} />
       </TabsContent>
       
       <TabsContent value="tickets" className="mt-0">
