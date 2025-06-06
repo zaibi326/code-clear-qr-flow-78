@@ -51,6 +51,7 @@ export const RouteConfig = () => {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/about" element={<About />} />
       <Route path="/api-documentation" element={<ApiDocumentation />} />
+      <Route path="/api-docs" element={<ApiDocumentation />} />
       <Route path="/integrations" element={<Integrations />} />
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/blog" element={<Blog />} />
@@ -143,12 +144,6 @@ export const RouteConfig = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/integrations" element={
-        <ProtectedRoute>
-          <Integrations />
-        </ProtectedRoute>
-      } />
-
       <Route path="/dashboard/integrations" element={
         <ProtectedRoute>
           <DashboardIntegrationsPage />

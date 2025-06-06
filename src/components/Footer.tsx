@@ -6,8 +6,8 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   const footerLinks = {
     Product: [
-      { name: 'Features', href: '#features' },
-      { name: 'Pricing', href: '#pricing' },
+      { name: 'Features', href: '/features' },
+      { name: 'Pricing', href: '/pricing' },
       { name: 'API Documentation', href: '/api-documentation' },
       { name: 'Integrations', href: '/integrations' },
       { name: 'Changelog', href: '/changelog' }
@@ -27,7 +27,7 @@ const Footer = () => {
       { name: 'Best Practices', href: '/best-practices' }
     ],
     Company: [
-      { name: 'About Us', href: '#about' },
+      { name: 'About Us', href: '/about' },
       { name: 'Careers', href: '/company/careers' },
       { name: 'Contact', href: '/company/contact' },
       { name: 'Privacy Policy', href: '/company/privacy' },
@@ -136,7 +136,7 @@ const Footer = () => {
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/company/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link to="/company/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Cookies</Link>
+            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
           </div>
         </div>
       </div>
