@@ -1,10 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { QrCode, Twitter, Linkedin, Github, Mail } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Footer = () => {
   const location = useLocation();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const footerLinks = {
     Product: [
@@ -49,6 +53,52 @@ const Footer = () => {
     // Scroll to top for non-anchor links
     if (!href.startsWith('#')) {
       window.scrollTo(0, 0);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubscribing(true);
+    
+    try {
+      // Simulate newsletter subscription
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Successfully Subscribed!",
+        description: "Thank you for subscribing to our newsletter. You'll receive the latest QR code trends and platform updates.",
+      });
+      
+      setEmail('');
+    } catch (error) {
+      toast({
+        title: "Subscription Failed",
+        description: "There was an error subscribing to our newsletter. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubscribing(false);
     }
   };
 
@@ -115,6 +165,62 @@ const Footer = () => {
               </ul>
             </div>
           ))}
+        </div>
+
+        {/* Newsletter Section */}
+        <div className="border-t border-gray-800 mt-12 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <h3 className="font-semibold text-lg mb-2">Stay Updated</h3>
+              <p className="text-gray-400">Get the latest QR code trends and platform updates.</p>
+            </div>
+            
+            <form onSubmit={handleNewsletterSubmit} className="flex space-x-4 w-full md:w-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubscribing}
+                className="flex-1 md:w-64 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              />
+              <button 
+                type="submit"
+                disabled={isSubscribing}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 px-6 py-2 rounded-lg font-semibold transition-all disabled:cursor-not-allowed"
+              >
+                {isSubscribing ? 'Subscribing...' : 'Subscribe'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
+          <p>&copy; 2024 ClearQR.io. All rights reserved.</p>
+          <div className="flex space-x-6 mt-4 md:mt-0">
+            <Link 
+              to="/company/privacy" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/company/privacy')}
+            >
+              Privacy
+            </Link>
+            <Link 
+              to="/company/terms" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/company/terms')}
+            >
+              Terms
+            </Link>
+            <Link 
+              to="/support" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/support')}
+            >
+              Support
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -9,7 +9,6 @@ import AnimatedHowItWorks from '@/components/AnimatedHowItWorks';
 import InteractiveStats from '@/components/InteractiveStats';
 import FuturisticPricing from '@/components/FuturisticPricing';
 import NextGenCTA from '@/components/NextGenCTA';
-import Footer from '@/components/Footer';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -85,7 +84,6 @@ const Index = () => {
           <div id="support">
             <NextGenCTA />
           </div>
-          <Footer />
         </div>
       </div>
     );
