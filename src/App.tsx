@@ -24,7 +24,8 @@ const AppContent = () => {
                           location.pathname.startsWith('/campaigns') ||
                           location.pathname.startsWith('/monitoring') ||
                           location.pathname.startsWith('/settings') ||
-                          location.pathname === '/support';
+                          location.pathname === '/support' ||
+                          location.pathname === '/quick-generate';
   
   return (
     <>

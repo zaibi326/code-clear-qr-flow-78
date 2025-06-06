@@ -30,6 +30,12 @@ const Navigation = () => {
     setIsMenuOpen(false);
   };
 
+  const handleSupportClick = () => {
+    // Navigate to support page
+    navigate('/support');
+    setIsMenuOpen(false);
+  };
+
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +75,7 @@ const Navigation = () => {
               About
             </button>
             <button 
-              onClick={() => scrollToSection('support')} 
+              onClick={handleSupportClick}
               className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
             >
               Support
@@ -127,7 +133,7 @@ const Navigation = () => {
                 About
               </button>
               <button
-                onClick={() => scrollToSection('support')}
+                onClick={handleSupportClick}
                 className="block w-full text-left px-3 py-2 text-gray-600 hover:text-blue-600"
               >
                 Support

@@ -7,6 +7,8 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Analytics from '@/pages/Analytics';
 import CreateQRCode from '@/pages/CreateQRCode';
+import CreateSingleQR from '@/pages/CreateSingleQR';
+import CreateBulkQR from '@/pages/CreateBulkQR';
 import QuickGenerate from '@/pages/QuickGenerate';
 import QRCodes from '@/pages/QRCodes';
 import TemplateManager from '@/pages/TemplateManager';
@@ -97,6 +99,18 @@ export const RouteConfig = () => {
       <Route path="/create" element={
         <ProtectedRoute>
           <CreateQRCode />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/create-single" element={
+        <ProtectedRoute>
+          <CreateSingleQR />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/create-bulk" element={
+        <ProtectedRoute>
+          <CreateBulkQR />
         </ProtectedRoute>
       } />
 
