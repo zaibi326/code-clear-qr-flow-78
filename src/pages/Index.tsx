@@ -39,9 +39,9 @@ const Index = () => {
   // Only show landing page if user is not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen overflow-hidden relative">
+      <div className="min-h-screen">
         {/* Animated Background */}
-        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 -z-10">
           <div className="absolute inset-0 opacity-40">
             <div className="absolute top-20 left-20 w-20 h-20 bg-blue-500/30 rounded-full animate-pulse"></div>
             <div className="absolute top-40 right-32 w-16 h-16 bg-purple-500/30 rounded-full animate-bounce"></div>
@@ -65,7 +65,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="relative z-10">
+        <div className="relative">
           <Navigation />
           <InteractiveHero />
           <div id="features">
