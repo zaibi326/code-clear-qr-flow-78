@@ -35,6 +35,10 @@ import Events from '@/pages/solutions/Events';
 import Restaurants from '@/pages/solutions/Restaurants';
 import Retail from '@/pages/solutions/Retail';
 import Healthcare from '@/pages/solutions/Healthcare';
+import Contact from '@/pages/company/Contact';
+import Privacy from '@/pages/company/Privacy';
+import Terms from '@/pages/company/Terms';
+import Careers from '@/pages/company/Careers';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import NotFound from '@/pages/NotFound';
 
@@ -58,6 +62,12 @@ export const RouteConfig = () => {
       <Route path="/case-studies" element={<CaseStudies />} />
       <Route path="/best-practices" element={<BestPractices />} />
       <Route path="/help-center" element={<HelpCenter />} />
+
+      {/* Company pages */}
+      <Route path="/company/contact" element={<Contact />} />
+      <Route path="/company/privacy" element={<Privacy />} />
+      <Route path="/company/terms" element={<Terms />} />
+      <Route path="/company/careers" element={<Careers />} />
       
       {/* Solutions pages */}
       <Route path="/solutions/marketing" element={<Marketing />} />

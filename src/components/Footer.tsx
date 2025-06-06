@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { QrCode, Twitter, Linkedin, Github, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Footer = () => {
+  const location = useLocation();
+
   const footerLinks = {
     Product: [
       { name: 'Features', href: '/features' },
@@ -43,6 +45,11 @@ const Footer = () => {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }
+    
+    // Scroll to top for non-anchor links
+    if (!href.startsWith('#')) {
+      window.scrollTo(0, 0);
+    }
   };
 
   return (
@@ -52,7 +59,7 @@ const Footer = () => {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center space-x-2 mb-6">
+            <Link to="/" className="flex items-center space-x-2 mb-6" onClick={() => handleLinkClick('/')}>
               <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
                 <QrCode className="h-6 w-6 text-white" />
               </div>
@@ -96,8 +103,9 @@ const Footer = () => {
                       </button>
                     ) : (
                       <Link 
-                        to={link.href} 
+                        to={link.href}
                         className="text-gray-400 hover:text-white transition-colors"
+                        onClick={() => handleLinkClick(link.href)}
                       >
                         {link.name}
                       </Link>
@@ -134,9 +142,27 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
           <p>&copy; 2024 ClearQR.io. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/company/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/company/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
+            <Link 
+              to="/company/privacy" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/company/privacy')}
+            >
+              Privacy
+            </Link>
+            <Link 
+              to="/company/terms" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/company/terms')}
+            >
+              Terms
+            </Link>
+            <Link 
+              to="/support" 
+              className="hover:text-white transition-colors"
+              onClick={() => handleLinkClick('/support')}
+            >
+              Support
+            </Link>
           </div>
         </div>
       </div>
