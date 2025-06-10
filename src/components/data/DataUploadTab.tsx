@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,20 @@ import { Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseCSV, validateCSVData } from '@/utils/csvParser';
 
-export const DataUploadTab = () => {
+interface DataSet {
+  id: number;
+  name: string;
+  rows: number;
+  uploadDate: string;
+  status: 'active' | 'processed' | 'error';
+  progress: number;
+}
+
+interface DataUploadTabProps {
+  onDataUpload?: (dataSet: DataSet) => void;
+}
+
+export const DataUploadTab = ({ onDataUpload }: DataUploadTabProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<any>(null);
@@ -54,6 +66,20 @@ export const DataUploadTab = () => {
       });
 
       if (parseResult.data.length > 0 && validationErrors.length === 0) {
+        // Create new data set and notify parent
+        const newDataSet: DataSet = {
+          id: Date.now(),
+          name: file.name.replace('.csv', ''),
+          rows: parseResult.data.length,
+          uploadDate: new Date().toLocaleDateString(),
+          status: 'active',
+          progress: 100
+        };
+
+        if (onDataUpload) {
+          onDataUpload(newDataSet);
+        }
+
         toast({
           title: "Upload Successful",
           description: `Successfully processed ${parseResult.data.length} rows`,

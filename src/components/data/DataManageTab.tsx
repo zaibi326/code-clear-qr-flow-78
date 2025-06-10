@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,13 +30,23 @@ interface DataSet {
 
 interface DataManageTabProps {
   mockDataSets: DataSet[];
+  onDataSetsChange?: (dataSets: DataSet[]) => void;
 }
 
-export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabProps) => {
+export const DataManageTab = ({ mockDataSets: initialDataSets, onDataSetsChange }: DataManageTabProps) => {
   const [dataSets, setDataSets] = useState<DataSet[]>(initialDataSets);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [selectedDataSet, setSelectedDataSet] = useState<DataSet | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const updateDataSets = (newDataSets: DataSet[]) => {
+    setDataSets(newDataSets);
+    if (onDataSetsChange) {
+      onDataSetsChange(newDataSets);
+    }
+    // Also update localStorage
+    localStorage.setItem('dataSets', JSON.stringify(newDataSets));
+  };
 
   const handleDeleteDataSet = async (dataSetId: number) => {
     const dataSet = dataSets.find(ds => ds.id === dataSetId);
@@ -51,7 +60,8 @@ export const DataManageTab = ({ mockDataSets: initialDataSets }: DataManageTabPr
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Remove from local state
-        setDataSets(prev => prev.filter(ds => ds.id !== dataSetId));
+        const updatedDataSets = dataSets.filter(ds => ds.id !== dataSetId);
+        updateDataSets(updatedDataSets);
         toast.success(`Successfully deleted ${dataSet.name}`);
       } catch (error) {
         toast.error('Failed to delete dataset');

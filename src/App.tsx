@@ -23,6 +23,7 @@ const AppContent = () => {
                           location.pathname.startsWith('/data') ||
                           location.pathname.startsWith('/projects') ||
                           location.pathname.startsWith('/campaigns') ||
+                          location.pathname.startsWith('/campaign-creator') ||
                           location.pathname.startsWith('/monitoring') ||
                           location.pathname.startsWith('/settings') ||
                           location.pathname === '/support' ||

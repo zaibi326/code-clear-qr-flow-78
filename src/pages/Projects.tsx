@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -40,6 +39,15 @@ interface Project {
   team: number;
   progress: number;
   featured?: boolean;
+}
+
+interface DataSet {
+  id: number;
+  name: string;
+  rows: number;
+  uploadDate: string;
+  status: 'active' | 'processed' | 'error';
+  progress: number;
 }
 
 const Projects = () => {
@@ -204,7 +212,21 @@ const Projects = () => {
       // Add new projects to existing ones
       setProjects(prev => [...newProjects, ...prev]);
       
-      toast.success(`Successfully uploaded ${csvData.length} projects`);
+      // Also add to data manager for persistence across tabs
+      const existingDataSets = JSON.parse(localStorage.getItem('dataSets') || '[]');
+      const newDataSet: DataSet = {
+        id: Date.now(),
+        name: file.name.replace('.csv', ''),
+        rows: csvData.length,
+        uploadDate: new Date().toLocaleDateString(),
+        status: 'active',
+        progress: 100
+      };
+      
+      const updatedDataSets = [newDataSet, ...existingDataSets];
+      localStorage.setItem('dataSets', JSON.stringify(updatedDataSets));
+      
+      toast.success(`Successfully uploaded ${csvData.length} projects and added to data manager`);
     } catch (error) {
       toast.error('Failed to upload CSV file');
       console.error('Upload error:', error);

@@ -1,152 +1,135 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataManagerTabs } from '@/components/data/DataManagerTabs';
 import { DataUploadTab } from '@/components/data/DataUploadTab';
 import { DataManageTab } from '@/components/data/DataManageTab';
 import { DataTemplatesTab } from '@/components/data/DataTemplatesTab';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DataExportService, ExportOptions } from '@/utils/dataExportService';
-import { CSVUploadService } from '@/utils/csvUploadService';
-import { Database, Upload, FileSpreadsheet, Users, Plus, Download, TrendingUp } from 'lucide-react';
-import { toast } from 'sonner';
+import { 
+  Database, 
+  Upload, 
+  BarChart3, 
+  Users, 
+  TrendingUp
+} from 'lucide-react';
+
+interface DataSet {
+  id: number;
+  name: string;
+  rows: number;
+  uploadDate: string;
+  status: 'active' | 'processed' | 'error';
+  progress: number;
+}
 
 const DataManager = () => {
   const [activeTab, setActiveTab] = useState('upload');
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [dataSets, setDataSets] = useState<DataSet[]>([]);
 
-  const dataStats = [
-    {
-      title: 'Total Projects',
-      value: '24',
-      icon: Database,
-      color: 'text-blue-600',
-      bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
-      lightBg: 'bg-blue-50',
-      change: '+15%'
-    },
-    {
-      title: 'Data Records',
-      value: '12,847',
-      icon: FileSpreadsheet,
-      color: 'text-green-600',
-      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-      lightBg: 'bg-green-50',
-      change: '+32%'
-    },
-    {
-      title: 'Active Campaigns',
-      value: '8',
-      icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
-      lightBg: 'bg-purple-50',
-      change: '+12%'
-    },
-    {
-      title: 'Recent Uploads',
-      value: '15',
-      icon: Upload,
-      color: 'text-orange-600',
-      bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
-      lightBg: 'bg-orange-50',
-      change: '+8%'
-    }
-  ];
-
-  const mockDataSets = [
+  const defaultDataSets: DataSet[] = [
     {
       id: 1,
-      name: 'Summer Campaign 2024',
-      rows: 2847,
+      name: 'Customer Contact List',
+      rows: 2500,
       uploadDate: '2024-01-15',
-      status: 'active' as const,
-      progress: 85
+      status: 'active',
+      progress: 100
     },
     {
       id: 2,
-      name: 'Product Launch List',
-      rows: 1203,
-      uploadDate: '2024-01-10',
-      status: 'processed' as const,
+      name: 'Product Catalog Data',
+      rows: 850,
+      uploadDate: '2024-01-12',
+      status: 'processed',
       progress: 100
     },
     {
       id: 3,
-      name: 'Customer Database',
-      rows: 5621,
-      uploadDate: '2024-01-08',
-      status: 'active' as const,
-      progress: 92
+      name: 'Event Registration List',
+      rows: 1200,
+      uploadDate: '2024-01-10',
+      status: 'active',
+      progress: 85
     }
   ];
 
-  const handleExportData = async () => {
-    setIsExporting(true);
-    try {
-      const exportOptions: ExportOptions = {
-        format: 'csv',
-        includeProjects: true,
-        includeCampaigns: true,
-        includeQRCodes: true,
-        includeAnalytics: true
-      };
-
-      const blob = await DataExportService.exportUserData('current-user', exportOptions);
-      const filename = `clearqr-data-export-${new Date().toISOString().split('T')[0]}.csv`;
-      
-      DataExportService.downloadFile(blob, filename);
-      setExportDialogOpen(false);
-      
-      toast.success('Data exported successfully!');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export data');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleUploadCSV = async () => {
-    if (!uploadFile) {
-      toast.error('Please select a CSV file to upload');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const result = await CSVUploadService.uploadProjectData('current-user', await CSVUploadService.parseCSV(uploadFile));
-      
-      if (result.success) {
-        toast.success(`Successfully uploaded ${result.recordsProcessed} records`);
-        setUploadDialogOpen(false);
-        setUploadFile(null);
-      } else {
-        toast.error(`Upload failed: ${result.errors.join(', ')}`);
+  // Load data sets from localStorage on component mount
+  useEffect(() => {
+    const savedDataSets = localStorage.getItem('dataSets');
+    if (savedDataSets) {
+      try {
+        const parsedDataSets = JSON.parse(savedDataSets);
+        setDataSets(parsedDataSets);
+      } catch (error) {
+        console.error('Error loading data sets from localStorage:', error);
+        setDataSets(defaultDataSets);
+        localStorage.setItem('dataSets', JSON.stringify(defaultDataSets));
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload CSV file');
-    } finally {
-      setIsUploading(false);
+    } else {
+      setDataSets(defaultDataSets);
+      localStorage.setItem('dataSets', JSON.stringify(defaultDataSets));
     }
+  }, []);
+
+  // Save data sets to localStorage whenever dataSets state changes
+  useEffect(() => {
+    if (dataSets.length > 0) {
+      localStorage.setItem('dataSets', JSON.stringify(dataSets));
+    }
+  }, [dataSets]);
+
+  const dataStats = [
+    {
+      title: 'Total Data Sets',
+      value: dataSets.length.toString(),
+      icon: Database,
+      color: 'text-blue-600',
+      bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      change: '+3'
+    },
+    {
+      title: 'Total Records',
+      value: dataSets.reduce((sum, ds) => sum + ds.rows, 0).toLocaleString(),
+      icon: BarChart3,
+      color: 'text-green-600',
+      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
+      change: '+12%'
+    },
+    {
+      title: 'Active Sets',
+      value: dataSets.filter(ds => ds.status === 'active').length.toString(),
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
+      change: '+2'
+    },
+    {
+      title: 'Upload Success Rate',
+      value: '98.5%',
+      icon: Upload,
+      color: 'text-orange-600',
+      bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
+      change: '+0.5%'
+    }
+  ];
+
+  const handleDataUpload = (newDataSet: DataSet) => {
+    setDataSets(prev => [newDataSet, ...prev]);
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type === 'text/csv') {
-      setUploadFile(file);
-    } else {
-      toast.error('Please select a valid CSV file');
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'upload':
+        return <DataUploadTab onDataUpload={handleDataUpload} />;
+      case 'manage':
+        return <DataManageTab mockDataSets={dataSets} onDataSetsChange={setDataSets} />;
+      case 'templates':
+        return <DataTemplatesTab />;
+      default:
+        return <DataUploadTab onDataUpload={handleDataUpload} />;
     }
   };
 
@@ -164,78 +147,10 @@ const DataManager = () => {
               <div className="mb-8 animate-fade-in">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Data Manager
                     </h1>
-                    <p className="text-lg text-gray-600">Upload, manage, and organize your campaign data with CSV files</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
-                          <Download className="h-4 w-4" />
-                          Export Data
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Export Data</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <p className="text-gray-600">
-                            Export your data including projects, campaigns, QR codes, and analytics.
-                          </p>
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handleExportData} disabled={isExporting}>
-                              {isExporting ? 'Exporting...' : 'Export CSV'}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white flex items-center gap-2">
-                          <Plus className="h-4 w-4" />
-                          Upload CSV
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Upload CSV Data</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Input
-                              type="file"
-                              accept=".csv"
-                              onChange={handleFileSelect}
-                              className="w-full"
-                            />
-                            {uploadFile && (
-                              <p className="text-sm text-gray-600 mt-2">
-                                Selected: {uploadFile.name}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
-                              Cancel
-                            </Button>
-                            <Button 
-                              onClick={handleUploadCSV} 
-                              disabled={!uploadFile || isUploading}
-                            >
-                              {isUploading ? 'Uploading...' : 'Upload'}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <p className="text-lg text-gray-600">Upload, organize, and manage your CSV data files</p>
                   </div>
                 </div>
               </div>
@@ -263,15 +178,13 @@ const DataManager = () => {
                 ))}
               </div>
 
-              {/* Data Management */}
+              {/* Data Manager Content */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                 <div className="px-8 pt-8 pb-0">
                   <DataManagerTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
                 <div className="p-8">
-                  {activeTab === 'upload' && <DataUploadTab />}
-                  {activeTab === 'manage' && <DataManageTab mockDataSets={mockDataSets} />}
-                  {activeTab === 'templates' && <DataTemplatesTab />}
+                  {renderTabContent()}
                 </div>
               </div>
             </div>
