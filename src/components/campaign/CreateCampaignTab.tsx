@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Campaign } from '@/types/campaign';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Copy, Calendar, Zap, FileText, Download } from 'lucide-react';
+import { Upload, Copy, Calendar, Zap } from 'lucide-react';
 import { CSVUploadService } from '@/utils/csvUploadService';
 
 interface CreateCampaignTabProps {
@@ -55,6 +56,11 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
         template: null
       };
 
+      // Store in localStorage to persist across tab changes
+      const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+      existingCampaigns.unshift(newCampaign);
+      localStorage.setItem('campaigns', JSON.stringify(existingCampaigns));
+
       onCampaignCreate(newCampaign);
       setFormData({ name: '', description: '', type: 'single', status: 'draft' });
       
@@ -88,7 +94,6 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
     try {
       const csvData = await CSVUploadService.parseCSV(csvFile);
       
-      // Create campaign from CSV data
       const campaignName = csvFile.name.replace('.csv', '') + ' Campaign';
       const campaignId = `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const currentTime = new Date().toISOString();
@@ -101,17 +106,22 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
         status: 'draft',
         qrCodes: csvData.map((row, index) => ({
           id: `qr_${Date.now()}_${index}`,
-          url: row.url || row.website || '',
+          url: row.url || row.website || row.link || '',
           scans: 0,
           createdAt: currentTime,
           campaignId: campaignId,
-          content: row.url || row.website || '',
+          content: row.url || row.website || row.link || '',
           customData: row
         })),
         scans: 0,
         createdAt: new Date(),
         template: null
       };
+
+      // Store in localStorage to persist across tab changes
+      const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+      existingCampaigns.unshift(newCampaign);
+      localStorage.setItem('campaigns', JSON.stringify(existingCampaigns));
 
       onCampaignCreate(newCampaign);
       setCsvFile(null);
@@ -124,7 +134,7 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
       console.error('CSV import error:', error);
       toast({
         title: "Import Failed",
-        description: "Failed to import CSV file",
+        description: error instanceof Error ? error.message : "Failed to import CSV file",
         variant: "destructive"
       });
     } finally {
@@ -133,15 +143,25 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
   };
 
   const handleDuplicateLastCampaign = () => {
-    // This would typically get the last campaign from props or context
-    const lastCampaignData = {
-      name: 'Copy of Last Campaign',
-      description: 'Duplicated campaign',
-      type: 'single' as const,
-      status: 'draft' as const
-    };
+    const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+    const lastCampaign = existingCampaigns[0];
     
-    setFormData(lastCampaignData);
+    if (lastCampaign) {
+      setFormData({
+        name: `Copy of ${lastCampaign.name}`,
+        description: lastCampaign.description || 'Duplicated campaign',
+        type: lastCampaign.type || 'single',
+        status: 'draft'
+      });
+    } else {
+      setFormData({
+        name: 'Copy of Last Campaign',
+        description: 'Duplicated campaign',
+        type: 'single',
+        status: 'draft'
+      });
+    }
+    
     toast({
       title: "Campaign Duplicated",
       description: "Last campaign has been duplicated. You can modify and save it.",
@@ -153,7 +173,6 @@ export const CreateCampaignTab = ({ onCampaignCreate }: CreateCampaignTabProps) 
       title: "Scheduled Campaigns",
       description: "Opening scheduled campaigns view...",
     });
-    // This would typically navigate to a scheduled campaigns page
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

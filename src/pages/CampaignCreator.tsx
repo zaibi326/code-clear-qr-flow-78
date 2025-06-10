@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
@@ -20,6 +20,25 @@ import {
 const CampaignCreator = () => {
   const [activeTab, setActiveTab] = useState('create');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+
+  // Load campaigns from localStorage on component mount
+  useEffect(() => {
+    const savedCampaigns = localStorage.getItem('campaigns');
+    if (savedCampaigns) {
+      try {
+        const parsedCampaigns = JSON.parse(savedCampaigns);
+        // Convert date strings back to Date objects
+        const campaignsWithDates = parsedCampaigns.map((campaign: any) => ({
+          ...campaign,
+          createdAt: new Date(campaign.createdAt)
+        }));
+        setCampaigns(campaignsWithDates);
+      } catch (error) {
+        console.error('Error loading campaigns from localStorage:', error);
+        setCampaigns([]);
+      }
+    }
+  }, []);
 
   const campaignStats = [
     {
@@ -61,19 +80,26 @@ const CampaignCreator = () => {
   ];
 
   const handleCampaignCreate = (campaign: Campaign) => {
-    setCampaigns(prev => [campaign, ...prev]);
+    setCampaigns(prev => {
+      const updated = [campaign, ...prev];
+      return updated;
+    });
   };
 
   const handleCampaignUpdate = (updatedCampaign: Campaign) => {
-    setCampaigns(prev => 
-      prev.map(campaign => 
+    setCampaigns(prev => {
+      const updated = prev.map(campaign => 
         campaign.id === updatedCampaign.id ? updatedCampaign : campaign
-      )
-    );
+      );
+      return updated;
+    });
   };
 
   const handleCampaignDelete = (campaignId: string) => {
-    setCampaigns(prev => prev.filter(campaign => campaign.id !== campaignId));
+    setCampaigns(prev => {
+      const updated = prev.filter(campaign => campaign.id !== campaignId);
+      return updated;
+    });
   };
 
   const renderTabContent = () => {

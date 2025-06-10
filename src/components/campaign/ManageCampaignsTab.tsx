@@ -21,6 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 interface ManageCampaignsTabProps {
@@ -36,6 +43,13 @@ export const ManageCampaignsTab = ({
 }: ManageCampaignsTabProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [dialogType, setDialogType] = useState<'view' | 'edit' | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    status: 'draft' as Campaign['status']
+  });
 
   const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -46,14 +60,67 @@ export const ManageCampaignsTab = ({
   const handleStatusChange = (campaign: Campaign, newStatus: Campaign['status']) => {
     const updatedCampaign = { ...campaign, status: newStatus };
     onCampaignUpdate(updatedCampaign);
+    
+    // Update localStorage
+    const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+    const updatedCampaigns = existingCampaigns.map((c: Campaign) => 
+      c.id === campaign.id ? updatedCampaign : c
+    );
+    localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
+    
     toast.success(`Campaign "${campaign.name}" ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };
 
   const handleDelete = (campaign: Campaign) => {
     if (window.confirm(`Are you sure you want to delete "${campaign.name}"?`)) {
       onCampaignDelete(campaign.id);
+      
+      // Update localStorage
+      const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+      const updatedCampaigns = existingCampaigns.filter((c: Campaign) => c.id !== campaign.id);
+      localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
+      
       toast.success(`Campaign "${campaign.name}" deleted`);
     }
+  };
+
+  const handleViewDetails = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setDialogType('view');
+  };
+
+  const handleEditCampaign = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setEditForm({
+      name: campaign.name,
+      description: campaign.description || '',
+      status: campaign.status
+    });
+    setDialogType('edit');
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedCampaign) return;
+
+    const updatedCampaign = {
+      ...selectedCampaign,
+      name: editForm.name,
+      description: editForm.description,
+      status: editForm.status
+    };
+
+    onCampaignUpdate(updatedCampaign);
+    
+    // Update localStorage
+    const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+    const updatedCampaigns = existingCampaigns.map((c: Campaign) => 
+      c.id === selectedCampaign.id ? updatedCampaign : c
+    );
+    localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
+    
+    setDialogType(null);
+    setSelectedCampaign(null);
+    toast.success(`Campaign "${updatedCampaign.name}" updated successfully`);
   };
 
   const getStatusColor = (status: Campaign['status']) => {
@@ -124,11 +191,11 @@ export const ManageCampaignsTab = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewDetails(campaign)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditCampaign(campaign)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Campaign
                       </DropdownMenuItem>
@@ -186,7 +253,12 @@ export const ManageCampaignsTab = ({
                     </Button>
                   ) : null}
                   
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleViewDetails(campaign)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View
                   </Button>
@@ -196,6 +268,122 @@ export const ManageCampaignsTab = ({
           ))}
         </div>
       )}
+
+      {/* View Details Dialog */}
+      <Dialog open={dialogType === 'view'} onOpenChange={() => setDialogType(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Campaign Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about {selectedCampaign?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCampaign && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Campaign Name</label>
+                  <p className="text-gray-900">{selectedCampaign.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <Badge className={getStatusColor(selectedCampaign.status)} variant="secondary">
+                    {selectedCampaign.status.charAt(0).toUpperCase() + selectedCampaign.status.slice(1)}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Type</label>
+                  <p className="text-gray-900">{selectedCampaign.type.charAt(0).toUpperCase() + selectedCampaign.type.slice(1)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Created Date</label>
+                  <p className="text-gray-900">{selectedCampaign.createdAt.toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Description</label>
+                <p className="text-gray-900">{selectedCampaign.description || 'No description provided'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">QR Codes</label>
+                  <p className="text-gray-900">{selectedCampaign.qrCodes.length}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Total Scans</label>
+                  <p className="text-gray-900">{selectedCampaign.scans || 0}</p>
+                </div>
+              </div>
+              {selectedCampaign.qrCodes.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">QR Codes in Campaign</label>
+                  <div className="mt-2 max-h-40 overflow-y-auto">
+                    {selectedCampaign.qrCodes.map((qr, index) => (
+                      <div key={qr.id} className="flex justify-between items-center py-1 border-b">
+                        <span className="text-sm">QR #{index + 1}</span>
+                        <span className="text-sm text-gray-500">{qr.scans} scans</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Campaign Dialog */}
+      <Dialog open={dialogType === 'edit'} onOpenChange={() => setDialogType(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Campaign</DialogTitle>
+            <DialogDescription>
+              Make changes to your campaign details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Campaign Name</label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={editForm.status}
+                onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value as Campaign['status'] }))}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="generating">Generating</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDialogType(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
