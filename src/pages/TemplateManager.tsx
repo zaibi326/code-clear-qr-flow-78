@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -80,6 +79,10 @@ const TemplateManager = () => {
         description: `Created a copy of ${templateToDuplicate.name}`,
       });
     }
+  };
+
+  const handleUploadNew = () => {
+    setActiveTab('upload');
   };
 
   // If editing a template, show the customizer
@@ -236,6 +239,7 @@ const TemplateManager = () => {
                           onTemplateEdit={handleTemplateEdit}
                           onTemplateDelete={handleTemplateDelete}
                           onTemplateDuplicate={handleTemplateDuplicate}
+                          onUploadNew={handleUploadNew}
                         />
                       </TabsContent>
                     </div>

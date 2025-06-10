@@ -12,13 +12,15 @@ interface TemplateManageTabProps {
   onTemplateEdit: (template: Template) => void;
   onTemplateDelete: (templateId: string) => void;
   onTemplateDuplicate: (templateId: string) => void;
+  onUploadNew?: () => void;
 }
 
 export const TemplateManageTab = ({ 
   templates, 
   onTemplateEdit, 
   onTemplateDelete, 
-  onTemplateDuplicate 
+  onTemplateDuplicate,
+  onUploadNew 
 }: TemplateManageTabProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -107,7 +109,10 @@ export const TemplateManageTab = ({
           <FileText className="mx-auto h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
           <p className="text-gray-600 mb-6">Upload your first marketing template to get started</p>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={onUploadNew}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Upload Template
           </Button>
@@ -170,7 +175,10 @@ export const TemplateManageTab = ({
             </Button>
           </div>
           
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={onUploadNew}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Upload New
           </Button>

@@ -19,6 +19,7 @@ const AppContent = () => {
                           location.pathname.startsWith('/create') ||
                           location.pathname.startsWith('/qr-codes') ||
                           location.pathname.startsWith('/templates') ||
+                          location.pathname.startsWith('/template-manager') ||
                           location.pathname.startsWith('/data') ||
                           location.pathname.startsWith('/projects') ||
                           location.pathname.startsWith('/campaigns') ||
