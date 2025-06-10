@@ -16,6 +16,7 @@ const TemplateManager = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Load templates from localStorage on component mount
   useEffect(() => {
@@ -33,19 +34,24 @@ const TemplateManager = () => {
     } else {
       console.log('No saved templates found');
     }
+    setIsLoaded(true);
   }, []);
 
-  // Save templates to localStorage whenever templates state changes
+  // Save templates to localStorage whenever templates state changes (but only after initial load)
   useEffect(() => {
-    console.log('Saving templates to localStorage:', templates);
-    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
-  }, [templates]);
+    if (isLoaded) {
+      console.log('Saving templates to localStorage:', templates);
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+    }
+  }, [templates, isLoaded]);
 
   const handleTemplateUpload = (template: Template) => {
     console.log('Template uploaded:', template);
     setTemplates(prev => {
       const newTemplates = [...prev, template];
       console.log('New templates array:', newTemplates);
+      // Force immediate save to localStorage
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
       return newTemplates;
     });
     
@@ -70,7 +76,12 @@ const TemplateManager = () => {
   };
 
   const handleTemplateCustomizationSave = (customizedTemplate: Template) => {
-    setTemplates(prev => prev.map(t => t.id === customizedTemplate.id ? customizedTemplate : t));
+    setTemplates(prev => {
+      const updatedTemplates = prev.map(t => t.id === customizedTemplate.id ? customizedTemplate : t);
+      // Force immediate save to localStorage
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(updatedTemplates));
+      return updatedTemplates;
+    });
     setEditingTemplate(null);
     toast({
       title: "Template customization saved",
@@ -83,7 +94,12 @@ const TemplateManager = () => {
   };
 
   const handleTemplateDelete = (templateId: string) => {
-    setTemplates(prev => prev.filter(template => template.id !== templateId));
+    setTemplates(prev => {
+      const filteredTemplates = prev.filter(template => template.id !== templateId);
+      // Force immediate save to localStorage
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(filteredTemplates));
+      return filteredTemplates;
+    });
     toast({
       title: "Template deleted",
       description: "Template has been removed from your library",
@@ -100,7 +116,12 @@ const TemplateManager = () => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      setTemplates(prev => [...prev, duplicatedTemplate]);
+      setTemplates(prev => {
+        const newTemplates = [...prev, duplicatedTemplate];
+        // Force immediate save to localStorage
+        localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
+        return newTemplates;
+      });
       toast({
         title: "Template duplicated",
         description: `Created a copy of ${templateToDuplicate.name}`,
@@ -111,6 +132,29 @@ const TemplateManager = () => {
   const handleUploadNew = () => {
     setActiveTab('upload');
   };
+
+  const handleTabChange = (newTab: string) => {
+    console.log('Changing tab from', activeTab, 'to', newTab);
+    console.log('Current templates count:', templates.length);
+    setActiveTab(newTab);
+  };
+
+  // Don't render until templates are loaded
+  if (!isLoaded) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
+            <DashboardTopbar />
+            <main className="flex-1 overflow-auto flex items-center justify-center">
+              <div className="text-lg">Loading templates...</div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   // If editing a template, show the customizer
   if (editingTemplate) {
@@ -133,13 +177,13 @@ const TemplateManager = () => {
           
           <main className="flex-1 overflow-auto">
             <div className="max-w-7xl mx-auto px-6 py-8">
-              <TemplateManagerHeader onUploadClick={() => setActiveTab('upload')} />
+              <TemplateManagerHeader onUploadClick={() => handleTabChange('upload')} />
               
               <TemplateManagerStats templateCount={templates.length} />
 
               <TemplateManagerTabsContent
                 activeTab={activeTab}
-                setActiveTab={setActiveTab}
+                setActiveTab={handleTabChange}
                 templates={templates}
                 onTemplateSelect={handleTemplateSelect}
                 onTemplateUpload={handleTemplateUpload}
