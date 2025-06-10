@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
@@ -17,6 +18,27 @@ const TemplateManager = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+
+  // Load templates from localStorage on component mount
+  useEffect(() => {
+    const savedTemplates = localStorage.getItem('templates');
+    if (savedTemplates) {
+      try {
+        const parsedTemplates = JSON.parse(savedTemplates);
+        setTemplates(parsedTemplates);
+      } catch (error) {
+        console.error('Error loading templates from localStorage:', error);
+        setTemplates([]);
+      }
+    }
+  }, []);
+
+  // Save templates to localStorage whenever templates state changes
+  useEffect(() => {
+    if (templates.length >= 0) {
+      localStorage.setItem('templates', JSON.stringify(templates));
+    }
+  }, [templates]);
 
   const handleTemplateUpload = (template: Template) => {
     console.log('Template uploaded:', template);
