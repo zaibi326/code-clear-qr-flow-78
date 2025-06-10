@@ -10,6 +10,8 @@ import { TemplateManagerTabsContent } from '@/components/template/TemplateManage
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
 
+const TEMPLATES_STORAGE_KEY = 'qr-templates';
+
 const TemplateManager = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTab, setActiveTab] = useState('library');
@@ -17,28 +19,35 @@ const TemplateManager = () => {
 
   // Load templates from localStorage on component mount
   useEffect(() => {
-    const savedTemplates = localStorage.getItem('templates');
+    console.log('Loading templates from localStorage...');
+    const savedTemplates = localStorage.getItem(TEMPLATES_STORAGE_KEY);
     if (savedTemplates) {
       try {
         const parsedTemplates = JSON.parse(savedTemplates);
+        console.log('Loaded templates:', parsedTemplates);
         setTemplates(parsedTemplates);
       } catch (error) {
         console.error('Error loading templates from localStorage:', error);
         setTemplates([]);
       }
+    } else {
+      console.log('No saved templates found');
     }
   }, []);
 
   // Save templates to localStorage whenever templates state changes
   useEffect(() => {
-    if (templates.length >= 0) {
-      localStorage.setItem('templates', JSON.stringify(templates));
-    }
+    console.log('Saving templates to localStorage:', templates);
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
   }, [templates]);
 
   const handleTemplateUpload = (template: Template) => {
     console.log('Template uploaded:', template);
-    setTemplates(prev => [...prev, template]);
+    setTemplates(prev => {
+      const newTemplates = [...prev, template];
+      console.log('New templates array:', newTemplates);
+      return newTemplates;
+    });
     
     toast({
       title: "Template uploaded successfully!",
