@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -6,15 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TemplateLibraryTab } from '@/components/template/TemplateLibraryTab';
 import { TemplateUploadTab } from '@/components/template/TemplateUploadTab';
 import { TemplateManageTab } from '@/components/template/TemplateManageTab';
+import { TemplateCustomizer } from '@/components/template/TemplateCustomizer';
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Upload, FolderOpen, Plus, TrendingUp, Download } from 'lucide-react';
+import { FileText, Upload, FolderOpen, Plus, TrendingUp, Download, Edit } from 'lucide-react';
 
 const TemplateManager = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTab, setActiveTab] = useState('library');
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const handleTemplateUpload = (template: Template) => {
     console.log('Template uploaded:', template);
@@ -37,10 +40,20 @@ const TemplateManager = () => {
 
   const handleTemplateEdit = (template: Template) => {
     console.log('Editing template:', template);
+    setEditingTemplate(template);
+  };
+
+  const handleTemplateCustomizationSave = (customizedTemplate: Template) => {
+    setTemplates(prev => prev.map(t => t.id === customizedTemplate.id ? customizedTemplate : t));
+    setEditingTemplate(null);
     toast({
-      title: "Template editor opened",
-      description: `Opening editor for ${template.name}`,
+      title: "Template customization saved",
+      description: `${customizedTemplate.name} has been updated with your changes`,
     });
+  };
+
+  const handleTemplateCustomizationCancel = () => {
+    setEditingTemplate(null);
   };
 
   const handleTemplateDelete = (templateId: string) => {
@@ -68,6 +81,17 @@ const TemplateManager = () => {
       });
     }
   };
+
+  // If editing a template, show the customizer
+  if (editingTemplate) {
+    return (
+      <TemplateCustomizer
+        template={editingTemplate}
+        onSave={handleTemplateCustomizationSave}
+        onCancel={handleTemplateCustomizationCancel}
+      />
+    );
+  }
 
   const templateStats = [
     {
@@ -125,7 +149,7 @@ const TemplateManager = () => {
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Template Manager
                     </h1>
-                    <p className="text-lg text-gray-600">Create, manage, and organize your QR code templates</p>
+                    <p className="text-lg text-gray-600">Create, customize, and organize your QR code templates with Canva-like editing</p>
                   </div>
                   <div className="flex gap-3">
                     <Button variant="outline" className="flex items-center gap-2 hover:bg-gray-100">
@@ -189,8 +213,8 @@ const TemplateManager = () => {
                         value="manage" 
                         className="flex items-center gap-2 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
                       >
-                        <FolderOpen className="h-4 w-4" />
-                        Manage Templates
+                        <Edit className="h-4 w-4" />
+                        Customize & Manage
                       </TabsTrigger>
                     </TabsList>
                     
