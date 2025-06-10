@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
@@ -46,8 +47,9 @@ const Projects = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
-  const mockProjects: Project[] = [
+  const defaultProjects: Project[] = [
     {
       id: '1',
       name: 'Summer Marketing Campaign 2024',
@@ -96,10 +98,35 @@ const Projects = () => {
     }
   ];
 
+  // Load projects from localStorage on component mount
+  useEffect(() => {
+    const savedProjects = localStorage.getItem('projects');
+    if (savedProjects) {
+      try {
+        const parsedProjects = JSON.parse(savedProjects);
+        setProjects(parsedProjects);
+      } catch (error) {
+        console.error('Error loading projects from localStorage:', error);
+        setProjects(defaultProjects);
+        localStorage.setItem('projects', JSON.stringify(defaultProjects));
+      }
+    } else {
+      setProjects(defaultProjects);
+      localStorage.setItem('projects', JSON.stringify(defaultProjects));
+    }
+  }, []);
+
+  // Save projects to localStorage whenever projects state changes
+  useEffect(() => {
+    if (projects.length > 0) {
+      localStorage.setItem('projects', JSON.stringify(projects));
+    }
+  }, [projects]);
+
   const projectStats = [
     {
       title: 'Active Projects',
-      value: '12',
+      value: projects.filter(p => p.status === 'active').length.toString(),
       icon: FolderOpen,
       color: 'text-blue-600',
       bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
@@ -107,7 +134,7 @@ const Projects = () => {
     },
     {
       title: 'Total Campaigns',
-      value: '89',
+      value: projects.reduce((sum, p) => sum + p.campaigns, 0).toString(),
       icon: BarChart3,
       color: 'text-green-600',
       bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
@@ -115,7 +142,7 @@ const Projects = () => {
     },
     {
       title: 'Team Members',
-      value: '24',
+      value: projects.reduce((sum, p) => sum + p.team, 0).toString(),
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
@@ -123,7 +150,7 @@ const Projects = () => {
     },
     {
       title: 'Total Scans',
-      value: '54.2k',
+      value: `${(projects.reduce((sum, p) => sum + p.totalScans, 0) / 1000).toFixed(1)}k`,
       icon: TrendingUp,
       color: 'text-orange-600',
       bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
@@ -159,14 +186,25 @@ const Projects = () => {
     setIsUploading(true);
     try {
       const csvData = await CSVUploadService.parseCSV(file);
-      const result = await CSVUploadService.uploadProjectData('user-123', csvData);
       
-      if (result.success) {
-        toast.success(`Successfully uploaded ${result.recordsProcessed} projects`);
-      } else {
-        toast.error(`Upload completed with errors. Processed: ${result.recordsProcessed}`);
-        result.errors.forEach(error => toast.error(error));
-      }
+      // Create new projects from CSV data
+      const newProjects = csvData.map((row, index) => ({
+        id: `uploaded_${Date.now()}_${index}`,
+        name: row.name || `Project ${index + 1}`,
+        description: row.description || 'Uploaded from CSV',
+        campaigns: parseInt(row.campaigns) || 0,
+        totalScans: parseInt(row.totalScans) || 0,
+        status: (row.status as 'active' | 'paused' | 'completed') || 'active',
+        lastActivity: 'Just uploaded',
+        team: parseInt(row.team) || 1,
+        progress: parseInt(row.progress) || 0,
+        featured: false
+      }));
+
+      // Add new projects to existing ones
+      setProjects(prev => [...newProjects, ...prev]);
+      
+      toast.success(`Successfully uploaded ${csvData.length} projects`);
     } catch (error) {
       toast.error('Failed to upload CSV file');
       console.error('Upload error:', error);
@@ -177,18 +215,14 @@ const Projects = () => {
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    const project = mockProjects.find(p => p.id === projectId);
+    const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
     if (confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
       try {
-        const result = await databaseService.delete('projects', projectId);
-        if (result.success) {
-          toast.success(`Deleted ${project.name}`);
-          // In a real app, you'd refresh the projects list here
-        } else {
-          toast.error(result.error || 'Failed to delete project');
-        }
+        // Remove from state and localStorage will be updated automatically
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        toast.success(`Deleted ${project.name}`);
       } catch (error) {
         toast.error('Failed to delete project');
         console.error('Delete error:', error);
@@ -202,7 +236,7 @@ const Projects = () => {
     completed: 'bg-blue-100 text-blue-800 border-blue-200'
   };
 
-  const filteredProjects = mockProjects.filter(project => {
+  const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = activeFilter === 'all' || project.status === activeFilter;
