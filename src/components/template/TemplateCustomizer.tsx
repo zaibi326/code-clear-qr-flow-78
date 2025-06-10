@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,7 +73,7 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
         });
         img.scaleToWidth(800);
         canvas.add(img);
-        canvas.sendToBack(img);
+        canvas.sendObjectToBack(img);
       });
     }
 
@@ -295,7 +294,7 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
         });
         img.scaleToWidth(800);
         fabricCanvas.add(img);
-        fabricCanvas.sendToBack(img);
+        fabricCanvas.sendObjectToBack(img);
       });
     }
     
@@ -310,6 +309,7 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
       const dataURL = fabricCanvas.toDataURL({
         format: 'png',
         quality: 1,
+        multiplier: 1,
       });
 
       // Create updated template with customizations
@@ -335,6 +335,7 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
     link.href = fabricCanvas.toDataURL({
       format: 'png',
       quality: 1,
+      multiplier: 1,
     });
     link.click();
     
@@ -544,7 +545,7 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
                           <Label className="text-xs">Font Size</Label>
                           <Input
                             type="number"
-                            value={selectedObject.fontSize || 20}
+                            value={(selectedObject as any).fontSize || 20}
                             onChange={(e) => updateSelectedObjectProperty('fontSize', parseInt(e.target.value))}
                             className="mt-1"
                           />
