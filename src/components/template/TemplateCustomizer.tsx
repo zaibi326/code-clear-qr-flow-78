@@ -5,21 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Canvas as FabricCanvas, FabricObject, Rect, Circle, Textbox, FabricImage } from 'fabric';
+import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
 import { 
   Type, 
   Square, 
   Circle as CircleIcon, 
   Image as ImageIcon, 
   QrCode, 
-  Undo, 
-  Redo, 
   RotateCcw, 
   Save, 
   Download,
   ZoomIn,
   ZoomOut,
-  Move,
   Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,7 +41,7 @@ interface CanvasElement {
 
 export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCustomizerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   const [qrUrl, setQrUrl] = useState('https://example.com');
@@ -56,11 +53,15 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const canvas = new FabricCanvas(canvasRef.current, {
+    const canvas = new Canvas(canvasRef.current, {
       width: 800,
       height: 600,
       backgroundColor: '#ffffff',
     });
+
+    // Initialize the freeDrawingBrush
+    canvas.freeDrawingBrush.color = '#000000';
+    canvas.freeDrawingBrush.width = 2;
 
     // Load template background if available
     if (template.preview) {
@@ -79,11 +80,11 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
 
     // Set up event listeners
     canvas.on('selection:created', (e) => {
-      setSelectedObject(e.selected[0]);
+      setSelectedObject(e.selected?.[0] || null);
     });
 
     canvas.on('selection:updated', (e) => {
-      setSelectedObject(e.selected[0]);
+      setSelectedObject(e.selected?.[0] || null);
     });
 
     canvas.on('selection:cleared', () => {
