@@ -58,9 +58,11 @@ export const TemplateCustomizer = ({ template, onSave, onCancel }: TemplateCusto
       backgroundColor: '#ffffff',
     });
 
-    // Initialize the freeDrawingBrush
-    canvas.freeDrawingBrush.color = '#000000';
-    canvas.freeDrawingBrush.width = 2;
+    // Initialize the freeDrawingBrush properly for Fabric.js v6
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = '#000000';
+      canvas.freeDrawingBrush.width = 2;
+    }
 
     // Load template background if available
     if (template.preview) {
