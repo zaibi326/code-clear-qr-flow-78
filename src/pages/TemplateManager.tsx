@@ -25,8 +25,14 @@ const TemplateManager = () => {
     if (savedTemplates) {
       try {
         const parsedTemplates = JSON.parse(savedTemplates);
-        console.log('Loaded templates:', parsedTemplates);
-        setTemplates(parsedTemplates);
+        // Convert date strings back to Date objects
+        const templatesWithDates = parsedTemplates.map((template: any) => ({
+          ...template,
+          createdAt: new Date(template.createdAt),
+          updatedAt: new Date(template.updatedAt)
+        }));
+        console.log('Loaded templates:', templatesWithDates);
+        setTemplates(templatesWithDates);
       } catch (error) {
         console.error('Error loading templates from localStorage:', error);
         setTemplates([]);
