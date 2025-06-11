@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { QRCodeType } from './QRGeneratorStepper';
 import { getQRForm } from './forms/QRFormRegistry';
-import { qrValidation } from './utils/qrValidation';
+import { validateQRForm, getValidationMessage } from './utils/qrValidation';
 
 interface QRSetupPanelProps {
   qrType: QRCodeType;
@@ -30,10 +30,11 @@ export function QRSetupPanel({ qrType, onComplete, onBack }: QRSetupPanelProps) 
   };
 
   const handleNext = () => {
-    const validation = qrValidation.validateForm(qrType.id, formData);
+    const isValid = validateQRForm(qrType.id, formData);
     
-    if (!validation.isValid) {
-      console.error('Form validation failed:', validation.errors);
+    if (!isValid) {
+      const errorMessage = getValidationMessage(qrType.id);
+      console.error('Form validation failed:', errorMessage);
       // You could show validation errors here
       return;
     }
