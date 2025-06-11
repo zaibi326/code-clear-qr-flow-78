@@ -1,21 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminRegister = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { adminRegister, isLoading } = useAdminAuth();
+  const { adminRegister, isLoading, adminUser } = useAdminAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -30,13 +29,14 @@ const AdminRegister = () => {
     confirmPassword: ''
   });
 
+  useEffect(() => {
+    if (adminUser) {
+      navigate('/admin/dashboard');
+    }
+  }, [adminUser, navigate]);
+
   const validateForm = () => {
-    const newErrors = {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    };
+    const newErrors = { name: '', email: '', password: '', confirmPassword: '' };
     let isValid = true;
 
     if (!formData.name.trim()) {
@@ -60,10 +60,7 @@ const AdminRegister = () => {
       isValid = false;
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-      isValid = false;
-    } else if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
       isValid = false;
     }
@@ -75,15 +72,11 @@ const AdminRegister = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Admin registration form submitted');
-    
     if (!validateForm()) {
-      console.log('Form validation failed');
       return;
     }
 
     try {
-      console.log('Attempting admin registration...');
       const success = await adminRegister(
         formData.name,
         formData.email,
@@ -92,17 +85,15 @@ const AdminRegister = () => {
       );
       
       if (success) {
-        console.log('Admin registration successful');
         toast({
           title: "Registration successful!",
-          description: "Your admin account has been created successfully.",
+          description: "Admin account created successfully.",
         });
         navigate('/admin/login');
       } else {
-        console.log('Admin registration failed');
         toast({
           title: "Registration failed",
-          description: "There was an error creating your account. Please try again.",
+          description: "Failed to create admin account. Please try again.",
           variant: "destructive"
         });
       }
@@ -133,7 +124,7 @@ const AdminRegister = () => {
             </div>
             <CardTitle className="text-2xl font-bold text-white">Admin Registration</CardTitle>
             <CardDescription className="text-gray-300">
-              Request access to the admin dashboard
+              Create a new admin account
             </CardDescription>
           </CardHeader>
 
@@ -181,9 +172,9 @@ const AdminRegister = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="role" className="text-white">Role</Label>
-                <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+                <Select value={formData.role} onValueChange={(value: 'admin' | 'super_admin') => handleInputChange('role', value)}>
                   <SelectTrigger className="bg-white/20 border-white/30 text-white">
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
@@ -198,7 +189,7 @@ const AdminRegister = () => {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
+                    placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     className={`bg-white/20 border-white/30 text-white placeholder:text-gray-400 pr-10 ${
@@ -223,35 +214,20 @@ const AdminRegister = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                    className={`bg-white/20 border-white/30 text-white placeholder:text-gray-400 pr-10 ${
-                      errors.confirmPassword ? 'border-red-500' : 'focus:border-blue-500'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  className={`bg-white/20 border-white/30 text-white placeholder:text-gray-400 ${
+                    errors.confirmPassword ? 'border-red-500' : 'focus:border-blue-500'
+                  }`}
+                />
                 {errors.confirmPassword && (
                   <div className="flex items-center space-x-1 text-red-400">
                     <AlertCircle className="h-4 w-4" />
                     <span className="text-sm">{errors.confirmPassword}</span>
-                  </div>
-                )}
-                {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                  <div className="flex items-center space-x-1 text-green-400">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm">Passwords match</span>
                   </div>
                 )}
               </div>
@@ -264,22 +240,22 @@ const AdminRegister = () => {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Submitting...</span>
+                    <span>Creating Account...</span>
                   </div>
                 ) : (
-                  'Request Access'
+                  'Create Admin Account'
                 )}
               </Button>
             </form>
 
             <div className="text-center">
               <p className="text-sm text-gray-400">
-                Already have admin access?{' '}
+                Already have an admin account?{' '}
                 <Link
                   to="/admin/login"
                   className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
                 >
-                  Sign in here
+                  Sign In
                 </Link>
               </p>
             </div>

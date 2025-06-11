@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<DatabaseUser | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }, 0);
         } else {
           setProfile(null);
+          setUserRole(null);
           if (mounted) {
             setLoading(false);
           }
@@ -107,6 +109,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (userProfile) {
         setProfile(userProfile);
       }
+
+      // Load user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleData) {
+        setUserRole(roleData.role);
+      } else {
+        // Default role for new users
+        setUserRole('user');
+      }
+      
     } catch (error) {
       console.error('Error loading user profile:', error);
     } finally {
@@ -227,6 +244,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('Creating profile with data:', profileData);
           await supabaseService.createUserProfile(profileData, data.user.id);
           console.log('Profile created successfully');
+
+          // Create default user role
+          await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: 'user'
+            });
           
           // Also sync with userProfileService for immediate local access
           await userProfileService.updateProfile({
@@ -289,6 +314,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     profile,
     session,
+    userRole,
     loading,
     isLoading,
     signIn,

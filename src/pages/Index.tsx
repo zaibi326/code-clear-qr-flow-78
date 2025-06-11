@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useSupabaseAuth';
@@ -11,15 +10,24 @@ import FuturisticPricing from '@/components/FuturisticPricing';
 import NextGenCTA from '@/components/NextGenCTA';
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && user) {
-      console.log('Index: User is authenticated, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
+      console.log('Index: User is authenticated, checking role for redirect');
+      console.log('User role:', userRole);
+      
+      // Role-based redirect
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        console.log('Redirecting admin user to admin dashboard');
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        console.log('Redirecting regular user to dashboard');
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, userRole, loading, navigate]);
 
   // Show loading while checking auth state
   if (loading) {

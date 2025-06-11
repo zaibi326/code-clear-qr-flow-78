@@ -14,7 +14,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn, isLoading } = useAuth();
+  const { signIn, isLoading, userRole } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +48,12 @@ const LoginForm = () => {
           setError(error.message || 'Sign in failed. Please try again.');
         }
       } else {
-        console.log('Sign in successful, navigating to dashboard');
+        console.log('Sign in successful, navigating based on role');
         toast.success('Successfully signed in!');
-        // Small delay to ensure auth state is updated
+        
+        // Small delay to ensure auth state and role are updated
         setTimeout(() => {
+          // Role-based redirect - default to dashboard for regular users
           navigate('/dashboard', { replace: true });
         }, 100);
       }
