@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { QRCodeType } from './QRGeneratorStepper';
 import { getQRForm } from './forms/QRFormRegistry';
-import { validateQRForm } from './utils/qrValidation';
+import { qrValidation } from './utils/qrValidation';
 
 interface QRSetupPanelProps {
   qrType: QRCodeType;
@@ -14,64 +14,83 @@ interface QRSetupPanelProps {
 }
 
 export function QRSetupPanel({ qrType, onComplete, onBack }: QRSetupPanelProps) {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({
+    url: qrType.id === 'url' ? 'https://www.example.com' : '',
+    qrName: qrType.id === 'url' ? 'My Website QR Code' : '',
+    foregroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    logoUrl: ''
+  });
+
+  console.log('Validating form for QR type:', qrType.id, formData);
 
   const handleInputChange = (field: string, value: string) => {
+    console.log(`QR Setup Panel - Input change: ${field} = ${value}`);
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  const handleContinue = () => {
-    if (validateQRForm(qrType.id, formData)) {
-      onComplete(formData);
+  const handleNext = () => {
+    const validation = qrValidation.validateForm(qrType.id, formData);
+    
+    if (!validation.isValid) {
+      console.error('Form validation failed:', validation.errors);
+      // You could show validation errors here
+      return;
     }
+
+    console.log('Form validation passed, proceeding to customize step');
+    onComplete(formData);
   };
 
-  const isFormValid = () => validateQRForm(qrType.id, formData);
-
+  // Get the appropriate form component for this QR type
   const FormComponent = getQRForm(qrType.id);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card className="bg-white/95 backdrop-blur-lg border border-indigo-100/50 shadow-xl shadow-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100/50">
-          <CardTitle className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${qrType.color} text-white shadow-lg`}>
-              <qrType.icon className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Setup {qrType.title}
-              </h3>
-              <p className="text-sm text-slate-600 font-medium mt-1">Configure your QR code content</p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-8 p-8">
-          <FormComponent 
-            formData={formData} 
-            onInputChange={handleInputChange} 
-          />
-          
-          <div className="flex justify-between pt-6 border-t border-indigo-100">
-            <Button 
-              variant="outline" 
-              onClick={onBack}
-              className="flex items-center gap-2 border-indigo-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl px-6 py-3"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <Button 
-              onClick={handleContinue}
-              disabled={!isFormValid()}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 rounded-xl px-6 py-3"
-            >
-              Continue
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+    <Card className="bg-white/80 backdrop-blur-sm border border-indigo-100/50 shadow-lg shadow-indigo-500/10">
+      <CardHeader className="border-b border-indigo-100/30 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+        <CardTitle className="flex items-center space-x-3">
+          <div className={`w-10 h-10 rounded-lg ${qrType.color} flex items-center justify-center shadow-lg`}>
+            <qrType.icon className="w-5 h-5 text-white" />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">{qrType.title}</h3>
+            <p className="text-sm text-gray-600 font-medium">{qrType.description}</p>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="p-8">
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+            <h4 className="font-semibold text-gray-900 mb-2">Configure Your {qrType.title}</h4>
+            <p className="text-sm text-gray-600">Set up the content and basic settings for your QR code below.</p>
+          </div>
+          
+          <FormComponent 
+            formData={formData}
+            onInputChange={handleInputChange}
+          />
+        </div>
+
+        <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+          <Button 
+            variant="outline" 
+            onClick={onBack}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </Button>
+          
+          <Button 
+            onClick={handleNext}
+            className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          >
+            <span>Next: Customize</span>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

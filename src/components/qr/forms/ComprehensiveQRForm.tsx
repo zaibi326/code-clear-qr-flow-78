@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SingleRecordForm } from './components/SingleRecordForm';
 import { QRPreviewDisplay } from './components/QRPreviewDisplay';
 import { CSVUploadSection } from './components/CSVUploadSection';
-import { useSearchParams } from 'react-router-dom';
 
 interface ComprehensiveQRFormProps {
   formData: any;
@@ -14,11 +13,7 @@ interface ComprehensiveQRFormProps {
 }
 
 export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQRFormProps) {
-  const [searchParams] = useSearchParams();
-  const qrType = searchParams.get('type') || 'url';
-  
   const { config, setConfig, generatedQR, canvasRef } = useQRGenerator();
-  // Default to single mode, but can be changed by user
   const [activeTab, setActiveTab] = useState('single');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<any[]>([]);
@@ -84,8 +79,6 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
     }
 
     try {
-      // Here you would typically save to your backend/database
-      // For now, we'll just show a success message
       toast({
         title: "Success",
         description: `${activeTab === 'single' ? 'Single' : 'Bulk'} QR Code saved successfully!`,
@@ -168,53 +161,79 @@ export function ComprehensiveQRForm({ formData, onInputChange }: ComprehensiveQR
   return (
     <div className="space-y-6">
       {/* Tab Selection */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="single" className="text-sm font-medium">Single Record</TabsTrigger>
-          <TabsTrigger value="bulk" className="text-sm font-medium text-blue-600">Bulk Records</TabsTrigger>
-        </TabsList>
+      <div className="mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger 
+              value="single" 
+              className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm"
+            >
+              Single Record
+            </TabsTrigger>
+            <TabsTrigger 
+              value="bulk" 
+              className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm"
+            >
+              Bulk Records
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="single" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Form Fields */}
-            <div className="space-y-6">
-              <SingleRecordForm
-                formData={formData}
-                logoFile={logoFile}
-                onInputChange={handleInputChangeWithColorUpdate}
-                onLogoFileChange={handleLogoFileChange}
-                onSave={handleSave}
-              />
+          <TabsContent value="single" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Form Fields */}
+              <div className="space-y-6">
+                <div className="mb-6 pb-4 border-b border-slate-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Single QR Code Configuration</h3>
+                  <p className="text-slate-600">Configure your single QR code content and styling below.</p>
+                </div>
+                <SingleRecordForm
+                  formData={formData}
+                  logoFile={logoFile}
+                  onInputChange={handleInputChangeWithColorUpdate}
+                  onLogoFileChange={handleLogoFileChange}
+                  onSave={handleSave}
+                />
+              </div>
+
+              {/* Right Column - QR Code Preview */}
+              <div className="space-y-6">
+                <div className="mb-6 pb-4 border-b border-slate-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Live Preview & Download</h3>
+                  <p className="text-slate-600">See your QR code update in real-time and download in multiple formats.</p>
+                </div>
+                <QRPreviewDisplay
+                  generatedQR={generatedQR}
+                  canvasRef={canvasRef}
+                  foregroundColor={formData.foregroundColor}
+                  backgroundColor={formData.backgroundColor}
+                />
+              </div>
             </div>
+          </TabsContent>
 
-            {/* Right Column - QR Code Preview */}
-            <QRPreviewDisplay
-              generatedQR={generatedQR}
-              canvasRef={canvasRef}
-              foregroundColor={formData.foregroundColor}
-              backgroundColor={formData.backgroundColor}
+          <TabsContent value="bulk" className="space-y-6 mt-6">
+            <div className="mb-6 pb-4 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Bulk QR Code Generation</h3>
+              <p className="text-slate-600">Upload CSV data to generate multiple QR codes with consistent styling.</p>
+            </div>
+            <CSVUploadSection
+              csvFile={csvFile}
+              csvData={csvData}
+              onCSVDataChange={setCsvData}
+              onCSVFileChange={setCsvFile}
+              onBulkSave={handleBulkSave}
+              styling={{
+                foregroundColor: formData.foregroundColor,
+                backgroundColor: formData.backgroundColor,
+                logoUrl: formData.logoUrl
+              }}
+              onStyleChange={handleInputChangeWithColorUpdate}
+              logoFile={logoFile}
+              onLogoFileChange={handleLogoFileChange}
             />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="bulk" className="space-y-6 mt-6">
-          <CSVUploadSection
-            csvFile={csvFile}
-            csvData={csvData}
-            onCSVDataChange={setCsvData}
-            onCSVFileChange={setCsvFile}
-            onBulkSave={handleBulkSave}
-            styling={{
-              foregroundColor: formData.foregroundColor,
-              backgroundColor: formData.backgroundColor,
-              logoUrl: formData.logoUrl
-            }}
-            onStyleChange={handleInputChangeWithColorUpdate}
-            logoFile={logoFile}
-            onLogoFileChange={handleLogoFileChange}
-          />
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
