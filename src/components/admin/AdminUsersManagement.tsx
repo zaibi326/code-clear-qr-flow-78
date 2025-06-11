@@ -1,14 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Users, Plus, Search, Filter, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { CreateUserDialog } from './users/CreateUserDialog';
+import { EditUserDialog } from './users/EditUserDialog';
+import { UsersTable } from './users/UsersTable';
+import { UsersFilters } from './users/UsersFilters';
 
 interface User {
   id: string;
@@ -110,14 +110,11 @@ export const AdminUsersManagement = () => {
 
   const handleActivateUser = async (userId: string) => {
     try {
-      // In a real app, you'd update the user's active status
-      // For now, we'll just show a success message
       toast({
         title: "Success",
         description: "User activated successfully",
       });
       
-      // Update local state
       setUsers(prev => prev.map(user => 
         user.id === userId ? { ...user, is_active: true } : user
       ));
@@ -133,14 +130,11 @@ export const AdminUsersManagement = () => {
 
   const handleSuspendUser = async (userId: string) => {
     try {
-      // In a real app, you'd update the user's active status
-      // For now, we'll just show a success message
       toast({
         title: "Success",
         description: "User suspended successfully",
       });
       
-      // Update local state
       setUsers(prev => prev.map(user => 
         user.id === userId ? { ...user, is_active: false } : user
       ));
@@ -294,103 +288,21 @@ export const AdminUsersManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
           <p className="text-gray-600">Manage users, roles, and subscriptions</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                  placeholder="User's full name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  placeholder="user@example.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  placeholder="Temporary password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUser.role} onValueChange={(value: 'user' | 'admin' | 'super_admin') => setNewUser({ ...newUser, role: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="subscription">Subscription Plan</Label>
-                <Select value={newUser.subscription} onValueChange={(value: 'free' | 'pro' | 'enterprise') => setNewUser({ ...newUser, subscription: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleCreateUser} className="w-full">
-                Create User
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <CreateUserDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          newUser={newUser}
+          onUserChange={setNewUser}
+          onCreateUser={handleCreateUser}
+        />
       </div>
 
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="super_admin">Super Admin</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <UsersFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filterRole={filterRole}
+        onFilterRoleChange={setFilterRole}
+      />
 
       <Card>
         <CardHeader>
@@ -400,146 +312,22 @@ export const AdminUsersManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3 font-medium">Name</th>
-                  <th className="text-left p-3 font-medium">Email</th>
-                  <th className="text-left p-3 font-medium">Role</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium">Joined</th>
-                  <th className="text-left p-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{user.name}</td>
-                    <td className="p-3 text-gray-600">{user.email}</td>
-                    <td className="p-3">
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={user.is_active ? 'default' : 'destructive'}>
-                        {user.is_active ? 'Active' : 'Suspended'}
-                      </Badge>
-                    </td>
-                    <td className="p-3 text-gray-600">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingUser(user)}
-                          title="Edit user"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        {user.is_active ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSuspendUser(user.id)}
-                            className="text-yellow-600 hover:text-yellow-700"
-                            title="Suspend user"
-                          >
-                            <UserX className="h-3 w-3" />
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleActivateUser(user.id)}
-                            className="text-green-600 hover:text-green-700"
-                            title="Activate user"
-                          >
-                            <UserCheck className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-700"
-                          title="Delete user"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <UsersTable
+            users={filteredUsers}
+            onEditUser={setEditingUser}
+            onActivateUser={handleActivateUser}
+            onSuspendUser={handleSuspendUser}
+            onDeleteUser={handleDeleteUser}
+          />
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
-      {editingUser && (
-        <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="editName">Name</Label>
-                <Input
-                  id="editName"
-                  value={editingUser.name}
-                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="editEmail">Email</Label>
-                <Input
-                  id="editEmail"
-                  value={editingUser.email}
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
-              <div>
-                <Label htmlFor="editRole">Role</Label>
-                <Select
-                  value={editingUser.role}
-                  onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="super_admin">Super Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex space-x-2">
-                <Button 
-                  onClick={() => handleUpdateUser(editingUser.id, editingUser)}
-                  className="flex-1"
-                >
-                  Save Changes
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setEditingUser(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <EditUserDialog
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onUpdateUser={handleUpdateUser}
+        onUserChange={setEditingUser}
+      />
     </div>
   );
 };
