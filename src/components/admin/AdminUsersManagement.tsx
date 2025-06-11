@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -229,11 +230,16 @@ export const AdminUsersManagement = () => {
 
   const handleCreateUser = async () => {
     try {
-      // Create a new profile directly in the profiles table
+      // Generate a UUID for the new user
+      const userId = crypto.randomUUID();
+      
+      // Create a new profile in the profiles table with all required fields
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: userId,
           email: newUser.email,
+          name: newUser.name,
           plan: newUser.subscription
         })
         .select()
@@ -243,12 +249,12 @@ export const AdminUsersManagement = () => {
         throw profileError;
       }
 
-      // Add user role
+      // Add user role if not default 'user'
       if (newUser.role !== 'user') {
         await supabase
           .from('user_roles')
           .insert({
-            user_id: profile.id,
+            user_id: userId,
             role: newUser.role
           });
       }
