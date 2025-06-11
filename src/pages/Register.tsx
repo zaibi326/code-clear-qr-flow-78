@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useSupabaseAuth';
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp, isLoading, user } = useAuth();
+  const { register, isLoading, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -75,22 +75,20 @@ const Register = () => {
     }
 
     try {
-      const { error } = await signUp(formData.email, formData.password, {
-        full_name: formData.name
-      });
+      const success = await register(formData.name, formData.email, formData.password);
       
-      if (error) {
-        toast({
-          title: "Registration failed",
-          description: error.message || "Failed to create account. Please try again.",
-          variant: "destructive"
-        });
-      } else {
+      if (success) {
         toast({
           title: "Registration successful!",
           description: "Please check your email to verify your account.",
         });
         navigate('/login');
+      } else {
+        toast({
+          title: "Registration failed",
+          description: "Failed to create account. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
