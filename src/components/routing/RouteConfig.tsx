@@ -21,6 +21,9 @@ import DataManager from '@/pages/DataManager';
 import Testing from '@/pages/Testing';
 import Integrations from '@/pages/Integrations';
 import Settings from '@/pages/Settings';
+import QRCodes from '@/pages/QRCodes';
+import Monitoring from '@/pages/Monitoring';
+import Support from '@/pages/Support';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminRegister from '@/pages/admin/AdminRegister';
@@ -54,6 +57,54 @@ export const RouteConfig = () => {
         </ProtectedRoute>
       } />
       
+      <Route path="/analytics" element={
+        <ProtectedRoute>
+          <Analytics />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/quick-generate" element={
+        <ProtectedRoute>
+          <QRCodes />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/template-manager" element={
+        <ProtectedRoute>
+          <TemplateManager />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/data-manager" element={
+        <ProtectedRoute>
+          <DataManager />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/campaign-creator" element={
+        <ProtectedRoute>
+          <CampaignCreator />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/dashboard/integrations" element={
+        <ProtectedRoute>
+          <Integrations />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/monitoring" element={
+        <ProtectedRoute>
+          <Monitoring />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/support" element={
+        <ProtectedRoute>
+          <Support />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/create" element={
         <ProtectedRoute>
           <CreateQRCode />
@@ -81,12 +132,6 @@ export const RouteConfig = () => {
       <Route path="/campaigns" element={
         <ProtectedRoute>
           <CampaignCreator />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <Analytics />
         </ProtectedRoute>
       } />
       

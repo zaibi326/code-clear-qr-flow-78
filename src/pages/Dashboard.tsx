@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { QRCodeStats } from '@/components/dashboard/QRCodeStats';
 import { QRCreationModeSelector } from '@/components/dashboard/QRCreationModeSelector';
 import { QRCodeManagement } from '@/components/dashboard/QRCodeManagement';
 
@@ -29,9 +28,6 @@ const Dashboard = () => {
                   <p className="text-blue-100 text-lg">Manage your dynamic and static QR codes with advanced analytics</p>
                 </div>
               </div>
-
-              {/* Stats Cards */}
-              <QRCodeStats />
 
               {/* Creation Mode Selector */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-6">
