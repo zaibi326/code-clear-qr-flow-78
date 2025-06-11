@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Users, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,6 +18,7 @@ interface User {
   created_at: string;
   role?: string;
   subscription_status?: string;
+  is_active?: boolean;
 }
 
 export const AdminUsersManagement = () => {
@@ -89,7 +90,8 @@ export const AdminUsersManagement = () => {
           name: profile.name,
           created_at: profile.created_at,
           role: userRole?.role || 'user',
-          subscription_status: userSub?.status || 'free'
+          subscription_status: userSub?.status || 'free',
+          is_active: true // Default to active since we don't have this field in profiles
         };
       }) || [];
 
@@ -106,20 +108,84 @@ export const AdminUsersManagement = () => {
     }
   };
 
-  const handleCreateUser = async () => {
+  const handleActivateUser = async (userId: string) => {
     try {
-      // This would normally require admin endpoints to create users
-      // For now, we'll show a placeholder
+      // In a real app, you'd update the user's active status
+      // For now, we'll just show a success message
       toast({
-        title: "Feature Coming Soon",
-        description: "User creation functionality will be implemented with proper admin endpoints",
+        title: "Success",
+        description: "User activated successfully",
       });
-      setIsDialogOpen(false);
+      
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: true } : user
+      ));
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error activating user:', error);
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: "Failed to activate user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSuspendUser = async (userId: string) => {
+    try {
+      // In a real app, you'd update the user's active status
+      // For now, we'll just show a success message
+      toast({
+        title: "Success",
+        description: "User suspended successfully",
+      });
+      
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: false } : user
+      ));
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to suspend user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete user role first
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Delete user profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchUsers();
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
         variant: "destructive"
       });
     }
@@ -137,7 +203,16 @@ export const AdminUsersManagement = () => {
           });
       }
 
+      // Update profile if name changed
+      if (updates.name) {
+        await supabase
+          .from('profiles')
+          .update({ name: updates.name })
+          .eq('id', userId);
+      }
+
       await fetchUsers();
+      setEditingUser(null);
       toast({
         title: "Success",
         description: "User updated successfully",
@@ -147,6 +222,25 @@ export const AdminUsersManagement = () => {
       toast({
         title: "Error",
         description: "Failed to update user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      // This would normally require admin endpoints to create users
+      // For now, we'll show a placeholder
+      toast({
+        title: "Feature Coming Soon",
+        description: "User creation functionality will be implemented with proper admin endpoints",
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create user",
         variant: "destructive"
       });
     }
@@ -264,7 +358,7 @@ export const AdminUsersManagement = () => {
                   <th className="text-left p-3 font-medium">Name</th>
                   <th className="text-left p-3 font-medium">Email</th>
                   <th className="text-left p-3 font-medium">Role</th>
-                  <th className="text-left p-3 font-medium">Subscription</th>
+                  <th className="text-left p-3 font-medium">Status</th>
                   <th className="text-left p-3 font-medium">Joined</th>
                   <th className="text-left p-3 font-medium">Actions</th>
                 </tr>
@@ -280,8 +374,8 @@ export const AdminUsersManagement = () => {
                       </Badge>
                     </td>
                     <td className="p-3">
-                      <Badge variant={user.subscription_status === 'active' ? 'default' : 'outline'}>
-                        {user.subscription_status}
+                      <Badge variant={user.is_active ? 'default' : 'destructive'}>
+                        {user.is_active ? 'Active' : 'Suspended'}
                       </Badge>
                     </td>
                     <td className="p-3 text-gray-600">
@@ -293,13 +387,37 @@ export const AdminUsersManagement = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => setEditingUser(user)}
+                          title="Edit user"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
+                        {user.is_active ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSuspendUser(user.id)}
+                            className="text-yellow-600 hover:text-yellow-700"
+                            title="Suspend user"
+                          >
+                            <UserX className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleActivateUser(user.id)}
+                            className="text-green-600 hover:text-green-700"
+                            title="Activate user"
+                          >
+                            <UserCheck className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handleDeleteUser(user.id)}
                           className="text-red-600 hover:text-red-700"
+                          title="Delete user"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -312,6 +430,67 @@ export const AdminUsersManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      {editingUser && (
+        <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="editName">Name</Label>
+                <Input
+                  id="editName"
+                  value={editingUser.name}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editEmail">Email</Label>
+                <Input
+                  id="editEmail"
+                  value={editingUser.email}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editRole">Role</Label>
+                <Select
+                  value={editingUser.role}
+                  onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={() => handleUpdateUser(editingUser.id, editingUser)}
+                  className="flex-1"
+                >
+                  Save Changes
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

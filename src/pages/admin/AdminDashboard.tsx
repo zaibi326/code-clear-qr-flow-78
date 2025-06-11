@@ -4,8 +4,11 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminOverviewTab from '@/components/admin/AdminOverviewTab';
-import AdminUsersTable from '@/components/admin/AdminUsersTable';
+import { AdminUsersManagement } from '@/components/admin/AdminUsersManagement';
+import { AdminPaymentLogs } from '@/components/admin/AdminPaymentLogs';
+import { AdminSubscriptionsManagement } from '@/components/admin/AdminSubscriptionsManagement';
 import AdminSystemTab from '@/components/admin/AdminSystemTab';
+import AdminReportsTab from '@/components/admin/AdminReportsTab';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminDashboard = () => {
@@ -18,15 +21,15 @@ const AdminDashboard = () => {
       case 'overview':
         return <AdminOverviewTab />;
       case 'users':
-        return <AdminUsersTable />;
+        return <AdminUsersManagement />;
       case 'qr-codes':
-        return <AdminUsersTable />;
+        return <AdminPaymentLogs />;
       case 'analytics':
-        return <AdminSystemTab />;
+        return <AdminSubscriptionsManagement />;
       case 'reports':
-        return <AdminSystemTab />;
+        return <AdminReportsTab />;
       case 'activity':
-        return <AdminSystemTab />;
+        return <AdminPaymentLogs />;
       case 'settings':
         return <AdminSystemTab />;
       case 'help':
