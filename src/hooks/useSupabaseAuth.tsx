@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   profile: DatabaseUser | null;
   session: Session | null;
+  userRole: string | null;
   loading: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;

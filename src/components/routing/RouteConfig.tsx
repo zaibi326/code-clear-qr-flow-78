@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -10,7 +11,7 @@ import ApiDocumentation from '@/pages/ApiDocumentation';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
-import CreateQR from '@/pages/CreateQR';
+import CreateQRCode from '@/pages/CreateQRCode';
 import CreateBulkQR from '@/pages/CreateBulkQR';
 import BulkDataSelector from '@/pages/BulkDataSelector';
 import TemplateManager from '@/pages/TemplateManager';
@@ -21,7 +22,7 @@ import Testing from '@/pages/Testing';
 import Integrations from '@/pages/Integrations';
 import Settings from '@/pages/Settings';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { AdminLogin } from '@/pages/admin/AdminLogin';
+import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminRegister from '@/pages/admin/AdminRegister';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import { AdminProtectedRoute } from '@/components/admin/AdminProtectedRoute';
@@ -55,7 +56,7 @@ export const RouteConfig = () => {
       
       <Route path="/create" element={
         <ProtectedRoute>
-          <CreateQR />
+          <CreateQRCode />
         </ProtectedRoute>
       } />
       

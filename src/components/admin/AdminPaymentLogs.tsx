@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, Search, DollarSign, CreditCard, TrendingUp, Calendar } from 'lucide-react';
+import { CreditCard, Download, Search, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -15,11 +15,13 @@ interface PaymentLog {
   amount: number;
   currency: string;
   status: string;
-  transaction_id: string;
-  payment_method: string;
+  transaction_id: string | null;
+  payment_method: string | null;
   created_at: string;
-  user_name: string;
-  user_email: string;
+  user?: {
+    name: string;
+    email: string;
+  };
 }
 
 export const AdminPaymentLogs = () => {
@@ -27,12 +29,6 @@ export const AdminPaymentLogs = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    successfulPayments: 0,
-    failedPayments: 0,
-    avgTransaction: 0
-  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,11 +39,12 @@ export const AdminPaymentLogs = () => {
     try {
       setLoading(true);
       
-      const { data: payments, error } = await supabase
+      // Fetch payment logs with user profile data
+      const { data: paymentLogs, error } = await supabase
         .from('payment_logs')
         .select(`
           *,
-          profiles:user_id (
+          profiles!payment_logs_user_id_fkey (
             name,
             email
           )
@@ -64,34 +61,16 @@ export const AdminPaymentLogs = () => {
         return;
       }
 
-      const formattedPayments = payments?.map(payment => ({
-        id: payment.id,
-        user_id: payment.user_id,
-        amount: payment.amount,
-        currency: payment.currency,
-        status: payment.status,
-        transaction_id: payment.transaction_id || `tx_${payment.id.substring(0, 8)}`,
-        payment_method: payment.payment_method || 'card',
-        created_at: payment.created_at,
-        user_name: payment.profiles?.name || 'Unknown',
-        user_email: payment.profiles?.email || 'Unknown'
+      // Transform the data to match our interface
+      const transformedPayments = paymentLogs?.map(log => ({
+        ...log,
+        user: {
+          name: log.profiles?.name || 'Unknown User',
+          email: log.profiles?.email || 'No email'
+        }
       })) || [];
 
-      setPayments(formattedPayments);
-
-      // Calculate stats
-      const successful = formattedPayments.filter(p => p.status === 'completed');
-      const failed = formattedPayments.filter(p => p.status === 'failed');
-      const totalRevenue = successful.reduce((sum, p) => sum + p.amount, 0);
-      const avgTransaction = successful.length > 0 ? totalRevenue / successful.length : 0;
-
-      setStats({
-        totalRevenue,
-        successfulPayments: successful.length,
-        failedPayments: failed.length,
-        avgTransaction
-      });
-
+      setPayments(transformedPayments);
     } catch (error) {
       console.error('Error in fetchPayments:', error);
       toast({
@@ -104,43 +83,55 @@ export const AdminPaymentLogs = () => {
     }
   };
 
-  const handleExportPayments = () => {
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
+      case 'refunded':
+        return <Badge className="bg-gray-100 text-gray-800">Refunded</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const exportPayments = () => {
     const csvContent = [
       ['Date', 'User', 'Email', 'Amount', 'Currency', 'Status', 'Transaction ID', 'Payment Method'],
       ...filteredPayments.map(payment => [
         new Date(payment.created_at).toLocaleDateString(),
-        payment.user_name,
-        payment.user_email,
-        payment.amount,
+        payment.user?.name || '',
+        payment.user?.email || '',
+        payment.amount.toString(),
         payment.currency,
         payment.status,
-        payment.transaction_id,
-        payment.payment_method
+        payment.transaction_id || '',
+        payment.payment_method || ''
       ])
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.style.display = 'none';
     a.href = url;
-    a.download = `payment_logs_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
+    a.download = `payment-logs-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
 
     toast({
-      title: "Success",
-      description: "Payment logs exported successfully",
+      title: "Export Complete",
+      description: "Payment logs have been exported to CSV",
     });
   };
 
   const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.transaction_id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
+    const matchesSearch = payment.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || payment.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -152,73 +143,54 @@ export const AdminPaymentLogs = () => {
     );
   }
 
+  const totalAmount = filteredPayments
+    .filter(p => p.status.toLowerCase() === 'completed')
+    .reduce((sum, p) => sum + p.amount, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Payment Logs</h2>
-          <p className="text-gray-600">View and export transaction history</p>
+          <p className="text-gray-600">View and manage payment transactions</p>
         </div>
-        <Button onClick={handleExportPayments} className="bg-green-600 hover:bg-green-700">
+        <Button onClick={exportPayments} className="bg-blue-600 hover:bg-blue-700">
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
-              </div>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              ${totalAmount.toFixed(2)}
             </div>
+            <p className="text-sm text-gray-600">Total Revenue</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Successful</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.successfulPayments}</p>
-              </div>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">
+              {filteredPayments.filter(p => p.status.toLowerCase() === 'completed').length}
             </div>
+            <p className="text-sm text-gray-600">Completed</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Failed</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.failedPayments}</p>
-              </div>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-yellow-600">
+              {filteredPayments.filter(p => p.status.toLowerCase() === 'pending').length}
             </div>
+            <p className="text-sm text-gray-600">Pending</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Transaction</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.avgTransaction.toFixed(2)}</p>
-              </div>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-red-600">
+              {filteredPayments.filter(p => p.status.toLowerCase() === 'failed').length}
             </div>
+            <p className="text-sm text-gray-600">Failed</p>
           </CardContent>
         </Card>
       </div>
@@ -235,6 +207,7 @@ export const AdminPaymentLogs = () => {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48">
+            <Filter className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -242,13 +215,17 @@ export const AdminPaymentLogs = () => {
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment History ({filteredPayments.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Transactions ({filteredPayments.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -271,27 +248,22 @@ export const AdminPaymentLogs = () => {
                     </td>
                     <td className="p-3">
                       <div>
-                        <div className="font-medium">{payment.user_name}</div>
-                        <div className="text-gray-600 text-xs">{payment.user_email}</div>
+                        <div className="font-medium">{payment.user?.name}</div>
+                        <div className="text-sm text-gray-500">{payment.user?.email}</div>
                       </div>
                     </td>
                     <td className="p-3 font-medium">
-                      {payment.amount} {payment.currency.toUpperCase()}
+                      {payment.currency} {payment.amount.toFixed(2)}
                     </td>
                     <td className="p-3">
-                      <Badge 
-                        variant={
-                          payment.status === 'completed' ? 'default' : 
-                          payment.status === 'pending' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {payment.status}
-                      </Badge>
+                      {getStatusBadge(payment.status)}
                     </td>
-                    <td className="p-3 font-mono text-xs text-gray-600">
-                      {payment.transaction_id}
+                    <td className="p-3 text-gray-600 font-mono text-xs">
+                      {payment.transaction_id || 'N/A'}
                     </td>
-                    <td className="p-3 capitalize">{payment.payment_method}</td>
+                    <td className="p-3 text-gray-600">
+                      {payment.payment_method || 'N/A'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

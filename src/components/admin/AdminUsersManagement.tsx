@@ -32,7 +32,7 @@ export const AdminUsersManagement = () => {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
-    role: 'user',
+    role: 'user' as 'user' | 'admin' | 'super_admin',
     subscription: 'free'
   });
 
@@ -133,7 +133,7 @@ export const AdminUsersManagement = () => {
           .from('user_roles')
           .upsert({
             user_id: userId,
-            role: updates.role
+            role: updates.role as 'user' | 'admin' | 'super_admin'
           });
       }
 
@@ -207,7 +207,7 @@ export const AdminUsersManagement = () => {
               </div>
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <Select value={newUser.role} onValueChange={(value: 'user' | 'admin' | 'super_admin') => setNewUser({ ...newUser, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
