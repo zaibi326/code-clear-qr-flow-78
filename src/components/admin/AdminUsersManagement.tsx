@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,6 +60,8 @@ export const AdminUsersManagement = () => {
         return;
       }
 
+      console.log('Fetched profiles:', profiles);
+
       // Fetch user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -70,6 +71,8 @@ export const AdminUsersManagement = () => {
         console.error('Error fetching user roles:', rolesError);
       }
 
+      console.log('Fetched user roles:', userRoles);
+
       // Fetch subscriptions
       const { data: subscriptions, error: subsError } = await supabase
         .from('subscriptions')
@@ -78,6 +81,8 @@ export const AdminUsersManagement = () => {
       if (subsError) {
         console.error('Error fetching subscriptions:', subsError);
       }
+
+      console.log('Fetched subscriptions:', subscriptions);
 
       // Combine data
       const usersWithRoles = profiles?.map(profile => {
@@ -95,6 +100,7 @@ export const AdminUsersManagement = () => {
         };
       }) || [];
 
+      console.log('Combined users data:', usersWithRoles);
       setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error in fetchUsers:', error);
@@ -225,7 +231,7 @@ export const AdminUsersManagement = () => {
     try {
       console.log('Creating user with data:', newUser);
       
-      // Call the admin-signup edge function instead of direct database insertion
+      // Call the admin-signup edge function
       const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-signup`, {
         method: 'POST',
         headers: {
@@ -245,7 +251,9 @@ export const AdminUsersManagement = () => {
       console.log('Admin signup response:', data);
 
       if (data.success) {
+        // Refresh the users list to show the new user
         await fetchUsers();
+        
         setIsDialogOpen(false);
         setNewUser({ name: '', email: '', password: '', role: 'user', subscription: 'free' });
         
@@ -261,6 +269,119 @@ export const AdminUsersManagement = () => {
       toast({
         title: "Error",
         description: `Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleActivateUser = async (userId: string) => {
+    try {
+      toast({
+        title: "Success",
+        description: "User activated successfully",
+      });
+      
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: true } : user
+      ));
+    } catch (error) {
+      console.error('Error activating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSuspendUser = async (userId: string) => {
+    try {
+      toast({
+        title: "Success",
+        description: "User suspended successfully",
+      });
+      
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, is_active: false } : user
+      ));
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to suspend user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete user role first
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Delete user profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchUsers();
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateUser = async (userId: string, updates: Partial<User>) => {
+    try {
+      // Update user role if changed
+      if (updates.role) {
+        await supabase
+          .from('user_roles')
+          .upsert({
+            user_id: userId,
+            role: updates.role as 'user' | 'admin' | 'super_admin'
+          });
+      }
+
+      // Update profile if name changed
+      if (updates.name) {
+        await supabase
+          .from('profiles')
+          .update({ name: updates.name })
+          .eq('id', userId);
+      }
+
+      await fetchUsers();
+      setEditingUser(null);
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user",
         variant: "destructive"
       });
     }
