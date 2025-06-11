@@ -11,9 +11,10 @@ interface QRSetupPanelProps {
   qrType: QRCodeType;
   onComplete: (data: any) => void;
   onBack: () => void;
+  mode?: 'single' | 'quick' | 'both'; // Add mode prop
 }
 
-export function QRSetupPanel({ qrType, onComplete, onBack }: QRSetupPanelProps) {
+export function QRSetupPanel({ qrType, onComplete, onBack, mode = 'both' }: QRSetupPanelProps) {
   const [formData, setFormData] = useState<any>({
     url: qrType.id === 'url' ? 'https://www.example.com' : '',
     qrName: qrType.id === 'url' ? 'My Website QR Code' : '',
@@ -70,6 +71,7 @@ export function QRSetupPanel({ qrType, onComplete, onBack }: QRSetupPanelProps) 
           <FormComponent 
             formData={formData}
             onInputChange={handleInputChange}
+            mode={mode}
           />
         </div>
 

@@ -50,13 +50,10 @@ const CreateQRCode = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
-                    Create {qrType === 'url' ? 'Single' : 'Bulk'} QR Code
+                    Create Single QR Code
                   </h1>
                   <p className="text-base text-slate-600 font-medium">
-                    {qrType === 'url' 
-                      ? 'Design and generate a professional QR code with custom styling' 
-                      : 'Generate multiple QR codes with custom styling'
-                    }
+                    Design and generate a professional QR code with custom styling
                   </p>
                 </div>
               </div>
@@ -77,6 +74,7 @@ const CreateQRCode = () => {
                   <ComprehensiveQRForm 
                     formData={formData}
                     onInputChange={handleInputChange}
+                    mode="single"
                   />
                 </div>
               </div>

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { QRTypeSelector } from './QRTypeSelector';
 import { QRSetupPanel } from './QRSetupPanel';
 import { QRCustomizePanel } from './QRCustomizePanel';
@@ -20,18 +21,28 @@ export interface QRCodeType {
 
 interface QRGeneratorStepperProps {
   initialType?: string;
+  mode?: 'single' | 'quick' | 'both';
 }
 
-export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
+export function QRGeneratorStepper({ initialType, mode }: QRGeneratorStepperProps) {
+  const location = useLocation();
   // Start at step 2 if initialType is provided, otherwise start at step 1
   const [currentStep, setCurrentStep] = useState(initialType ? 2 : 1);
   const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
   const [setupData, setSetupData] = useState<any>(null);
   const [customizeData, setCustomizeData] = useState<any>(null);
 
+  // Determine mode based on route if not explicitly provided
+  const effectiveMode = mode || (() => {
+    if (location.pathname === '/quick-generate') return 'quick';
+    if (location.pathname === '/create' && new URLSearchParams(location.search).get('type')) return 'single';
+    return 'both';
+  })();
+
   console.log('QRGeneratorStepper: initialType received:', initialType);
   console.log('QRGeneratorStepper: currentStep:', currentStep);
   console.log('QRGeneratorStepper: selectedType:', selectedType);
+  console.log('QRGeneratorStepper: effectiveMode:', effectiveMode);
 
   // Set the selected type based on initialType
   useEffect(() => {
@@ -130,6 +141,7 @@ export function QRGeneratorStepper({ initialType }: QRGeneratorStepperProps) {
             qrType={selectedType} 
             onComplete={handleSetupComplete} 
             onBack={prevStep}
+            mode={effectiveMode}
           />
         )}
         {currentStep === 3 && selectedType && setupData && (

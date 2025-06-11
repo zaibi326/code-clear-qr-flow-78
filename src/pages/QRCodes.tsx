@@ -64,6 +64,7 @@ const QRCodes = () => {
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                   <QRGeneratorStepper 
                     initialType={selectedType.id}
+                    mode="quick"
                   />
                 </div>
               )}
