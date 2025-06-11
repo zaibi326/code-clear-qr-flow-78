@@ -33,6 +33,7 @@ export const AdminUsersManagement = () => {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'user' as 'user' | 'admin' | 'super_admin',
     subscription: 'free'
   });
@@ -229,13 +230,39 @@ export const AdminUsersManagement = () => {
 
   const handleCreateUser = async () => {
     try {
-      // This would normally require admin endpoints to create users
-      // For now, we'll show a placeholder
-      toast({
-        title: "Feature Coming Soon",
-        description: "User creation functionality will be implemented with proper admin endpoints",
-      });
+      // Create a new profile directly in the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          name: newUser.name,
+          email: newUser.email,
+          plan: newUser.subscription
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      // Add user role
+      if (newUser.role !== 'user') {
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: profile.id,
+            role: newUser.role
+          });
+      }
+
+      await fetchUsers();
       setIsDialogOpen(false);
+      setNewUser({ name: '', email: '', password: '', role: 'user', subscription: 'free' });
+      
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
@@ -300,6 +327,16 @@ export const AdminUsersManagement = () => {
                 />
               </div>
               <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  placeholder="Temporary password"
+                />
+              </div>
+              <div>
                 <Label htmlFor="role">Role</Label>
                 <Select value={newUser.role} onValueChange={(value: 'user' | 'admin' | 'super_admin') => setNewUser({ ...newUser, role: value })}>
                   <SelectTrigger>
@@ -308,6 +345,19 @@ export const AdminUsersManagement = () => {
                   <SelectContent>
                     <SelectItem value="user">User</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="subscription">Subscription Plan</Label>
+                <Select value={newUser.subscription} onValueChange={(value) => setNewUser({ ...newUser, subscription: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

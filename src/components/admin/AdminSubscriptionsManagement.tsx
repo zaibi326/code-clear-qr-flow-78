@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,15 +26,40 @@ interface Subscription {
 
 export const AdminSubscriptionsManagement = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  const [newSubscription, setNewSubscription] = useState({
+    user_id: '',
+    plan_id: 'free',
+    status: 'active' as 'active' | 'trial' | 'inactive'
+  });
+
   useEffect(() => {
     fetchSubscriptions();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .order('name');
+
+      if (error) {
+        throw error;
+      }
+
+      setUsers(profiles || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   const fetchSubscriptions = async () => {
     try {
@@ -93,6 +117,48 @@ export const AdminSubscriptionsManagement = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateSubscription = async () => {
+    try {
+      const subscriptionData = {
+        user_id: newSubscription.user_id,
+        plan_id: newSubscription.plan_id,
+        status: newSubscription.status,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      };
+
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert(subscriptionData);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update user's plan in profiles table
+      await supabase
+        .from('profiles')
+        .update({ plan: newSubscription.plan_id })
+        .eq('id', newSubscription.user_id);
+
+      await fetchSubscriptions();
+      setIsDialogOpen(false);
+      setNewSubscription({ user_id: '', plan_id: 'free', status: 'active' });
+      
+      toast({
+        title: "Success",
+        description: "Subscription created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create subscription",
+        variant: "destructive"
+      });
     }
   };
 
@@ -194,9 +260,50 @@ export const AdminSubscriptionsManagement = () => {
               <DialogTitle>Add New Subscription</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Subscription creation functionality will be implemented with proper billing integration.
-              </p>
+              <div>
+                <Label htmlFor="user">User</Label>
+                <Select value={newSubscription.user_id} onValueChange={(value) => setNewSubscription({ ...newSubscription, user_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="plan">Plan</Label>
+                <Select value={newSubscription.plan_id} onValueChange={(value) => setNewSubscription({ ...newSubscription, plan_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={newSubscription.status} onValueChange={(value: 'active' | 'trial' | 'inactive') => setNewSubscription({ ...newSubscription, status: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleCreateSubscription} className="w-full" disabled={!newSubscription.user_id}>
+                Create Subscription
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
