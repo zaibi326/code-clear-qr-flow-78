@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ export const AdminUsersManagement = () => {
     email: '',
     password: '',
     role: 'user' as 'user' | 'admin' | 'super_admin',
-    subscription: 'free'
+    subscription: 'free' as 'free' | 'pro' | 'enterprise'
   });
 
   useEffect(() => {
@@ -234,7 +233,6 @@ export const AdminUsersManagement = () => {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert({
-          name: newUser.name,
           email: newUser.email,
           plan: newUser.subscription
         })
@@ -350,7 +348,7 @@ export const AdminUsersManagement = () => {
               </div>
               <div>
                 <Label htmlFor="subscription">Subscription Plan</Label>
-                <Select value={newUser.subscription} onValueChange={(value) => setNewUser({ ...newUser, subscription: value })}>
+                <Select value={newUser.subscription} onValueChange={(value: 'free' | 'pro' | 'enterprise') => setNewUser({ ...newUser, subscription: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

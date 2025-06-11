@@ -35,7 +35,7 @@ export const AdminSubscriptionsManagement = () => {
 
   const [newSubscription, setNewSubscription] = useState({
     user_id: '',
-    plan_id: 'free',
+    plan_id: 'free' as 'free' | 'pro' | 'enterprise',
     status: 'active' as 'active' | 'trial' | 'inactive'
   });
 
@@ -277,7 +277,7 @@ export const AdminSubscriptionsManagement = () => {
               </div>
               <div>
                 <Label htmlFor="plan">Plan</Label>
-                <Select value={newSubscription.plan_id} onValueChange={(value) => setNewSubscription({ ...newSubscription, plan_id: value })}>
+                <Select value={newSubscription.plan_id} onValueChange={(value: 'free' | 'pro' | 'enterprise') => setNewSubscription({ ...newSubscription, plan_id: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
