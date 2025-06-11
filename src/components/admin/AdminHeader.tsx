@@ -28,6 +28,16 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader = ({ adminUser, onLogout }: AdminHeaderProps) => {
+  const handleProfileClick = () => {
+    console.log('Profile clicked - navigating to profile settings');
+    // You can add navigation logic here if needed
+  };
+
+  const handleSettingsClick = () => {
+    console.log('Settings clicked - navigating to admin settings');
+    // You can add navigation logic here if needed
+  };
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -73,16 +83,16 @@ const AdminHeader = ({ adminUser, onLogout }: AdminHeaderProps) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSettingsClick} className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onLogout} className="text-red-600">
+              <DropdownMenuItem onClick={onLogout} className="text-red-600 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

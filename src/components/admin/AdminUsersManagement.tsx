@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -230,48 +229,44 @@ export const AdminUsersManagement = () => {
 
   const handleCreateUser = async () => {
     try {
-      // Generate a UUID for the new user
-      const userId = crypto.randomUUID();
+      console.log('Creating user with data:', newUser);
       
-      // Create a new profile in the profiles table with all required fields
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
+      // Call the admin-signup edge function instead of direct database insertion
+      const response = await fetch(`https://tiaxynkduixekzqzsgvk.supabase.co/functions/v1/admin-signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpYXh5bmtkdWl4ZWt6cXpzZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MDQwMjMsImV4cCI6MjA2Mzk4MDAyM30.pLiy2dtIssgVsP-_UnP7nepo1WSui7SqExU0dWctPpY`
+        },
+        body: JSON.stringify({
           email: newUser.email,
+          password: newUser.password,
           name: newUser.name,
+          role: newUser.role,
           plan: newUser.subscription
         })
-        .select()
-        .single();
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      // Add user role if not default 'user'
-      if (newUser.role !== 'user') {
-        await supabase
-          .from('user_roles')
-          .insert({
-            user_id: userId,
-            role: newUser.role
-          });
-      }
-
-      await fetchUsers();
-      setIsDialogOpen(false);
-      setNewUser({ name: '', email: '', password: '', role: 'user', subscription: 'free' });
-      
-      toast({
-        title: "Success",
-        description: "User created successfully",
       });
+
+      const data = await response.json();
+      console.log('Admin signup response:', data);
+
+      if (data.success) {
+        await fetchUsers();
+        setIsDialogOpen(false);
+        setNewUser({ name: '', email: '', password: '', role: 'user', subscription: 'free' });
+        
+        toast({
+          title: "Success",
+          description: "User created successfully",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to create user');
+      }
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: `Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     }
