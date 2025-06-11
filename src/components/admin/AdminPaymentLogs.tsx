@@ -39,20 +39,14 @@ export const AdminPaymentLogs = () => {
     try {
       setLoading(true);
       
-      // Fetch payment logs with user profile data
-      const { data: paymentLogs, error } = await supabase
+      // First fetch payment logs
+      const { data: paymentLogs, error: paymentError } = await supabase
         .from('payment_logs')
-        .select(`
-          *,
-          profiles!payment_logs_user_id_fkey (
-            name,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching payments:', error);
+      if (paymentError) {
+        console.error('Error fetching payments:', paymentError);
         toast({
           title: "Error",
           description: "Failed to fetch payment logs",
@@ -61,12 +55,23 @@ export const AdminPaymentLogs = () => {
         return;
       }
 
-      // Transform the data to match our interface
+      // Then fetch user profiles separately
+      const userIds = [...new Set(paymentLogs?.map(log => log.user_id) || [])];
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Combine the data
       const transformedPayments = paymentLogs?.map(log => ({
         ...log,
-        user: {
-          name: log.profiles?.name || 'Unknown User',
-          email: log.profiles?.email || 'No email'
+        user: profiles?.find(profile => profile.id === log.user_id) || {
+          name: 'Unknown User',
+          email: 'No email'
         }
       })) || [];
 

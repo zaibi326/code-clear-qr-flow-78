@@ -14,10 +14,10 @@ import { supabase } from '@/integrations/supabase/client';
 interface Subscription {
   id: string;
   user_id: string;
-  plan_name: string;
-  status: string;
-  started_at: string;
-  expires_at: string | null;
+  plan_id: string;
+  status: 'active' | 'inactive' | 'cancelled' | 'trial' | 'past_due';
+  current_period_start: string;
+  current_period_end: string | null;
   created_at: string;
   user?: {
     name: string;
@@ -41,19 +41,14 @@ export const AdminSubscriptionsManagement = () => {
     try {
       setLoading(true);
       
-      const { data: subscriptionData, error } = await supabase
+      // First fetch subscriptions
+      const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('subscriptions')
-        .select(`
-          *,
-          profiles!subscriptions_user_id_fkey (
-            name,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching subscriptions:', error);
+      if (subscriptionError) {
+        console.error('Error fetching subscriptions:', subscriptionError);
         toast({
           title: "Error",
           description: "Failed to fetch subscriptions",
@@ -62,17 +57,29 @@ export const AdminSubscriptionsManagement = () => {
         return;
       }
 
+      // Then fetch user profiles separately
+      const userIds = [...new Set(subscriptionData?.map(sub => sub.user_id) || [])];
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Combine the data
       const transformedSubscriptions = subscriptionData?.map(sub => ({
         id: sub.id,
         user_id: sub.user_id,
-        plan_name: sub.plan_name,
-        status: sub.status,
-        started_at: sub.started_at,
-        expires_at: sub.expires_at,
+        plan_id: sub.plan_id,
+        status: sub.status as 'active' | 'inactive' | 'cancelled' | 'trial' | 'past_due',
+        current_period_start: sub.current_period_start,
+        current_period_end: sub.current_period_end,
         created_at: sub.created_at,
-        user: {
-          name: sub.profiles?.name || 'Unknown User',
-          email: sub.profiles?.email || 'No email'
+        user: profiles?.find(profile => profile.id === sub.user_id) || {
+          name: 'Unknown User',
+          email: 'No email'
         }
       })) || [];
 
@@ -119,7 +126,7 @@ export const AdminSubscriptionsManagement = () => {
     }
   };
 
-  const handleUpdateSubscription = async (subscriptionId: string, newStatus: string) => {
+  const handleUpdateSubscription = async (subscriptionId: string, newStatus: 'active' | 'inactive' | 'cancelled' | 'trial' | 'past_due') => {
     try {
       const { error } = await supabase
         .from('subscriptions')
@@ -148,7 +155,7 @@ export const AdminSubscriptionsManagement = () => {
   const filteredSubscriptions = subscriptions.filter(sub => {
     const matchesSearch = sub.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sub.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sub.plan_name.toLowerCase().includes(searchTerm.toLowerCase());
+                         sub.plan_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -277,17 +284,17 @@ export const AdminSubscriptionsManagement = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      {getPlanBadge(subscription.plan_name)}
+                      {getPlanBadge(subscription.plan_id)}
                     </td>
                     <td className="p-3">
                       {getStatusBadge(subscription.status)}
                     </td>
                     <td className="p-3 text-gray-600">
-                      {new Date(subscription.started_at).toLocaleDateString()}
+                      {new Date(subscription.current_period_start).toLocaleDateString()}
                     </td>
                     <td className="p-3 text-gray-600">
-                      {subscription.expires_at 
-                        ? new Date(subscription.expires_at).toLocaleDateString() 
+                      {subscription.current_period_end 
+                        ? new Date(subscription.current_period_end).toLocaleDateString() 
                         : 'Never'
                       }
                     </td>
@@ -295,7 +302,9 @@ export const AdminSubscriptionsManagement = () => {
                       <div className="flex items-center space-x-2">
                         <Select
                           value={subscription.status}
-                          onValueChange={(value) => handleUpdateSubscription(subscription.id, value)}
+                          onValueChange={(value: 'active' | 'inactive' | 'cancelled' | 'trial' | 'past_due') => 
+                            handleUpdateSubscription(subscription.id, value)
+                          }
                         >
                           <SelectTrigger className="w-28 h-8">
                             <SelectValue />
