@@ -24,6 +24,7 @@ import Settings from '@/pages/Settings';
 import QRCodes from '@/pages/QRCodes';
 import Monitoring from '@/pages/Monitoring';
 import Support from '@/pages/Support';
+import DashboardIntegrationsPage from '@/pages/DashboardIntegrationsPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminRegister from '@/pages/admin/AdminRegister';
@@ -89,7 +90,7 @@ export const RouteConfig = () => {
       
       <Route path="/dashboard/integrations" element={
         <ProtectedRoute>
-          <Integrations />
+          <DashboardIntegrationsPage />
         </ProtectedRoute>
       } />
       

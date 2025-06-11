@@ -108,11 +108,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     setIsMobileMenuOpen(false);
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    console.log('Sidebar toggled:', !isCollapsed);
-  };
-
   return (
     <>
       {/* Mobile Menu Button */}
@@ -131,7 +126,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
         />
       )}
 
-      {/* Sidebar - Fixed positioning */}
+      {/* Sidebar */}
       <div
         className={`fixed left-0 top-0 z-30 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
