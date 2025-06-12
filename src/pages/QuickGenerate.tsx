@@ -5,20 +5,45 @@ import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { QRTypeSelector } from '@/components/qr/QRTypeSelector';
 import { QRGeneratorStepper, QRCodeType } from '@/components/qr/QRGeneratorStepper';
+import { ComprehensiveQRForm } from '@/components/qr/forms/ComprehensiveQRForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const QuickGenerate = () => {
   const [selectedType, setSelectedType] = useState<QRCodeType | null>(null);
+  const [formData, setFormData] = useState<any>({
+    url: '',
+    qrName: '',
+    foregroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    logoUrl: ''
+  });
 
   const handleTypeSelect = (type: QRCodeType) => {
     setSelectedType(type);
     console.log('QR Type selected:', type);
+    
+    // Reset form data when type changes
+    setFormData({
+      url: type.id === 'url' ? 'https://www.example.com' : '',
+      qrName: type.id === 'url' ? 'My Website QR Code' : '',
+      foregroundColor: '#000000',
+      backgroundColor: '#FFFFFF',
+      logoUrl: ''
+    });
   };
 
   const handleBack = () => {
     setSelectedType(null);
   };
+
+  const handleInputChange = (field: string, value: string) => {
+    console.log(`Quick Generate - Input change: ${field} = ${value}`);
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  // Check if this is a URL/Link type that should use direct form
+  const isDirectFormType = selectedType && (selectedType.id === 'url' || selectedType.id === 'website');
 
   return (
     <SidebarProvider>
@@ -59,6 +84,26 @@ const QuickGenerate = () => {
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto">Select from our collection of QR code types for instant generation</p>
                   </div>
                   <QRTypeSelector onTypeSelect={handleTypeSelect} />
+                </div>
+              ) : isDirectFormType ? (
+                <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-8 animate-fade-in">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-12 h-12 rounded-lg ${selectedType.color} flex items-center justify-center shadow-lg`}>
+                        <selectedType.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">{selectedType.title}</h2>
+                        <p className="text-gray-600">{selectedType.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <ComprehensiveQRForm 
+                    formData={formData}
+                    onInputChange={handleInputChange}
+                    mode="quick"
+                  />
                 </div>
               ) : (
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
