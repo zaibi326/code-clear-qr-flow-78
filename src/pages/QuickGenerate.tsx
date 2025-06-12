@@ -45,9 +45,9 @@ const QuickGenerate = () => {
                   )}
                   <div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                      QR Code Generator
+                      Quick QR Generator
                     </h1>
-                    <p className="text-lg text-gray-600">Create dynamic and static QR codes for any purpose</p>
+                    <p className="text-lg text-gray-600">Create QR codes instantly without any complex setup</p>
                   </div>
                 </div>
               </div>
@@ -55,8 +55,8 @@ const QuickGenerate = () => {
               {!selectedType ? (
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-8 animate-fade-in">
                   <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Explore All QR Code Types</h2>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">Choose from our comprehensive collection of QR code types to create the perfect solution for your needs</p>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your QR Code Type</h2>
+                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">Select from our collection of QR code types for instant generation</p>
                   </div>
                   <QRTypeSelector onTypeSelect={handleTypeSelect} />
                 </div>
@@ -64,6 +64,7 @@ const QuickGenerate = () => {
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
                   <QRGeneratorStepper 
                     initialType={selectedType.id}
+                    mode="quick"
                   />
                 </div>
               )}
