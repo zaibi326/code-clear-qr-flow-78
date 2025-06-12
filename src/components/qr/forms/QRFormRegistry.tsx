@@ -19,6 +19,7 @@ import { ComprehensiveQRForm } from './ComprehensiveQRForm';
 interface QRFormProps {
   formData: any;
   onInputChange: (field: string, value: string) => void;
+  mode?: 'single' | 'quick' | 'both';
 }
 
 export const QRFormRegistry: Record<string, React.ComponentType<QRFormProps>> = {
