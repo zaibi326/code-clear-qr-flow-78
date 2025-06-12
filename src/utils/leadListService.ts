@@ -35,7 +35,7 @@ export const leadListService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as LeadList;
   },
 
   async getLeadLists(userId: string) {
@@ -84,7 +84,7 @@ export const leadListService = {
   },
 
   async getLeadRecords(listId: string) {
-    const { data, error } = await supabase
+    const { data, error } =  await supabase
       .from('lead_records')
       .select('*')
       .eq('list_id', listId)

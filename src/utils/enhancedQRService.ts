@@ -5,7 +5,7 @@ export interface EnhancedQRCode {
   id: string;
   name?: string;
   content: string;
-  content_type: string;
+  content_type: 'url' | 'text' | 'email' | 'phone' | 'sms' | 'wifi' | 'vcard' | 'location' | 'social_media';
   project_id?: string;
   campaign_id?: string;
   tags: string[];
@@ -46,13 +46,16 @@ export const enhancedQRService = {
     const { data, error } = await supabase
       .from('qr_codes')
       .insert({
-        ...qrData,
-        stats: {
-          total_scans: 0,
-          unique_scans: 0,
-          last_scan_at: null,
-          first_scan_at: null
-        }
+        name: qrData.name,
+        content: qrData.content,
+        content_type: qrData.content_type,
+        project_id: qrData.project_id,
+        campaign_id: qrData.campaign_id,
+        tags: qrData.tags,
+        logo_url: qrData.logo_url,
+        border_style: qrData.border_style,
+        variable_fields: qrData.variable_fields,
+        user_id: qrData.user_id
       })
       .select()
       .single();

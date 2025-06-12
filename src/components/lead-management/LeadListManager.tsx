@@ -47,7 +47,7 @@ export function LeadListManager() {
         status: 'active' as const
       });
       
-      setLists(prev => [newList, ...prev]);
+      setLists(prev => [newList, ...prev] as LeadList[]);
     } catch (error) {
       console.error('Error creating lead list:', error);
     }
