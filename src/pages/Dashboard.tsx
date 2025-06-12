@@ -3,10 +3,43 @@ import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
+import { EnhancedDashboardStats } from '@/components/dashboard/EnhancedDashboardStats';
+import { QRCodeDatabase } from '@/components/dashboard/QRCodeDatabase';
+import { ScanAnalytics } from '@/components/dashboard/ScanAnalytics';
+import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaignHierarchy';
 import { QRCreationModeSelector } from '@/components/dashboard/QRCreationModeSelector';
-import { QRCodeManagement } from '@/components/dashboard/QRCodeManagement';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
+  // Mock data - in real app this would come from your database
+  const dashboardData = {
+    totalQRCodes: 1247,
+    totalScans: 15420,
+    uniqueScans: 12340,
+    activeCampaigns: 8,
+    totalProjects: 4,
+    recentScans: [
+      {
+        qrName: 'Summer Landing Page',
+        project: 'Summer Marketing 2024',
+        location: 'New York, US',
+        time: '2 min ago'
+      },
+      {
+        qrName: 'Product Demo',
+        project: 'Product Launch Q4',
+        location: 'California, US',
+        time: '5 min ago'
+      },
+      {
+        qrName: 'Holiday Promo',
+        project: 'Holiday Promotions',
+        location: 'Texas, US',
+        time: '8 min ago'
+      }
+    ]
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50" style={{ boxSizing: 'border-box' }}>
@@ -24,19 +57,46 @@ const Dashboard = () => {
                 <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-white/5 rounded-full blur-lg"></div>
                 
                 <div className="relative z-10">
-                  <h1 className="text-4xl font-bold mb-2">QR Code Dashboard</h1>
-                  <p className="text-blue-100 text-lg">Manage your dynamic and static QR codes with advanced analytics</p>
+                  <h1 className="text-4xl font-bold mb-2">Enhanced QR Dashboard</h1>
+                  <p className="text-blue-100 text-lg">Complete visibility into your QR code performance, analytics, and database</p>
                 </div>
               </div>
 
-              {/* Creation Mode Selector */}
+              {/* Enhanced Stats */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-6">
-                <QRCreationModeSelector />
+                <EnhancedDashboardStats {...dashboardData} />
               </div>
 
-              {/* QR Code Management */}
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-6">
-                <QRCodeManagement />
+              {/* Tabs for different views */}
+              <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl">
+                <Tabs defaultValue="database" className="w-full">
+                  <div className="px-6 pt-6 pb-0">
+                    <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full max-w-2xl">
+                      <TabsTrigger value="database" className="text-sm">QR Database</TabsTrigger>
+                      <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
+                      <TabsTrigger value="hierarchy" className="text-sm">Projects</TabsTrigger>
+                      <TabsTrigger value="create" className="text-sm">Create QR</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  
+                  <div className="p-6">
+                    <TabsContent value="database" className="space-y-6 m-0">
+                      <QRCodeDatabase />
+                    </TabsContent>
+
+                    <TabsContent value="analytics" className="space-y-6 m-0">
+                      <ScanAnalytics />
+                    </TabsContent>
+                    
+                    <TabsContent value="hierarchy" className="m-0">
+                      <ProjectCampaignHierarchy />
+                    </TabsContent>
+                    
+                    <TabsContent value="create" className="m-0">
+                      <QRCreationModeSelector />
+                    </TabsContent>
+                  </div>
+                </Tabs>
               </div>
             </div>
           </div>
