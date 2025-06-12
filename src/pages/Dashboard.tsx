@@ -5,7 +5,6 @@ import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { EnhancedDashboardStats } from '@/components/dashboard/EnhancedDashboardStats';
 import { QRCodeDatabase } from '@/components/dashboard/QRCodeDatabase';
-import { ScanAnalytics } from '@/components/dashboard/ScanAnalytics';
 import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaignHierarchy';
 import { QRCreationModeSelector } from '@/components/dashboard/QRCreationModeSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -58,7 +57,7 @@ const Dashboard = () => {
                 
                 <div className="relative z-10">
                   <h1 className="text-4xl font-bold mb-2">Enhanced QR Dashboard</h1>
-                  <p className="text-blue-100 text-lg">Complete visibility into your QR code performance, analytics, and database</p>
+                  <p className="text-blue-100 text-lg">Complete visibility into your QR code performance and database</p>
                 </div>
               </div>
 
@@ -69,31 +68,28 @@ const Dashboard = () => {
 
               {/* Tabs for different views */}
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl">
-                <Tabs defaultValue="database" className="w-full">
+                <Tabs defaultValue="qr-codes" className="w-full">
                   <div className="px-6 pt-6 pb-0">
-                    <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full max-w-2xl">
-                      <TabsTrigger value="database" className="text-sm">QR Database</TabsTrigger>
-                      <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
-                      <TabsTrigger value="hierarchy" className="text-sm">Projects</TabsTrigger>
-                      <TabsTrigger value="create" className="text-sm">Create QR</TabsTrigger>
+                    <TabsList className="grid grid-cols-2 w-full max-w-lg">
+                      <TabsTrigger value="qr-codes" className="text-sm">QR Codes</TabsTrigger>
+                      <TabsTrigger value="projects" className="text-sm">Projects</TabsTrigger>
                     </TabsList>
                   </div>
                   
                   <div className="p-6">
-                    <TabsContent value="database" className="space-y-6 m-0">
-                      <QRCodeDatabase />
-                    </TabsContent>
-
-                    <TabsContent value="analytics" className="space-y-6 m-0">
-                      <ScanAnalytics />
+                    <TabsContent value="qr-codes" className="space-y-6 m-0">
+                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-2">
+                          <QRCodeDatabase />
+                        </div>
+                        <div>
+                          <QRCreationModeSelector />
+                        </div>
+                      </div>
                     </TabsContent>
                     
-                    <TabsContent value="hierarchy" className="m-0">
+                    <TabsContent value="projects" className="m-0">
                       <ProjectCampaignHierarchy />
-                    </TabsContent>
-                    
-                    <TabsContent value="create" className="m-0">
-                      <QRCreationModeSelector />
                     </TabsContent>
                   </div>
                 </Tabs>

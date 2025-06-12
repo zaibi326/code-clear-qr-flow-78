@@ -46,7 +46,7 @@ export const leadListService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data as LeadList[];
   },
 
   async importCSVData(listId: string, csvData: Record<string, any>[], userId: string) {

@@ -4,243 +4,222 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Upload, Download, Plus, Search, Tag, Users, FileText } from 'lucide-react';
+import { Upload, Download, Plus, Search, FileText, Users, Calendar, Tag } from 'lucide-react';
 import { leadListService, LeadList } from '@/utils/leadListService';
 import { useAuth } from '@/hooks/useSupabaseAuth';
-import { toast } from 'sonner';
 
 export function LeadListManager() {
   const { user } = useAuth();
-  const [leadLists, setLeadLists] = useState<LeadList[]>([]);
-  const [selectedList, setSelectedList] = useState<LeadList | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [lists, setLists] = useState<LeadList[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      loadLeadLists();
+      loadLists();
     }
   }, [user]);
 
-  const loadLeadLists = async () => {
+  const loadLists = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const data = await leadListService.getLeadLists(user!.id);
-      setLeadLists(data || []);
+      setLists(data);
     } catch (error) {
       console.error('Error loading lead lists:', error);
-      toast.error('Failed to load lead lists');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleCreateList = async () => {
+    if (!user) return;
+    
     try {
-      const text = await file.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
-      
-      const csvData = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim());
-        const record: Record<string, any> = {};
-        headers.forEach((header, index) => {
-          record[header] = values[index] || '';
-        });
-        return record;
-      }).filter(record => Object.values(record).some(v => v)); // Filter empty rows
-
-      // Create lead list
-      const listData = {
-        user_id: user!.id,
-        name: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
-        description: `Imported from ${file.name}`,
-        file_type: file.name.split('.').pop() || 'csv',
-        record_count: csvData.length,
-        tags: ['imported'],
+      const newList = await leadListService.createLeadList({
+        user_id: user.id,
+        name: 'New Lead List',
+        description: 'Description for new list',
+        file_type: 'csv',
+        record_count: 0,
+        tags: [],
+        import_date: new Date().toISOString(),
         status: 'active' as const
-      };
-
-      const newList = await leadListService.createLeadList(listData);
-      await leadListService.importCSVData(newList.id, csvData, user!.id);
+      });
       
-      toast.success(`Successfully imported ${csvData.length} records`);
-      loadLeadLists();
+      setLists(prev => [newList, ...prev]);
     } catch (error) {
-      console.error('Error importing file:', error);
-      toast.error('Failed to import file');
+      console.error('Error creating lead list:', error);
     }
   };
 
-  const exportList = async (list: LeadList) => {
-    try {
-      const data = await leadListService.exportLeadData(list.id);
-      const csv = convertToCSV(data);
-      downloadCSV(csv, `${list.name}_export.csv`);
-      toast.success('List exported successfully');
-    } catch (error) {
-      console.error('Error exporting list:', error);
-      toast.error('Failed to export list');
-    }
-  };
-
-  const convertToCSV = (data: any[]) => {
-    if (!data.length) return '';
-    
-    const headers = Object.keys(data[0].data);
-    const csvContent = [
-      headers.join(','),
-      ...data.map(record => 
-        headers.map(header => `"${record.data[header] || ''}"`).join(',')
-      )
-    ].join('\n');
-    
-    return csvContent;
-  };
-
-  const downloadCSV = (csv: string, filename: string) => {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const filteredLists = leadLists.filter(list =>
-    list.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    list.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLists = lists.filter(list =>
+    list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    list.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalRecords = lists.reduce((sum, list) => sum + list.record_count, 0);
+  const activeLists = lists.filter(list => list.status === 'active').length;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Lead List Management
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="flex items-center gap-2 cursor-pointer">
-                <Upload className="w-4 h-4" />
-                Import CSV/XLS
-              </label>
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="lists" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="lists">My Lists</TabsTrigger>
-            <TabsTrigger value="records">Records</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="lists" className="space-y-4">
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search lists..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="p-3 rounded-lg bg-blue-50">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Lists</p>
+                <p className="text-2xl font-bold">{lists.length}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredLists.map((list) => (
-                <Card key={list.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{list.name}</h3>
-                        <p className="text-sm text-gray-600">{list.description}</p>
-                      </div>
-                      <Badge variant={list.status === 'active' ? 'default' : 'secondary'}>
-                        {list.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1">
-                        <FileText className="w-4 h-4" />
-                        {list.record_count} records
-                      </span>
-                      <span className="text-gray-500">{list.file_type?.toUpperCase()}</span>
-                    </div>
-                    
-                    <div className="flex gap-1 flex-wrap">
-                      {list.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedList(list)}
-                        className="flex-1"
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => exportList(list)}
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-green-50">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Records</p>
+                <p className="text-2xl font-bold">{totalRecords.toLocaleString()}</p>
+              </div>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="records">
-            {selectedList ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">{selectedList.name} Records</h3>
-                  <Button variant="outline" onClick={() => exportList(selectedList)}>
-                    <Download className="w-4 h-4 mr-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-purple-50">
+                <Calendar className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Active Lists</p>
+                <p className="text-2xl font-bold">{activeLists}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions Bar */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="flex gap-2">
+              <Button onClick={handleCreateList} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create List
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Export All
+              </Button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search lists..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lists Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredLists.map((list) => (
+          <Card key={list.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <CardTitle className="text-lg truncate">{list.name}</CardTitle>
+                <Badge 
+                  variant={list.status === 'active' ? 'default' : 'secondary'}
+                  className="ml-2"
+                >
+                  {list.status}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-600 line-clamp-2">{list.description}</p>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Records:</span>
+                  <span className="font-medium">{list.record_count.toLocaleString()}</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Type:</span>
+                  <span className="font-medium uppercase">{list.file_type || 'CSV'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Created:</span>
+                  <span className="font-medium">
+                    {new Date(list.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {list.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {list.tags.slice(0, 3).map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {list.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{list.tags.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" variant="outline" className="flex-1">
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1">
                     Export
                   </Button>
                 </div>
-                <div className="text-sm text-gray-600">
-                  {selectedList.record_count} total records
-                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                Select a list from the "My Lists" tab to view its records
-              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredLists.length === 0 && !isLoading && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Lead Lists Found</h3>
+            <p className="text-gray-600 mb-4">
+              {searchQuery ? 'No lists match your search criteria.' : 'Get started by creating your first lead list.'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={handleCreateList}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First List
+              </Button>
             )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

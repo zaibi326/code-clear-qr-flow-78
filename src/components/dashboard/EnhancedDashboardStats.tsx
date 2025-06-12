@@ -41,7 +41,10 @@ export function EnhancedDashboardStats({
       const qrData = await enhancedQRService.getQRCodesWithAnalytics(user!.id);
       const analytics = await enhancedQRService.getScanAnalytics(user!.id, 'month');
       
-      const totalScansCount = qrData.reduce((sum, qr) => sum + (qr.stats?.total_scans || 0), 0);
+      const totalScansCount = qrData.reduce((sum, qr) => {
+        const stats = qr.stats as any;
+        return sum + (stats?.total_scans || 0);
+      }, 0);
       const uniqueSessionIds = new Set(analytics.map(scan => scan.session_id));
       
       setRealTimeStats({
@@ -51,7 +54,7 @@ export function EnhancedDashboardStats({
         recentActivity: analytics.slice(0, 5).map(scan => ({
           qrName: scan.qr_codes?.name || 'Unnamed QR',
           project: scan.projects?.name || 'No Project',
-          location: scan.location_data?.country || 'Unknown',
+          location: (scan.location_data as any)?.country || 'Unknown',
           time: new Date(scan.scan_timestamp).toLocaleString()
         }))
       });

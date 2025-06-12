@@ -37,10 +37,12 @@ export interface ScanAnalytic {
   user_agent?: string;
   session_id?: string;
   conversion_data: Record<string, any>;
+  qr_codes?: { name?: string };
+  projects?: { name?: string };
 }
 
 export const enhancedQRService = {
-  async createQRCode(qrData: Omit<EnhancedQRCode, 'id' | 'created_at' | 'updated_at' | 'stats'>) {
+  async createQRCode(qrData: Omit<EnhancedQRCode, 'id' | 'created_at' | 'updated_at' | 'stats'> & { user_id: string }) {
     const { data, error } = await supabase
       .from('qr_codes')
       .insert({
