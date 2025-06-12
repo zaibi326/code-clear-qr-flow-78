@@ -226,6 +226,89 @@ export type Database = {
           },
         ]
       }
+      lead_lists: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          import_date: string | null
+          name: string
+          record_count: number | null
+          status: string | null
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          import_date?: string | null
+          name: string
+          record_count?: number | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          import_date?: string | null
+          name?: string
+          record_count?: number | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      lead_records: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          list_id: string | null
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          list_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          list_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_records_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lead_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_logs: {
         Row: {
           amount: number
@@ -373,6 +456,7 @@ export type Database = {
       }
       qr_codes: {
         Row: {
+          border_style: Json | null
           campaign_id: string | null
           content: string
           content_type: Database["public"]["Enums"]["qr_content_type"] | null
@@ -381,16 +465,22 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           name: string | null
           password_hash: string | null
           password_protected: boolean | null
+          project_id: string | null
           qr_image_url: string | null
+          scan_location_data: Json | null
           short_url: string | null
           stats: Json | null
+          tags: string[] | null
           updated_at: string | null
           user_id: string
+          variable_fields: Json | null
         }
         Insert: {
+          border_style?: Json | null
           campaign_id?: string | null
           content: string
           content_type?: Database["public"]["Enums"]["qr_content_type"] | null
@@ -399,16 +489,22 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name?: string | null
           password_hash?: string | null
           password_protected?: boolean | null
+          project_id?: string | null
           qr_image_url?: string | null
+          scan_location_data?: Json | null
           short_url?: string | null
           stats?: Json | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id: string
+          variable_fields?: Json | null
         }
         Update: {
+          border_style?: Json | null
           campaign_id?: string | null
           content?: string
           content_type?: Database["public"]["Enums"]["qr_content_type"] | null
@@ -417,14 +513,19 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name?: string | null
           password_hash?: string | null
           password_protected?: boolean | null
+          project_id?: string | null
           qr_image_url?: string | null
+          scan_location_data?: Json | null
           short_url?: string | null
           stats?: Json | null
+          tags?: string[] | null
           updated_at?: string | null
           user_id?: string
+          variable_fields?: Json | null
         }
         Relationships: [
           {
@@ -435,10 +536,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "qr_codes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "qr_codes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_analytics: {
+        Row: {
+          campaign_id: string | null
+          conversion_data: Json | null
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          ip_address: unknown | null
+          is_first_time_scan: boolean | null
+          lead_source: string | null
+          location_data: Json | null
+          project_id: string | null
+          qr_code_id: string | null
+          referrer_source: string | null
+          scan_timestamp: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          conversion_data?: Json | null
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          is_first_time_scan?: boolean | null
+          lead_source?: string | null
+          location_data?: Json | null
+          project_id?: string | null
+          qr_code_id?: string | null
+          referrer_source?: string | null
+          scan_timestamp?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          conversion_data?: Json | null
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          is_first_time_scan?: boolean | null
+          lead_source?: string | null
+          location_data?: Json | null
+          project_id?: string | null
+          qr_code_id?: string | null
+          referrer_source?: string | null
+          scan_timestamp?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_analytics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_analytics_qr_code_id_fkey"
+            columns: ["qr_code_id"]
+            isOneToOne: false
+            referencedRelation: "qr_codes"
             referencedColumns: ["id"]
           },
         ]
