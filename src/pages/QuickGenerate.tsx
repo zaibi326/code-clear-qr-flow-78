@@ -25,8 +25,8 @@ const QuickGenerate = () => {
     
     // Reset form data when type changes
     setFormData({
-      url: type.id === 'url' ? 'https://www.example.com' : '',
-      qrName: type.id === 'url' ? 'My Website QR Code' : '',
+      url: type.id === 'url' || type.id === 'website' || type.id === 'website-static' ? 'https://www.example.com' : '',
+      qrName: type.id === 'url' || type.id === 'website' || type.id === 'website-static' ? 'My Website QR Code' : '',
       foregroundColor: '#000000',
       backgroundColor: '#FFFFFF',
       logoUrl: ''

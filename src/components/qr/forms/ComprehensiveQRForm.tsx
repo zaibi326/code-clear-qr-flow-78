@@ -32,22 +32,6 @@ export function ComprehensiveQRForm({ formData, onInputChange, mode = 'both' }: 
 
   console.log('ComprehensiveQRForm - mode:', mode, 'showTabs:', showTabs, 'showBulkTab:', showBulkTab);
 
-  // For quick mode, render without tabs but show single form
-  if (mode === 'quick') {
-    return (
-      <SingleRecordContent
-        formData={formData}
-        logoFile={logoFile}
-        onInputChange={handleInputChangeWithColorUpdate}
-        onLogoFileChange={handleLogoFileChange}
-        onSave={handleSave}
-        generatedQR={generatedQR}
-        canvasRef={canvasRef}
-        showAsTab={false}
-      />
-    );
-  }
-
   // For single mode, render without tabs
   if (mode === 'single') {
     return (
@@ -64,7 +48,7 @@ export function ComprehensiveQRForm({ formData, onInputChange, mode = 'both' }: 
     );
   }
 
-  // For both mode, show tabs with single and bulk options
+  // For both mode or quick mode with URL types, show tabs with single and bulk options
   return (
     <div className="space-y-6">
       <FormTabsManager
