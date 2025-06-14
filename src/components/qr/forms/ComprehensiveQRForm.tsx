@@ -30,6 +30,8 @@ export function ComprehensiveQRForm({ formData, onInputChange, mode = 'both' }: 
     handleBulkSave
   } = useQRFormManager({ formData, onInputChange, mode });
 
+  console.log('ComprehensiveQRForm - mode:', mode, 'showTabs:', showTabs, 'showBulkTab:', showBulkTab);
+
   // For quick mode, render without tabs but show single form
   if (mode === 'quick') {
     return (
