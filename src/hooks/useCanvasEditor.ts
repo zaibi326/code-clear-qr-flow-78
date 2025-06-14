@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
 import { toast } from '@/hooks/use-toast';
@@ -37,25 +36,7 @@ export const useCanvasEditor = (template: Template) => {
       canvas.freeDrawingBrush.width = 2;
     }
 
-    // Load template background if available
-    if (template.preview) {
-      FabricImage.fromURL(template.preview, {}, (img) => {
-        if (img) {
-          img.set({
-            left: 0,
-            top: 0,
-            selectable: false,
-            evented: false,
-          });
-          img.scaleToWidth(800);
-          canvas.add(img);
-          canvas.sendObjectToBack(img);
-          canvas.renderAll();
-        }
-      });
-    }
-
-    // Load existing customization
+    // Only load existing customization JSON if it exists, don't load preview images
     if (template.editable_json) {
       try {
         canvas.loadFromJSON(template.editable_json, () => {
@@ -96,7 +77,7 @@ export const useCanvasEditor = (template: Template) => {
     return () => {
       canvas.dispose();
     };
-  }, [template.preview, template.editable_json]);
+  }, [template.editable_json]);
 
   const addQRCode = async (qrUrl: string) => {
     if (!fabricCanvas) {
@@ -341,26 +322,7 @@ export const useCanvasEditor = (template: Template) => {
     fabricCanvas.backgroundColor = '#ffffff';
     setCanvasElements([]);
     setSelectedObject(null);
-    
-    // Reload template background
-    if (template.preview) {
-      FabricImage.fromURL(template.preview, {}, (img) => {
-        if (img) {
-          img.set({
-            left: 0,
-            top: 0,
-            selectable: false,
-            evented: false,
-          });
-          img.scaleToWidth(800);
-          fabricCanvas.add(img);
-          fabricCanvas.sendObjectToBack(img);
-          fabricCanvas.renderAll();
-        }
-      });
-    } else {
-      fabricCanvas.renderAll();
-    }
+    fabricCanvas.renderAll();
     
     toast({
       title: 'Canvas reset',
