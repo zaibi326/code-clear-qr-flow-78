@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, X, QrCode, Type, Square, Circle, ImagePlus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
@@ -42,8 +43,8 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         scaleY: canvasHeight / (img.height || canvasHeight),
       });
       canvas.add(img);
-      // moveTo (object, 0) to send image to back
-      canvas.moveTo(img, 0);
+      // sendObjectToBack to send image to back
+      canvas.sendObjectToBack(img);
     } catch (e) {
       // noop
     }
