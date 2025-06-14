@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,10 +31,10 @@ const TemplatesTabGallery: React.FC<TemplatesTabGalleryProps> = ({
   const [category, setCategory] = useState("All");
 
   const builtinTemplates = templates.filter(
-    (t) => t.isPublic || t.isBuiltin || t.is_builtin
+    (t) => t.is_builtin // only built-in flag direct snake_case
   );
   const userTemplates = templates.filter(
-    (t) => !t.isPublic && !t.isBuiltin && !t.is_builtin
+    (t) => !t.is_builtin
   );
 
   const filteredBuiltin = builtinTemplates.filter((t) => {

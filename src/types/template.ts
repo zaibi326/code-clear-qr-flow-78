@@ -1,4 +1,5 @@
 
+// Extend Template type for new properties (snake_case to match DB)
 export interface QRPosition {
   x: number;
   y: number;
@@ -34,15 +35,19 @@ export interface Template {
   id: string;
   name: string;
   type: string;
-  category: string;
-  description: string;
+  category?: string;
+  description?: string;
   file?: File | null;
   preview?: string;
   qrPosition?: QRPosition;
   customization?: TemplateCustomization;
   createdAt: Date;
   updatedAt: Date;
-  isPublic?: boolean;
+  isPublic?: boolean; // for legacy, always fallback to below fields
+  is_builtin?: boolean;
+  thumbnail_url?: string;
+  template_url?: string;
+  editable_json?: any;
   tags?: string[];
   dimensions?: {
     width: number;

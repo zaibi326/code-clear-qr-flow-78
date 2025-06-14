@@ -1,10 +1,9 @@
-
 import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, X, QrCode, Type, Square, Circle, ImagePlus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
 import { Template } from "@/types/template";
-// You must have 'fabric' v6 installed!
-import { fabric } from "fabric";
+// Fabric.js v6 import - use named imports
+import { Canvas, Image as FabricImage, IText, Rect, Circle as FabricCircle } from "fabric";
 import { toast } from "@/hooks/use-toast";
 
 interface TemplatesCanvasEditorProps {
@@ -24,12 +23,12 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   onSave,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
+  const fabricRef = useRef<Canvas | null>(null);
 
   // Initialize and load background image/template
   useEffect(() => {
     if (!canvasRef.current) return;
-    let fabricCanvas = new fabric.Canvas(canvasRef.current, {
+    let fabricCanvas = new Canvas(canvasRef.current, {
       width: canvasWidth,
       height: canvasHeight,
       selection: true,
@@ -40,7 +39,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     // Load the template bg image (URL, thumbnail, or preview)
     let imgSrc = template.template_url || template.preview || template.thumbnail_url;
     if (imgSrc) {
-      fabric.Image.fromURL(imgSrc, (img) => {
+      FabricImage.fromURL(imgSrc, (img) => {
         img.set({
           left: 0,
           top: 0,
@@ -71,10 +70,10 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     };
   }, [template]);
 
-  // Canvas tools
+  // Canvas tools (use .current for fabricRef)
   const handleAddQR = () => {
-    // A real app would generate a real QR, for demo a placeholder:
-    fabric.Image.fromURL("/sample-qr.png", (img) => {
+    // Just a placeholder for now:
+    FabricImage.fromURL("/sample-qr.png", (img) => {
       img.set({
         left: 60,
         top: 60,
@@ -90,7 +89,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   };
 
   const handleAddText = () => {
-    const text = new fabric.IText("Edit me!", {
+    const text = new IText("Edit me!", {
       left: 160,
       top: 110,
       fontSize: 32,
@@ -101,7 +100,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   };
 
   const handleAddRect = () => {
-    const rect = new fabric.Rect({
+    const rect = new Rect({
       left: 200,
       top: 200,
       width: 120,
@@ -114,8 +113,9 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     });
     fabricRef.current?.add(rect).setActiveObject(rect);
   };
+
   const handleAddCircle = () => {
-    const circ = new fabric.Circle({
+    const circ = new FabricCircle({
       left: 360,
       top: 160,
       radius: 44,
@@ -125,12 +125,13 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     });
     fabricRef.current?.add(circ).setActiveObject(circ);
   };
+
   const handleImageUpload = (evt: React.ChangeEvent<HTMLInputElement>) => {
     const file = evt.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      fabric.Image.fromURL(e.target?.result as string, (img) => {
+      FabricImage.fromURL(e.target?.result as string, (img) => {
         img.set({
           left: 130,
           top: 130,
@@ -151,10 +152,9 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   const handleReset = () => {
     if (window.confirm("Reset all canvas changes?")) {
       fabricRef.current?.clear();
-      // Restore background
       let imgSrc = template.template_url || template.preview || template.thumbnail_url;
       if (imgSrc) {
-        fabric.Image.fromURL(imgSrc, (img) => {
+        FabricImage.fromURL(imgSrc, (img) => {
           img.set({
             left: 0,
             top: 0,
@@ -173,9 +173,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   const handleSave = () => {
     if (fabricRef.current) {
       const json = fabricRef.current.toJSON();
-      // Optionally create export (image, PDF, etc)
       fabricRef.current.discardActiveObject().renderAll();
-      // For demo, we capture PNG export
       const exportUrl = fabricRef.current.toDataURL({ format: "png" });
       onSave(json, exportUrl);
     }
