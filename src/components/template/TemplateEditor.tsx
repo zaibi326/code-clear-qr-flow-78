@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,21 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
     template.qrPosition || { x: 50, y: 50, width: 80, height: 80 }
   );
   const [isDragging, setIsDragging] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Create PDF URL when component mounts or template changes
+  useEffect(() => {
+    if (template.file && template.file.type === 'application/pdf') {
+      const url = URL.createObjectURL(template.file);
+      setPdfUrl(url);
+      
+      // Cleanup function to revoke the URL when component unmounts
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    }
+  }, [template.file]);
 
   const handleDrag = (e: any, data: any) => {
     if (containerRef.current) {
@@ -55,7 +69,7 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
         <h2 className="text-2xl font-bold text-gray-900 mb-2">QR Code Editor</h2>
         <p className="text-gray-600">
           {isPdfTemplate 
-            ? 'Position the QR code on your PDF template (preview shows template outline)' 
+            ? 'Position the QR code on your PDF template' 
             : 'Drag the QR code to position it on your template'
           }
         </p>
@@ -86,17 +100,23 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
                 className="relative bg-gray-100 rounded-lg overflow-hidden mx-auto border-2 border-dashed border-gray-300"
                 style={{ maxWidth: '800px', aspectRatio: '4/3' }}
               >
-                {isPdfTemplate ? (
+                {isPdfTemplate && pdfUrl ? (
+                  <div className="w-full h-full relative">
+                    <iframe
+                      src={pdfUrl}
+                      className="w-full h-full border-0"
+                      title={`PDF Preview - ${template.name}`}
+                    />
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
+                      PDF Template - {template.name}
+                    </div>
+                  </div>
+                ) : isPdfTemplate ? (
                   <div className="w-full h-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center relative">
                     <div className="text-center">
                       <FileImage className="w-16 h-16 text-red-400 mx-auto mb-2" />
                       <span className="text-red-600 font-medium text-lg">PDF Template</span>
-                      <p className="text-red-500 text-sm mt-1">Position QR code as needed</p>
-                    </div>
-                    
-                    {/* PDF Template Border Indicators */}
-                    <div className="absolute inset-4 border-2 border-red-200 rounded-lg pointer-events-none">
-                      <div className="absolute top-2 left-2 text-xs text-red-500">Content Area</div>
+                      <p className="text-red-500 text-sm mt-1">Loading PDF...</p>
                     </div>
                   </div>
                 ) : template.preview ? (
@@ -127,7 +147,7 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
                   bounds="parent"
                 >
                   <div 
-                    className={`absolute cursor-move border-2 border-blue-500 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center transition-all ${
+                    className={`absolute cursor-move border-2 border-blue-500 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center transition-all z-10 ${
                       isDragging ? 'scale-110 shadow-xl' : 'hover:scale-105'
                     }`}
                     style={{ 
@@ -161,8 +181,8 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
               {isPdfTemplate && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>PDF Template Note:</strong> The QR code position will be applied when generating the final PDF output. 
-                    The preview shows a placeholder area for positioning reference.
+                    <strong>PDF Template:</strong> You can now see and position the QR code on your actual PDF template. 
+                    The QR code position will be applied when generating the final PDF output.
                   </p>
                 </div>
               )}
@@ -256,7 +276,7 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
                   <li>• Use the size slider to resize</li>
                   <li>• Save to store the position</li>
                   {isPdfTemplate && (
-                    <li>• PDF position is applied during generation</li>
+                    <li>• PDF shows actual uploaded content</li>
                   )}
                 </ul>
               </div>
