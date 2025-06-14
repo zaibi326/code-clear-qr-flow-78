@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, X, QrCode, Type, Square, Circle, ImagePlus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
@@ -27,7 +26,13 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   // Helper to load image as Fabric object (Fabric.js v6 pattern)
   const addBackgroundImage = async (imgSrc: string, canvas: Canvas) => {
     try {
-      const img = await FabricImage.fromURLAsync(imgSrc);
+      // Fabric.js v6: Use callback-style and wrap in a Promise for async/await
+      const img = await new Promise<FabricImage>((resolve, reject) =>
+        FabricImage.fromURL(imgSrc, (oimg) => {
+          if (oimg) resolve(oimg as FabricImage);
+          else reject(new Error("Failed to load image"));
+        })
+      );
       img.set({
         left: 0,
         top: 0,
@@ -37,7 +42,8 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         scaleY: canvasHeight / (img.height || canvasHeight),
       });
       canvas.add(img);
-      canvas.moveTo(img, 0); // move background to back
+      // sendToBack moves image to canvas background
+      canvas.sendToBack(img);
     } catch (e) {
       // noop
     }
@@ -85,7 +91,12 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     const canvas = fabricRef.current;
     if (!canvas) return;
     try {
-      const img = await FabricImage.fromURLAsync("/sample-qr.png");
+      const img = await new Promise<FabricImage>((resolve, reject) =>
+        FabricImage.fromURL("/sample-qr.png", (oimg) => {
+          if (oimg) resolve(oimg as FabricImage);
+          else reject(new Error("Failed to load QR image"));
+        })
+      );
       img.set({
         left: 60,
         top: 60,
@@ -96,7 +107,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         lockUniScaling: false,
       });
       canvas.add(img);
-      canvas.setActiveObject(img);
+      canvas.setActiveObject?.(img); // In Fabric v6, this is a method on Canvas
       toast({ title: "QR code placeholder added!" });
     } catch (e) {
       toast({ title: "Failed to add QR code" });
@@ -158,7 +169,12 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const img = await FabricImage.fromURLAsync(e.target?.result as string);
+        const img = await new Promise<FabricImage>((resolve, reject) =>
+          FabricImage.fromURL(e.target?.result as string, (oimg) => {
+            if (oimg) resolve(oimg as FabricImage);
+            else reject(new Error("Failed to load image from upload"));
+          })
+        );
         img.set({
           left: 130,
           top: 130,
@@ -166,7 +182,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
           scaleY: 0.5,
         });
         canvas.add(img);
-        canvas.setActiveObject(img);
+        canvas.setActiveObject?.(img);
       } catch (e) {
         toast({ title: "Failed to add image" });
       }
