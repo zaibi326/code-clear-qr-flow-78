@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -103,6 +102,8 @@ export const TemplateManageTab = ({
 
   const handleEdit = (template: Template) => {
     console.log('Editing template:', template);
+    console.log('Template file type:', template.file?.type);
+    console.log('Template has file:', !!template.file);
     
     // Check if template has proper data for editing
     if (!template.file && !template.preview) {
@@ -110,8 +111,16 @@ export const TemplateManageTab = ({
       return;
     }
     
+    // For PDF templates, ensure we're passing the template with the file
+    if (template.file?.type === 'application/pdf') {
+      console.log('Editing PDF template with file');
+      toast.success(`Opening PDF editor for ${template.name}`);
+    } else {
+      console.log('Editing image template');
+      toast.success(`Opening editor for ${template.name}`);
+    }
+    
     onTemplateEdit(template);
-    toast.success(`Opening editor for ${template.name}`);
   };
 
   const handleDownload = (template: Template) => {
