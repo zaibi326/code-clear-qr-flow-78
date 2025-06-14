@@ -42,8 +42,47 @@ export const TemplateManageTab = ({
   });
 
   const handlePreview = (template: Template) => {
-    if (template.preview) {
-      // Create a modal or new window for preview
+    console.log('Preview template:', template);
+    
+    if (template.file?.type === 'application/pdf') {
+      // For PDF files, create a blob URL and open in new window
+      if (template.file) {
+        try {
+          const url = URL.createObjectURL(template.file);
+          const previewWindow = window.open(url, '_blank', 'width=800,height=600');
+          if (previewWindow) {
+            // Clean up the blob URL after the window is loaded
+            previewWindow.onload = () => {
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+            toast.success(`Opened PDF preview for ${template.name}`);
+          } else {
+            toast.error('Could not open preview window. Please check your browser settings.');
+          }
+        } catch (error) {
+          console.error('Error opening PDF preview:', error);
+          toast.error('Failed to open PDF preview');
+        }
+      } else if (template.preview) {
+        // Fallback to preview image if available
+        const previewWindow = window.open('', '_blank', 'width=800,height=600');
+        if (previewWindow) {
+          previewWindow.document.write(`
+            <html>
+              <head><title>Template Preview - ${template.name}</title></head>
+              <body style="margin:0; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                <img src="${template.preview}" alt="${template.name}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+              </body>
+            </html>
+          `);
+          previewWindow.document.close();
+          toast.success(`Opened preview for ${template.name}`);
+        }
+      } else {
+        toast.error('PDF preview not available - no file or preview image found');
+      }
+    } else if (template.preview) {
+      // For image templates, show preview image
       const previewWindow = window.open('', '_blank', 'width=800,height=600');
       if (previewWindow) {
         previewWindow.document.write(`
@@ -55,14 +94,22 @@ export const TemplateManageTab = ({
           </html>
         `);
         previewWindow.document.close();
+        toast.success(`Opened preview for ${template.name}`);
       }
-      toast.success(`Opened preview for ${template.name}`);
     } else {
       toast.error('Preview not available for this template');
     }
   };
 
   const handleEdit = (template: Template) => {
+    console.log('Editing template:', template);
+    
+    // Check if template has proper data for editing
+    if (!template.file && !template.preview) {
+      toast.error('Cannot edit template - no file or preview data available');
+      return;
+    }
+    
     onTemplateEdit(template);
     toast.success(`Opening editor for ${template.name}`);
   };
@@ -204,9 +251,9 @@ export const TemplateManageTab = ({
             <Card key={template.id} className="hover:shadow-md transition-shadow duration-200">
               <div className="relative">
                 {template.file?.type === 'application/pdf' ? (
-                  <div className="w-full h-48 bg-red-100 flex items-center justify-center">
+                  <div className="w-full h-48 bg-red-100 flex items-center justify-center cursor-pointer" onClick={() => handlePreview(template)}>
                     <FileText className="w-12 h-12 text-red-600" />
-                    <span className="ml-2 text-red-600 font-medium">PDF</span>
+                    <span className="ml-2 text-red-600 font-medium">PDF Template</span>
                   </div>
                 ) : (
                   <img 
@@ -266,13 +313,20 @@ export const TemplateManageTab = ({
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-purple-100 rounded-lg cursor-pointer" onClick={() => handlePreview(template)}>
-                      <FileText className="h-6 w-6 text-purple-600" />
+                    <div 
+                      className={`p-3 rounded-lg cursor-pointer ${
+                        template.file?.type === 'application/pdf' ? 'bg-red-100' : 'bg-purple-100'
+                      }`}
+                      onClick={() => handlePreview(template)}
+                    >
+                      <FileText className={`h-6 w-6 ${
+                        template.file?.type === 'application/pdf' ? 'text-red-600' : 'text-purple-600'
+                      }`} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{template.name}</h3>
                       <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>{template.file?.type === 'application/pdf' ? 'PDF' : 'IMAGE'}</span>
+                        <span>{template.file?.type === 'application/pdf' ? 'PDF Template' : 'IMAGE Template'}</span>
                         <span>•</span>
                         <span>Updated {template.updatedAt.toLocaleDateString()}</span>
                         {template.qrPosition && (
