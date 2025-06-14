@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Template } from '@/types/template';
 import { useCanvasEditor } from '@/hooks/useCanvasEditor';
@@ -33,16 +34,19 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
   const [textContent, setTextContent] = React.useState('Sample Text');
 
   const handleAddQRCode = () => {
+    console.log('Adding QR code with URL:', qrUrl);
     addQRCode(qrUrl);
   };
 
   const handleAddText = () => {
+    console.log('Adding text:', textContent);
     addText(textContent, 16, '#000000');
   };
 
   const handleUploadImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Uploading image:', file.name, file.type);
       uploadImage(file);
     }
   };
@@ -93,46 +97,64 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     });
   };
 
+  const handleDelete = () => {
+    console.log('Delete button clicked, selected object:', selectedObject);
+    deleteSelected();
+  };
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Template Customizer</h1>
-        <p className="text-gray-600">Customize your template with drag-and-drop tools</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Canvas Area */}
-        <div className="lg:col-span-2">
-          <CanvasArea canvasRef={canvasRef} zoom={zoom} />
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Template Customizer</h1>
+          <p className="text-gray-600">Customize your template with drag-and-drop tools</p>
         </div>
 
-        {/* Tools Panel */}
-        <div className="lg:col-span-1">
-          <CanvasToolbar
-            qrUrl={qrUrl}
-            setQrUrl={setQrUrl}
-            textContent={textContent}
-            setTextContent={setTextContent}
-            onAddQRCode={handleAddQRCode}
-            onAddText={handleAddText}
-            onAddShape={addShape}
-            onUploadImage={handleUploadImage}
-            onZoomCanvas={zoomCanvas}
-            onResetCanvas={resetCanvas}
-            onDeleteSelected={deleteSelected}
-            hasSelectedObject={!!selectedObject}
-          />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Canvas Area - Takes up more space */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 p-4">
+                <canvas
+                  ref={canvasRef}
+                  className="border border-gray-200 rounded shadow-sm mx-auto block bg-white"
+                />
+                <div className="text-center mt-4 text-sm text-gray-500">
+                  Zoom: {Math.round(zoom * 100)}%
+                </div>
+              </div>
+            </div>
+          </div>
 
-        {/* Properties Panel */}
-        <div className="lg:col-span-1">
-          <PropertiesPanel
-            selectedObject={selectedObject}
-            onUpdateProperty={updateSelectedObjectProperty}
-            onSave={handleSave}
-            onDownload={handleDownload}
-            onCancel={onCancel}
-          />
+          {/* Tools Panel */}
+          <div className="lg:col-span-1">
+            <CanvasToolbar
+              qrUrl={qrUrl}
+              setQrUrl={setQrUrl}
+              textContent={textContent}
+              setTextContent={setTextContent}
+              onAddQRCode={handleAddQRCode}
+              onAddText={handleAddText}
+              onAddShape={addShape}
+              onUploadImage={handleUploadImage}
+              onZoomCanvas={zoomCanvas}
+              onResetCanvas={resetCanvas}
+              onDeleteSelected={handleDelete}
+              hasSelectedObject={!!selectedObject}
+            />
+          </div>
+
+          {/* Properties Panel */}
+          <div className="lg:col-span-1">
+            <PropertiesPanel
+              selectedObject={selectedObject}
+              onUpdateProperty={updateSelectedObjectProperty}
+              onSave={handleSave}
+              onDownload={handleDownload}
+              onCancel={onCancel}
+            />
+          </div>
         </div>
       </div>
     </div>

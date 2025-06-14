@@ -31,7 +31,7 @@ export const useCanvasEditor = (template: Template) => {
       backgroundColor: '#ffffff',
     });
 
-    // Initialize the freeDrawingBrush properly for Fabric.js v6
+    // Initialize drawing brush
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = '#000000';
       canvas.freeDrawingBrush.width = 2;
@@ -50,11 +50,12 @@ export const useCanvasEditor = (template: Template) => {
           img.scaleToWidth(800);
           canvas.add(img);
           canvas.sendObjectToBack(img);
+          canvas.renderAll();
         }
       });
     }
 
-    // Load existing customization if available
+    // Load existing customization
     if (template.editable_json) {
       try {
         canvas.loadFromJSON(template.editable_json, () => {
@@ -65,21 +66,29 @@ export const useCanvasEditor = (template: Template) => {
       }
     }
 
-    // Set up event listeners
+    // Event listeners for object selection
     canvas.on('selection:created', (e) => {
+      console.log('Selection created:', e.selected);
       if (e.selected && e.selected.length > 0) {
         setSelectedObject(e.selected[0]);
       }
     });
 
     canvas.on('selection:updated', (e) => {
+      console.log('Selection updated:', e.selected);
       if (e.selected && e.selected.length > 0) {
         setSelectedObject(e.selected[0]);
       }
     });
 
     canvas.on('selection:cleared', () => {
+      console.log('Selection cleared');
       setSelectedObject(null);
+    });
+
+    // Listen for object modifications
+    canvas.on('object:modified', () => {
+      canvas.renderAll();
     });
 
     setFabricCanvas(canvas);
@@ -90,18 +99,24 @@ export const useCanvasEditor = (template: Template) => {
   }, [template.preview, template.editable_json]);
 
   const addQRCode = async (qrUrl: string) => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      console.error('Canvas not available');
+      return;
+    }
 
     try {
-      const qrResult = await generateQRCode(qrUrl, { size: 100 });
+      console.log('Generating QR code for:', qrUrl);
+      const qrResult = await generateQRCode(qrUrl, { size: 150 });
       
       FabricImage.fromURL(qrResult.dataURL, {}, (qrImg) => {
         if (qrImg) {
           qrImg.set({
             left: 100,
             top: 100,
-            width: 100,
-            height: 100,
+            width: 150,
+            height: 150,
+            selectable: true,
+            evented: true,
           });
           
           // Store QR metadata
@@ -112,26 +127,30 @@ export const useCanvasEditor = (template: Template) => {
 
           fabricCanvas.add(qrImg);
           fabricCanvas.setActiveObject(qrImg);
+          fabricCanvas.renderAll();
           
           const newElement: CanvasElement = {
             id: `qr-${Date.now()}`,
             type: 'qr',
             x: 100,
             y: 100,
-            width: 100,
-            height: 100,
+            width: 150,
+            height: 150,
             properties: { url: qrUrl }
           };
           
           setCanvasElements(prev => [...prev, newElement]);
           toast({
-            title: 'QR code added to canvas',
+            title: 'QR code added successfully',
+            description: `QR code for ${qrUrl} has been added to the canvas`,
           });
         }
       });
     } catch (error) {
+      console.error('QR generation error:', error);
       toast({
         title: 'Failed to generate QR code',
+        description: 'Please check the URL and try again',
         variant: 'destructive'
       });
     }
@@ -147,10 +166,13 @@ export const useCanvasEditor = (template: Template) => {
       fontSize: fontSize,
       fill: textColor,
       fontFamily: 'Arial',
+      selectable: true,
+      evented: true,
     });
 
     fabricCanvas.add(textObj);
     fabricCanvas.setActiveObject(textObj);
+    fabricCanvas.renderAll();
 
     const newElement: CanvasElement = {
       id: `text-${Date.now()}`,
@@ -187,6 +209,8 @@ export const useCanvasEditor = (template: Template) => {
         fill: '#3B82F6',
         stroke: '#1E40AF',
         strokeWidth: 2,
+        selectable: true,
+        evented: true,
       });
     } else {
       shape = new Circle({
@@ -196,11 +220,14 @@ export const useCanvasEditor = (template: Template) => {
         fill: '#EF4444',
         stroke: '#DC2626',
         strokeWidth: 2,
+        selectable: true,
+        evented: true,
       });
     }
 
     fabricCanvas.add(shape);
     fabricCanvas.setActiveObject(shape);
+    fabricCanvas.renderAll();
 
     const newElement: CanvasElement = {
       id: `shape-${Date.now()}`,
@@ -232,18 +259,21 @@ export const useCanvasEditor = (template: Template) => {
             top: 150,
             scaleX: 0.5,
             scaleY: 0.5,
+            selectable: true,
+            evented: true,
           });
 
           fabricCanvas.add(img);
           fabricCanvas.setActiveObject(img);
+          fabricCanvas.renderAll();
 
           const newElement: CanvasElement = {
             id: `image-${Date.now()}`,
             type: 'image',
             x: 150,
             y: 150,
-            width: img.width! * 0.5,
-            height: img.height! * 0.5,
+            width: (img.width || 0) * 0.5,
+            height: (img.height || 0) * 0.5,
             properties: { src: imageUrl }
           };
 
@@ -258,20 +288,39 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const deleteSelected = () => {
-    if (!fabricCanvas || !selectedObject) return;
+    if (!fabricCanvas) {
+      console.error('Canvas not available');
+      return;
+    }
 
-    fabricCanvas.remove(selectedObject);
+    const activeObject = fabricCanvas.getActiveObject();
+    if (!activeObject) {
+      toast({
+        title: 'No object selected',
+        description: 'Please select an object to delete',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    console.log('Deleting object:', activeObject);
+    fabricCanvas.remove(activeObject);
+    fabricCanvas.discardActiveObject();
+    fabricCanvas.renderAll();
     setSelectedObject(null);
+    
     toast({
       title: 'Object deleted',
+      description: 'Selected object has been removed from canvas',
     });
   };
 
   const updateSelectedObjectProperty = (property: string, value: any) => {
-    if (!selectedObject) return;
+    if (!selectedObject || !fabricCanvas) return;
 
+    console.log(`Updating property ${property} to ${value}`);
     selectedObject.set(property, value);
-    fabricCanvas?.renderAll();
+    fabricCanvas.renderAll();
   };
 
   const zoomCanvas = (direction: 'in' | 'out') => {
@@ -281,6 +330,7 @@ export const useCanvasEditor = (template: Template) => {
     const clampedZoom = Math.max(0.1, Math.min(3, newZoom));
     
     fabricCanvas.setZoom(clampedZoom);
+    fabricCanvas.renderAll();
     setZoom(clampedZoom);
   };
 
@@ -288,6 +338,7 @@ export const useCanvasEditor = (template: Template) => {
     if (!fabricCanvas) return;
 
     fabricCanvas.clear();
+    fabricCanvas.backgroundColor = '#ffffff';
     setCanvasElements([]);
     setSelectedObject(null);
     
@@ -304,12 +355,16 @@ export const useCanvasEditor = (template: Template) => {
           img.scaleToWidth(800);
           fabricCanvas.add(img);
           fabricCanvas.sendObjectToBack(img);
+          fabricCanvas.renderAll();
         }
       });
+    } else {
+      fabricCanvas.renderAll();
     }
     
     toast({
       title: 'Canvas reset',
+      description: 'Canvas has been cleared and reset',
     });
   };
 
