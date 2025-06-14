@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import TemplateEditor from '@/components/template/TemplateEditor';
-import { TemplateManagerHeader } from '@/components/template/TemplateManagerHeader';
-import { TemplateManagerStats } from '@/components/template/TemplateManagerStats';
-import { TemplateManagerTabsContent } from '@/components/template/TemplateManagerTabsContent';
+import TemplatesTabGallery from "@/components/template/TemplatesTabGallery";
+import TemplatesCanvasEditor from "@/components/template/TemplatesCanvasEditor";
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
 
@@ -176,7 +174,6 @@ const TemplateManager = () => {
                   template={selectedTemplate}
                   onBack={() => setSelectedTemplate(null)}
                   onSave={(layoutJson, exportUrl) => {
-                    // Save locally plus optionally upload to Supabase
                     setTemplates((prev) =>
                       prev.map((tpl) =>
                         tpl.id === selectedTemplate.id
