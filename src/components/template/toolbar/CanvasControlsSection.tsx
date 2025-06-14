@@ -32,71 +32,41 @@ export const CanvasControlsSection = ({
   canRedo = false
 }: CanvasControlsSectionProps) => {
   return (
-    <div className="space-y-3">
-      <div className="pb-1">
-        <h4 className="text-sm font-medium text-gray-700">Canvas Controls</h4>
+    <div className="space-y-4">
+      <div>
+        <h4 className="text-sm font-medium text-gray-900 mb-3">Canvas</h4>
       </div>
       
-      {/* Undo/Redo Row */}
-      {(onUndo || onRedo) && (
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onUndo}
-            disabled={!canUndo}
-            className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9 disabled:opacity-50"
-          >
-            <Undo className="h-3 w-3" />
-            <span>Undo</span>
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRedo}
-            disabled={!canRedo}
-            className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9 disabled:opacity-50"
-          >
-            <Redo className="h-3 w-3" />
-            <span>Redo</span>
-          </Button>
-        </div>
-      )}
-      
-      {/* Zoom Controls */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Canvas control buttons in 2x2 grid */}
+      <div className="grid grid-cols-2 gap-3">
         <Button
           variant="outline"
           size="sm"
           onClick={() => onZoomCanvas('in')}
-          className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9"
+          className="flex flex-col items-center justify-center h-16 p-2 hover:bg-gray-50 border-gray-300 space-y-1"
         >
-          <ZoomIn className="h-3 w-3" />
-          <span>Zoom In</span>
+          <ZoomIn className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-700">Zoom In</span>
         </Button>
         
         <Button
           variant="outline"
           size="sm"
           onClick={() => onZoomCanvas('out')}
-          className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9"
+          className="flex flex-col items-center justify-center h-16 p-2 hover:bg-gray-50 border-gray-300 space-y-1"
         >
-          <ZoomOut className="h-3 w-3" />
-          <span>Zoom Out</span>
+          <ZoomOut className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-700">Zoom Out</span>
         </Button>
-      </div>
-      
-      {/* Action Controls */}
-      <div className="grid grid-cols-2 gap-2">
+        
         <Button
           variant="outline"
           size="sm"
           onClick={onResetCanvas}
-          className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9"
+          className="flex flex-col items-center justify-center h-16 p-2 hover:bg-gray-50 border-gray-300 space-y-1"
         >
-          <RotateCcw className="h-3 w-3" />
-          <span>Reset</span>
+          <RotateCcw className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-700">Reset</span>
         </Button>
         
         <Button
@@ -104,10 +74,10 @@ export const CanvasControlsSection = ({
           size="sm"
           onClick={onDeleteSelected}
           disabled={!hasSelectedObject}
-          className="flex items-center justify-center gap-2 text-xs border-gray-200 h-9 disabled:opacity-50"
+          className="flex flex-col items-center justify-center h-16 p-2 hover:bg-gray-50 border-gray-300 space-y-1 disabled:opacity-50"
         >
-          <Trash2 className="h-3 w-3" />
-          <span>Delete</span>
+          <Trash2 className="h-5 w-5 text-gray-600" />
+          <span className="text-xs text-gray-700">Delete</span>
         </Button>
       </div>
     </div>

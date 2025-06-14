@@ -18,28 +18,28 @@ export const QuickSettingsSection = ({
 }: QuickSettingsSectionProps) => {
   return (
     <div className="space-y-4">
-      <div className="pb-1">
-        <h4 className="text-sm font-medium text-gray-700">Quick Settings</h4>
+      <div>
+        <h4 className="text-sm font-medium text-gray-900 mb-3">Quick Settings</h4>
       </div>
       
       <div className="space-y-4">
         <div>
-          <Label className="text-xs text-gray-600 mb-2 block">QR URL</Label>
+          <Label className="text-xs font-medium text-gray-700 mb-2 block">QR URL</Label>
           <Input
             value={qrUrl}
             onChange={(e) => setQrUrl(e.target.value)}
             placeholder="https://example.com"
-            className="text-sm h-10 border-gray-200"
+            className="text-sm h-9 border-gray-300 bg-white"
           />
         </div>
         
         <div>
-          <Label className="text-xs text-gray-600 mb-2 block">Text Content</Label>
+          <Label className="text-xs font-medium text-gray-700 mb-2 block">Text Content</Label>
           <Input
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="Sample Text"
-            className="text-sm h-10 border-gray-200"
+            className="text-sm h-9 border-gray-300 bg-white"
           />
         </div>
       </div>

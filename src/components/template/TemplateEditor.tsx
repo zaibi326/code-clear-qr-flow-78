@@ -7,8 +7,6 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Save, Download, Play, FileImage, X } from 'lucide-react';
 
 interface TemplateEditorProps {
   template: Template;
@@ -104,192 +102,82 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     });
   };
 
-  const handleExportPDF = () => {
-    if (!fabricCanvas) return;
-    
-    // Create a higher resolution version for PDF
-    const dataURL = fabricCanvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 3
-    });
-    
-    const link = document.createElement('a');
-    link.download = `${template.name}.pdf.png`;
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "PDF Export ready",
-      description: "High-resolution image exported for PDF conversion",
-    });
-  };
-
-  const handleLaunchCampaign = () => {
-    if (!fabricCanvas) return;
-    
-    const canvasData = fabricCanvas.toJSON();
-    const exportUrl = fabricCanvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 2
-    });
-    
-    // Save campaign data (this would typically go to your backend)
-    const campaignData = {
-      templateId: template.id,
-      templateName: template.name,
-      canvasData,
-      exportUrl,
-      elements: canvasElements,
-      createdAt: new Date()
-    };
-    
-    console.log('Launching campaign:', campaignData);
-    
-    toast({
-      title: "Campaign launched!",
-      description: "Your template has been prepared for campaign use",
-    });
-  };
-
-  const handleSaveAsMyTemplate = () => {
-    if (!fabricCanvas) return;
-    
-    const canvasData = fabricCanvas.toJSON();
-    const previewUrl = fabricCanvas.toDataURL({
-      format: 'png',
-      quality: 0.8,
-      multiplier: 1
-    });
-    
-    const newTemplate: Template = {
-      ...template,
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: `${template.name} (Custom)`,
-      preview: previewUrl,
-      customization: {
-        canvasWidth: 800,
-        canvasHeight: 600,
-        backgroundColor: '#ffffff',
-        elements: canvasElements,
-        version: '1.0'
-      },
-      editable_json: canvasData,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    onSave(newTemplate);
-    toast({
-      title: "Saved as My Template",
-      description: "Your custom template has been saved to your library",
-    });
-  };
-
   const handleDelete = () => {
     console.log('Delete button clicked, selected object:', selectedObject);
     deleteSelected();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-full mx-auto">
-        {/* Header Section */}
-        <div className="bg-white shadow-sm border-b px-6 py-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Template Editor</h1>
-                <p className="text-sm text-gray-600 mt-1">Drag, drop, and customize your template elements</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSaveAsMyTemplate}
-                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
-                >
-                  <FileImage className="w-4 h-4 mr-2" />
-                  Save as My Template
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportPDF}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleLaunchCampaign}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Launch Campaign
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCancel}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Close
-                </Button>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Template Customizer</h1>
+            <p className="text-sm text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              className="text-gray-600"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Left Sidebar - Tools */}
+        <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+          <CanvasToolbar
+            qrUrl={qrUrl}
+            setQrUrl={setQrUrl}
+            textContent={textContent}
+            setTextContent={setTextContent}
+            onAddQRCode={handleAddQRCode}
+            onAddText={handleAddText}
+            onAddShape={addShape}
+            onUploadImage={handleUploadImage}
+            onZoomCanvas={zoomCanvas}
+            onResetCanvas={resetCanvas}
+            onDeleteSelected={handleDelete}
+            hasSelectedObject={!!selectedObject}
+            onUndo={undoCanvas}
+            onRedo={redoCanvas}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        </div>
+
+        {/* Center - Canvas Area */}
+        <div className="flex-1 bg-gray-100 relative">
+          <CanvasArea 
+            canvasRef={canvasRef} 
+            zoom={zoom}
+          />
+          
+          {/* Zoom indicator */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+            <div className="bg-white px-3 py-1 rounded-full shadow-sm border text-sm text-gray-600">
+              Zoom: {Math.round(zoom * 100)}%
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex h-[calc(100vh-120px)]">
-          {/* Left Sidebar - Tools */}
-          <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
-            <CanvasToolbar
-              qrUrl={qrUrl}
-              setQrUrl={setQrUrl}
-              textContent={textContent}
-              setTextContent={setTextContent}
-              onAddQRCode={handleAddQRCode}
-              onAddText={handleAddText}
-              onAddShape={addShape}
-              onUploadImage={handleUploadImage}
-              onZoomCanvas={zoomCanvas}
-              onResetCanvas={resetCanvas}
-              onDeleteSelected={handleDelete}
-              hasSelectedObject={!!selectedObject}
-              onUndo={undoCanvas}
-              onRedo={redoCanvas}
-              canUndo={canUndo}
-              canRedo={canRedo}
-            />
-          </div>
-
-          {/* Center - Canvas Area */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 p-6">
-              <CanvasArea 
-                canvasRef={canvasRef} 
-                zoom={zoom}
-              />
-            </div>
-          </div>
-
-          {/* Right Sidebar - Properties */}
-          <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
-            <PropertiesPanel
-              selectedObject={selectedObject}
-              onUpdateProperty={updateSelectedObjectProperty}
-              onSave={handleSave}
-              onDownload={handleDownload}
-              onCancel={onCancel}
-              template={template}
-            />
-          </div>
+        {/* Right Sidebar - Properties */}
+        <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
+          <PropertiesPanel
+            selectedObject={selectedObject}
+            onUpdateProperty={updateSelectedObjectProperty}
+            onSave={handleSave}
+            onDownload={handleDownload}
+            onCancel={onCancel}
+            template={template}
+          />
         </div>
       </div>
     </div>
