@@ -6,6 +6,9 @@ import { CanvasArea } from './CanvasArea';
 import { CanvasToolbar } from './CanvasToolbar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Save, Download, Play, FileImage, X } from 'lucide-react';
 
 interface TemplateEditorProps {
   template: Template;
@@ -27,7 +30,11 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     deleteSelected,
     updateSelectedObjectProperty,
     zoomCanvas,
-    resetCanvas
+    resetCanvas,
+    undoCanvas,
+    redoCanvas,
+    canUndo,
+    canRedo
   } = useCanvasEditor(template);
 
   const [qrUrl, setQrUrl] = React.useState('https://example.com');
@@ -81,7 +88,7 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     const dataURL = fabricCanvas.toDataURL({
       format: 'png',
       quality: 1,
-      multiplier: 1
+      multiplier: 2
     });
     
     const link = document.createElement('a');
@@ -94,6 +101,91 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     toast({
       title: "Template downloaded",
       description: "Template has been downloaded as PNG",
+    });
+  };
+
+  const handleExportPDF = () => {
+    if (!fabricCanvas) return;
+    
+    // Create a higher resolution version for PDF
+    const dataURL = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 3
+    });
+    
+    const link = document.createElement('a');
+    link.download = `${template.name}.pdf.png`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "PDF Export ready",
+      description: "High-resolution image exported for PDF conversion",
+    });
+  };
+
+  const handleLaunchCampaign = () => {
+    if (!fabricCanvas) return;
+    
+    const canvasData = fabricCanvas.toJSON();
+    const exportUrl = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 2
+    });
+    
+    // Save campaign data (this would typically go to your backend)
+    const campaignData = {
+      templateId: template.id,
+      templateName: template.name,
+      canvasData,
+      exportUrl,
+      elements: canvasElements,
+      createdAt: new Date()
+    };
+    
+    console.log('Launching campaign:', campaignData);
+    
+    toast({
+      title: "Campaign launched!",
+      description: "Your template has been prepared for campaign use",
+    });
+  };
+
+  const handleSaveAsMyTemplate = () => {
+    if (!fabricCanvas) return;
+    
+    const canvasData = fabricCanvas.toJSON();
+    const previewUrl = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 0.8,
+      multiplier: 1
+    });
+    
+    const newTemplate: Template = {
+      ...template,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: `${template.name} (Custom)`,
+      preview: previewUrl,
+      customization: {
+        canvasWidth: 800,
+        canvasHeight: 600,
+        backgroundColor: '#ffffff',
+        elements: canvasElements,
+        version: '1.0'
+      },
+      editable_json: canvasData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    onSave(newTemplate);
+    toast({
+      title: "Saved as My Template",
+      description: "Your custom template has been saved to your library",
     });
   };
 
@@ -110,22 +202,44 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Template Customizer</h1>
-                <p className="text-sm text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
+                <h1 className="text-2xl font-bold text-gray-900">Template Editor</h1>
+                <p className="text-sm text-gray-600 mt-1">Drag, drop, and customize your template elements</p>
               </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleSave}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveAsMyTemplate}
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
                 >
-                  Save Template
-                </button>
-                <button
+                  <FileImage className="w-4 h-4 mr-2" />
+                  Save as My Template
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportPDF}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleLaunchCampaign}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Launch Campaign
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={onCancel}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
                 >
-                  Cancel
-                </button>
+                  <X className="w-4 h-4 mr-2" />
+                  Close
+                </Button>
               </div>
             </div>
           </div>
@@ -135,22 +249,24 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
         <div className="flex h-[calc(100vh-120px)]">
           {/* Left Sidebar - Tools */}
           <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
-            <div className="p-6">
-              <CanvasToolbar
-                qrUrl={qrUrl}
-                setQrUrl={setQrUrl}
-                textContent={textContent}
-                setTextContent={setTextContent}
-                onAddQRCode={handleAddQRCode}
-                onAddText={handleAddText}
-                onAddShape={addShape}
-                onUploadImage={handleUploadImage}
-                onZoomCanvas={zoomCanvas}
-                onResetCanvas={resetCanvas}
-                onDeleteSelected={handleDelete}
-                hasSelectedObject={!!selectedObject}
-              />
-            </div>
+            <CanvasToolbar
+              qrUrl={qrUrl}
+              setQrUrl={setQrUrl}
+              textContent={textContent}
+              setTextContent={setTextContent}
+              onAddQRCode={handleAddQRCode}
+              onAddText={handleAddText}
+              onAddShape={addShape}
+              onUploadImage={handleUploadImage}
+              onZoomCanvas={zoomCanvas}
+              onResetCanvas={resetCanvas}
+              onDeleteSelected={handleDelete}
+              hasSelectedObject={!!selectedObject}
+              onUndo={undoCanvas}
+              onRedo={redoCanvas}
+              canUndo={canUndo}
+              canRedo={canRedo}
+            />
           </div>
 
           {/* Center - Canvas Area */}
@@ -165,15 +281,14 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
 
           {/* Right Sidebar - Properties */}
           <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
-            <div className="p-6">
-              <PropertiesPanel
-                selectedObject={selectedObject}
-                onUpdateProperty={updateSelectedObjectProperty}
-                onSave={handleSave}
-                onDownload={handleDownload}
-                onCancel={onCancel}
-              />
-            </div>
+            <PropertiesPanel
+              selectedObject={selectedObject}
+              onUpdateProperty={updateSelectedObjectProperty}
+              onSave={handleSave}
+              onDownload={handleDownload}
+              onCancel={onCancel}
+              template={template}
+            />
           </div>
         </div>
       </div>

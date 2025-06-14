@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
 import { toast } from '@/hooks/use-toast';
@@ -14,12 +15,46 @@ interface CanvasElement {
   properties: Record<string, any>;
 }
 
+interface CanvasState {
+  json: any;
+  timestamp: number;
+}
+
 export const useCanvasEditor = (template: Template) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   const [zoom, setZoom] = useState(1);
+  
+  // Undo/Redo state
+  const [history, setHistory] = useState<CanvasState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  // Save canvas state to history
+  const saveToHistory = (canvas: Canvas) => {
+    const canvasJson = canvas.toJSON();
+    const newState: CanvasState = {
+      json: canvasJson,
+      timestamp: Date.now()
+    };
+
+    // Remove any states after current index (when user makes new change after undo)
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+
+    // Limit history to 50 states
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(historyIndex + 1);
+    }
+
+    setHistory(newHistory);
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -45,12 +80,16 @@ export const useCanvasEditor = (template: Template) => {
         canvas.loadFromJSON(template.editable_json, () => {
           canvas.renderAll();
           console.log('Canvas data loaded successfully');
+          // Save initial state to history
+          saveToHistory(canvas);
         });
       } catch (error) {
         console.warn('Failed to load existing customization:', error);
+        saveToHistory(canvas);
       }
     } else {
       console.log('No existing canvas data, starting with blank canvas');
+      saveToHistory(canvas);
     }
 
     // Event listeners for object selection
@@ -73,8 +112,17 @@ export const useCanvasEditor = (template: Template) => {
       setSelectedObject(null);
     });
 
-    // Listen for object modifications
+    // Listen for object modifications to save to history
     canvas.on('object:modified', () => {
+      canvas.renderAll();
+      saveToHistory(canvas);
+    });
+
+    canvas.on('object:added', () => {
+      canvas.renderAll();
+    });
+
+    canvas.on('object:removed', () => {
       canvas.renderAll();
     });
 
@@ -86,6 +134,62 @@ export const useCanvasEditor = (template: Template) => {
       canvas.dispose();
     };
   }, [template.editable_json, template.id]);
+
+  const undoCanvas = () => {
+    if (!fabricCanvas || !canUndo) return;
+
+    const newIndex = historyIndex - 1;
+    const stateToRestore = history[newIndex];
+
+    if (stateToRestore) {
+      // Temporarily remove event listeners to prevent adding to history
+      fabricCanvas.off('object:modified');
+      
+      fabricCanvas.loadFromJSON(stateToRestore.json, () => {
+        fabricCanvas.renderAll();
+        setHistoryIndex(newIndex);
+        
+        // Re-add event listeners
+        fabricCanvas.on('object:modified', () => {
+          fabricCanvas.renderAll();
+          saveToHistory(fabricCanvas);
+        });
+        
+        toast({
+          title: 'Undo successful',
+          description: 'Canvas state restored',
+        });
+      });
+    }
+  };
+
+  const redoCanvas = () => {
+    if (!fabricCanvas || !canRedo) return;
+
+    const newIndex = historyIndex + 1;
+    const stateToRestore = history[newIndex];
+
+    if (stateToRestore) {
+      // Temporarily remove event listeners to prevent adding to history
+      fabricCanvas.off('object:modified');
+      
+      fabricCanvas.loadFromJSON(stateToRestore.json, () => {
+        fabricCanvas.renderAll();
+        setHistoryIndex(newIndex);
+        
+        // Re-add event listeners
+        fabricCanvas.on('object:modified', () => {
+          fabricCanvas.renderAll();
+          saveToHistory(fabricCanvas);
+        });
+        
+        toast({
+          title: 'Redo successful',
+          description: 'Canvas state restored',
+        });
+      });
+    }
+  };
 
   const addQRCode = async (qrUrl: string) => {
     if (!fabricCanvas) {
@@ -117,6 +221,7 @@ export const useCanvasEditor = (template: Template) => {
           fabricCanvas.add(qrImg);
           fabricCanvas.setActiveObject(qrImg);
           fabricCanvas.renderAll();
+          saveToHistory(fabricCanvas);
           
           const newElement: CanvasElement = {
             id: `qr-${Date.now()}`,
@@ -162,6 +267,7 @@ export const useCanvasEditor = (template: Template) => {
     fabricCanvas.add(textObj);
     fabricCanvas.setActiveObject(textObj);
     fabricCanvas.renderAll();
+    saveToHistory(fabricCanvas);
 
     const newElement: CanvasElement = {
       id: `text-${Date.now()}`,
@@ -217,6 +323,7 @@ export const useCanvasEditor = (template: Template) => {
     fabricCanvas.add(shape);
     fabricCanvas.setActiveObject(shape);
     fabricCanvas.renderAll();
+    saveToHistory(fabricCanvas);
 
     const newElement: CanvasElement = {
       id: `shape-${Date.now()}`,
@@ -255,6 +362,7 @@ export const useCanvasEditor = (template: Template) => {
           fabricCanvas.add(img);
           fabricCanvas.setActiveObject(img);
           fabricCanvas.renderAll();
+          saveToHistory(fabricCanvas);
 
           const newElement: CanvasElement = {
             id: `image-${Date.now()}`,
@@ -296,6 +404,7 @@ export const useCanvasEditor = (template: Template) => {
     fabricCanvas.remove(activeObject);
     fabricCanvas.discardActiveObject();
     fabricCanvas.renderAll();
+    saveToHistory(fabricCanvas);
     setSelectedObject(null);
     
     toast({
@@ -310,6 +419,8 @@ export const useCanvasEditor = (template: Template) => {
     console.log(`Updating property ${property} to ${value}`);
     selectedObject.set(property, value);
     fabricCanvas.renderAll();
+    // Note: We don't save to history here immediately to avoid too many history states
+    // History is saved on object:modified event
   };
 
   const zoomCanvas = (direction: 'in' | 'out') => {
@@ -331,6 +442,7 @@ export const useCanvasEditor = (template: Template) => {
     setCanvasElements([]);
     setSelectedObject(null);
     fabricCanvas.renderAll();
+    saveToHistory(fabricCanvas);
     
     toast({
       title: 'Canvas reset',
@@ -351,6 +463,10 @@ export const useCanvasEditor = (template: Template) => {
     deleteSelected,
     updateSelectedObjectProperty,
     zoomCanvas,
-    resetCanvas
+    resetCanvas,
+    undoCanvas,
+    redoCanvas,
+    canUndo,
+    canRedo
   };
 };

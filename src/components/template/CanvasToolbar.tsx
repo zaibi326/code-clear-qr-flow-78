@@ -19,6 +19,10 @@ interface CanvasToolbarProps {
   onResetCanvas: () => void;
   onDeleteSelected: () => void;
   hasSelectedObject: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const CanvasToolbar = ({
@@ -33,7 +37,11 @@ export const CanvasToolbar = ({
   onZoomCanvas,
   onResetCanvas,
   onDeleteSelected,
-  hasSelectedObject
+  hasSelectedObject,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false
 }: CanvasToolbarProps) => {
   return (
     <div className="h-full overflow-y-auto bg-white">
@@ -55,6 +63,10 @@ export const CanvasToolbar = ({
             onResetCanvas={onResetCanvas}
             onDeleteSelected={onDeleteSelected}
             hasSelectedObject={hasSelectedObject}
+            onUndo={onUndo}
+            onRedo={onRedo}
+            canUndo={canUndo}
+            canRedo={canRedo}
           />
 
           <Separator className="my-6" />
