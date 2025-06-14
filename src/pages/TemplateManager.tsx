@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { TemplateCustomizer } from '@/components/template/TemplateCustomizer';
+import TemplateEditor from '@/components/template/TemplateEditor';
 import { TemplateManagerHeader } from '@/components/template/TemplateManagerHeader';
 import { TemplateManagerStats } from '@/components/template/TemplateManagerStats';
 import { TemplateManagerTabsContent } from '@/components/template/TemplateManagerTabsContent';
@@ -162,10 +161,10 @@ const TemplateManager = () => {
     );
   }
 
-  // If editing a template, show the customizer
+  // If editing a template, show the TemplateEditor with all tools
   if (editingTemplate) {
     return (
-      <TemplateCustomizer
+      <TemplateEditor
         template={editingTemplate}
         onSave={handleTemplateCustomizationSave}
         onCancel={handleTemplateCustomizationCancel}
