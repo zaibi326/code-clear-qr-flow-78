@@ -1,8 +1,8 @@
+
 import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, X, QrCode, Type, Square, Circle, ImagePlus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
 import { Template } from "@/types/template";
-// Fabric.js v6 import - use named imports
 import { Canvas, Image as FabricImage, IText, Rect, Circle as FabricCircle } from "fabric";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,7 +13,6 @@ interface TemplatesCanvasEditorProps {
 }
 
 const CANVAS_ID = "custom-template-canvas-main";
-
 const canvasWidth = 900;
 const canvasHeight = 630;
 
@@ -25,10 +24,28 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
 
-  // Initialize and load background image/template
+  // Helper to load image as Fabric object (Fabric.js v6 pattern)
+  const addBackgroundImage = async (imgSrc: string, canvas: Canvas) => {
+    try {
+      const img = await FabricImage.fromURLAsync(imgSrc);
+      img.set({
+        left: 0,
+        top: 0,
+        selectable: false,
+        evented: false,
+        scaleX: canvasWidth / (img.width || canvasWidth),
+        scaleY: canvasHeight / (img.height || canvasHeight),
+      });
+      canvas.add(img);
+      canvas.moveTo(img, 0); // move background to back
+    } catch (e) {
+      // noop
+    }
+  };
+
   useEffect(() => {
     if (!canvasRef.current) return;
-    let fabricCanvas = new Canvas(canvasRef.current, {
+    const fabricCanvas = new Canvas(canvasRef.current, {
       width: canvasWidth,
       height: canvasHeight,
       selection: true,
@@ -39,24 +56,15 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     // Load the template bg image (URL, thumbnail, or preview)
     let imgSrc = template.template_url || template.preview || template.thumbnail_url;
     if (imgSrc) {
-      FabricImage.fromURL(imgSrc, (img) => {
-        img.set({
-          left: 0,
-          top: 0,
-          selectable: false,
-          evented: false,
-          scaleX: canvasWidth / (img.width || canvasWidth),
-          scaleY: canvasHeight / (img.height || canvasHeight),
-        });
-        fabricCanvas.add(img);
-        fabricCanvas.sendToBack(img);
-      });
+      addBackgroundImage(imgSrc, fabricCanvas);
     }
 
     // Load existing customization JSON
     if (template.editable_json) {
       try {
-        fabricCanvas.loadFromJSON(template.editable_json, fabricCanvas.renderAll.bind(fabricCanvas));
+        fabricCanvas.loadFromJSON(template.editable_json, () => {
+          fabricCanvas.renderAll();
+        });
       } catch (e) {
         // Fallback: ignore broken json
         console.warn("Invalid saved JSON layout");
@@ -68,12 +76,16 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
       fabricCanvas.dispose();
       fabricRef.current = null;
     };
+    // We want to re-run only if the template changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template]);
 
-  // Canvas tools (use .current for fabricRef)
-  const handleAddQR = () => {
-    // Just a placeholder for now:
-    FabricImage.fromURL("/sample-qr.png", (img) => {
+  // Canvas tools (add objects and set as active after)
+  const handleAddQR = async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    try {
+      const img = await FabricImage.fromURLAsync("/sample-qr.png");
       img.set({
         left: 60,
         top: 60,
@@ -83,12 +95,17 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         borderColor: "#3182ce",
         lockUniScaling: false,
       });
-      fabricRef.current?.add(img).setActiveObject(img);
-    });
-    toast({ title: "QR code placeholder added!" });
+      canvas.add(img);
+      canvas.setActiveObject(img);
+      toast({ title: "QR code placeholder added!" });
+    } catch (e) {
+      toast({ title: "Failed to add QR code" });
+    }
   };
 
   const handleAddText = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
     const text = new IText("Edit me!", {
       left: 160,
       top: 110,
@@ -96,10 +113,13 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
       fill: "#22223b",
       fontWeight: "bold",
     });
-    fabricRef.current?.add(text).setActiveObject(text);
+    canvas.add(text);
+    canvas.setActiveObject(text);
   };
 
   const handleAddRect = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
     const rect = new Rect({
       left: 200,
       top: 200,
@@ -111,10 +131,13 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
       rx: 8,
       ry: 8,
     });
-    fabricRef.current?.add(rect).setActiveObject(rect);
+    canvas.add(rect);
+    canvas.setActiveObject(rect);
   };
 
   const handleAddCircle = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
     const circ = new FabricCircle({
       left: 360,
       top: 160,
@@ -123,49 +146,54 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
       stroke: "#ea580c",
       strokeWidth: 2,
     });
-    fabricRef.current?.add(circ).setActiveObject(circ);
+    canvas.add(circ);
+    canvas.setActiveObject(circ);
   };
 
-  const handleImageUpload = (evt: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
     const file = evt.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      FabricImage.fromURL(e.target?.result as string, (img) => {
+    reader.onload = async (e) => {
+      try {
+        const img = await FabricImage.fromURLAsync(e.target?.result as string);
         img.set({
           left: 130,
           top: 130,
           scaleX: 0.5,
           scaleY: 0.5,
         });
-        fabricRef.current?.add(img).setActiveObject(img);
-      });
+        canvas.add(img);
+        canvas.setActiveObject(img);
+      } catch (e) {
+        toast({ title: "Failed to add image" });
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleUndo = () => fabricRef.current?.undo && (fabricRef.current as any).undo();
-  const handleRedo = () => fabricRef.current?.redo && (fabricRef.current as any).redo();
-  const handleZoomIn = () => fabricRef.current?.setZoom((fabricRef.current?.getZoom() || 1) * 1.1);
-  const handleZoomOut = () => fabricRef.current?.setZoom((fabricRef.current?.getZoom() || 1) / 1.1);
+  // Undo/Redo not supported in base Fabric.js 6. Omit those for now.
+  // const handleUndo = () => {};
+  // const handleRedo = () => {};
+  const handleZoomIn = () => {
+    if (!fabricRef.current) return;
+    fabricRef.current.setZoom((fabricRef.current.getZoom() || 1) * 1.1);
+  };
+  const handleZoomOut = () => {
+    if (!fabricRef.current) return;
+    fabricRef.current.setZoom((fabricRef.current.getZoom() || 1) / 1.1);
+  };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
     if (window.confirm("Reset all canvas changes?")) {
-      fabricRef.current?.clear();
+      canvas.clear();
       let imgSrc = template.template_url || template.preview || template.thumbnail_url;
       if (imgSrc) {
-        FabricImage.fromURL(imgSrc, (img) => {
-          img.set({
-            left: 0,
-            top: 0,
-            selectable: false,
-            evented: false,
-            scaleX: canvasWidth / (img.width || canvasWidth),
-            scaleY: canvasHeight / (img.height || canvasHeight),
-          });
-          fabricRef.current?.add(img);
-          fabricRef.current?.sendToBack(img);
-        });
+        await addBackgroundImage(imgSrc, canvas);
       }
     }
   };
@@ -173,8 +201,9 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   const handleSave = () => {
     if (fabricRef.current) {
       const json = fabricRef.current.toJSON();
-      fabricRef.current.discardActiveObject().renderAll();
-      const exportUrl = fabricRef.current.toDataURL({ format: "png" });
+      fabricRef.current.discardActiveObject();
+      fabricRef.current.renderAll();
+      const exportUrl = fabricRef.current.toDataURL({ multiplier: 1, format: "png" });
       onSave(json, exportUrl);
     }
   };
