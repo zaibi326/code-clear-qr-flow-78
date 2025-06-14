@@ -47,58 +47,58 @@ export const CanvasToolbar = ({
   hasSelectedObject
 }: CanvasToolbarProps) => {
   return (
-    <div className="space-y-6">
-      {/* Tools Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Tools</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Add Elements Section */}
+    <div className="h-full overflow-y-auto">
+      <div className="p-4 space-y-6">
+        {/* Tools Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Tools</h3>
+          
+          {/* Add Elements Subsection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700">Add Elements</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <h4 className="text-sm font-medium text-gray-700">Add Elements</h4>
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onAddQRCode}
-                className="flex flex-col h-20 p-3 hover:bg-blue-50 hover:border-blue-300"
+                className="flex flex-col h-16 p-2 hover:bg-blue-50 hover:border-blue-300 border-gray-200"
               >
-                <QrCode className="h-5 w-5 mb-2 text-blue-600" />
-                <span className="text-xs font-medium">QR Code</span>
+                <QrCode className="h-4 w-4 mb-1 text-blue-600" />
+                <span className="text-xs font-medium text-gray-700">QR Code</span>
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onAddText}
-                className="flex flex-col h-20 p-3 hover:bg-green-50 hover:border-green-300"
+                className="flex flex-col h-16 p-2 hover:bg-green-50 hover:border-green-300 border-gray-200"
               >
-                <Type className="h-5 w-5 mb-2 text-green-600" />
-                <span className="text-xs font-medium">Text</span>
+                <Type className="h-4 w-4 mb-1 text-green-600" />
+                <span className="text-xs font-medium text-gray-700">Text</span>
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onAddShape('rectangle')}
-                className="flex flex-col h-20 p-3 hover:bg-purple-50 hover:border-purple-300"
+                className="flex flex-col h-16 p-2 hover:bg-purple-50 hover:border-purple-300 border-gray-200"
               >
-                <Square className="h-5 w-5 mb-2 text-purple-600" />
-                <span className="text-xs font-medium">Rectangle</span>
+                <Square className="h-4 w-4 mb-1 text-purple-600" />
+                <span className="text-xs font-medium text-gray-700">Rectangle</span>
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onAddShape('circle')}
-                className="flex flex-col h-20 p-3 hover:bg-orange-50 hover:border-orange-300"
+                className="flex flex-col h-16 p-2 hover:bg-orange-50 hover:border-orange-300 border-gray-200"
               >
-                <CircleIcon className="h-5 w-5 mb-2 text-orange-600" />
-                <span className="text-xs font-medium">Circle</span>
+                <CircleIcon className="h-4 w-4 mb-1 text-orange-600" />
+                <span className="text-xs font-medium text-gray-700">Circle</span>
               </Button>
             </div>
             
+            {/* Image Upload */}
             <div className="relative">
               <input
                 type="file"
@@ -110,51 +110,51 @@ export const CanvasToolbar = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full flex items-center gap-2 h-12 hover:bg-gray-50"
+                className="w-full flex items-center gap-2 h-10 hover:bg-gray-50 border-gray-200"
                 asChild
               >
                 <label htmlFor="image-upload" className="cursor-pointer">
                   <ImageIcon className="h-4 w-4" />
-                  Upload Image
+                  <span className="text-sm">Upload Image</span>
                 </label>
               </Button>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-4" />
 
-          {/* Canvas Controls Section */}
+          {/* Canvas Controls */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700">Canvas</Label>
+            <h4 className="text-sm font-medium text-gray-700">Canvas</h4>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onZoomCanvas('in')}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 text-xs border-gray-200"
               >
-                <ZoomIn className="h-4 w-4" />
-                <span className="text-xs">Zoom In</span>
+                <ZoomIn className="h-3 w-3" />
+                <span>Zoom In</span>
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onZoomCanvas('out')}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 text-xs border-gray-200"
               >
-                <ZoomOut className="h-4 w-4" />
-                <span className="text-xs">Zoom Out</span>
+                <ZoomOut className="h-3 w-3" />
+                <span>Zoom Out</span>
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onResetCanvas}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 text-xs border-gray-200"
               >
-                <RotateCcw className="h-4 w-4" />
-                <span className="text-xs">Reset</span>
+                <RotateCcw className="h-3 w-3" />
+                <span>Reset</span>
               </Button>
               
               <Button
@@ -162,42 +162,44 @@ export const CanvasToolbar = ({
                 size="sm"
                 onClick={onDeleteSelected}
                 disabled={!hasSelectedObject}
-                className="flex items-center gap-1 disabled:opacity-50"
+                className="flex items-center gap-1 text-xs border-gray-200 disabled:opacity-50"
               >
-                <Trash2 className="h-4 w-4" />
-                <span className="text-xs">Delete</span>
+                <Trash2 className="h-3 w-3" />
+                <span>Delete</span>
               </Button>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-4" />
 
-          {/* Quick Settings Section */}
+          {/* Quick Settings */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium text-gray-700">Quick Settings</Label>
+            <h4 className="text-sm font-medium text-gray-700">Quick Settings</h4>
             
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-600">QR URL</Label>
-              <Input
-                value={qrUrl}
-                onChange={(e) => setQrUrl(e.target.value)}
-                placeholder="https://example.com"
-                className="text-sm"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-xs text-gray-600">Text Content</Label>
-              <Input
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                placeholder="Sample Text"
-                className="text-sm"
-              />
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs text-gray-600 mb-1 block">QR URL</Label>
+                <Input
+                  value={qrUrl}
+                  onChange={(e) => setQrUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="text-sm h-9 border-gray-200"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600 mb-1 block">Text Content</Label>
+                <Input
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                  placeholder="Sample Text"
+                  className="text-sm h-9 border-gray-200"
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
