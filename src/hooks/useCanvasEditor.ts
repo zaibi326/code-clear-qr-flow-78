@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { generateQRCode } from '@/utils/qrCodeGenerator';
 import { Template } from '@/types/template';
 
@@ -39,26 +39,43 @@ export const useCanvasEditor = (template: Template) => {
 
     // Load template background if available
     if (template.preview) {
-      FabricImage.fromURL(template.preview).then((img) => {
-        img.set({
-          left: 0,
-          top: 0,
-          selectable: false,
-          evented: false,
-        });
-        img.scaleToWidth(800);
-        canvas.add(img);
-        canvas.sendObjectToBack(img);
+      FabricImage.fromURL(template.preview, {}, (img) => {
+        if (img) {
+          img.set({
+            left: 0,
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+          img.scaleToWidth(800);
+          canvas.add(img);
+          canvas.sendObjectToBack(img);
+        }
       });
+    }
+
+    // Load existing customization if available
+    if (template.editable_json) {
+      try {
+        canvas.loadFromJSON(template.editable_json, () => {
+          canvas.renderAll();
+        });
+      } catch (error) {
+        console.warn('Failed to load existing customization:', error);
+      }
     }
 
     // Set up event listeners
     canvas.on('selection:created', (e) => {
-      setSelectedObject(e.selected?.[0] || null);
+      if (e.selected && e.selected.length > 0) {
+        setSelectedObject(e.selected[0]);
+      }
     });
 
     canvas.on('selection:updated', (e) => {
-      setSelectedObject(e.selected?.[0] || null);
+      if (e.selected && e.selected.length > 0) {
+        setSelectedObject(e.selected[0]);
+      }
     });
 
     canvas.on('selection:cleared', () => {
@@ -70,7 +87,7 @@ export const useCanvasEditor = (template: Template) => {
     return () => {
       canvas.dispose();
     };
-  }, [template.preview]);
+  }, [template.preview, template.editable_json]);
 
   const addQRCode = async (qrUrl: string) => {
     if (!fabricCanvas) return;
@@ -78,38 +95,45 @@ export const useCanvasEditor = (template: Template) => {
     try {
       const qrResult = await generateQRCode(qrUrl, { size: 100 });
       
-      FabricImage.fromURL(qrResult.dataURL).then((qrImg) => {
-        qrImg.set({
-          left: 100,
-          top: 100,
-          width: 100,
-          height: 100,
-        });
-        
-        // Store QR metadata
-        qrImg.set('qrData', {
-          url: qrUrl,
-          type: 'qr'
-        });
+      FabricImage.fromURL(qrResult.dataURL, {}, (qrImg) => {
+        if (qrImg) {
+          qrImg.set({
+            left: 100,
+            top: 100,
+            width: 100,
+            height: 100,
+          });
+          
+          // Store QR metadata
+          qrImg.set('qrData', {
+            url: qrUrl,
+            type: 'qr'
+          });
 
-        fabricCanvas.add(qrImg);
-        fabricCanvas.setActiveObject(qrImg);
-        
-        const newElement: CanvasElement = {
-          id: `qr-${Date.now()}`,
-          type: 'qr',
-          x: 100,
-          y: 100,
-          width: 100,
-          height: 100,
-          properties: { url: qrUrl }
-        };
-        
-        setCanvasElements(prev => [...prev, newElement]);
-        toast.success('QR code added to canvas');
+          fabricCanvas.add(qrImg);
+          fabricCanvas.setActiveObject(qrImg);
+          
+          const newElement: CanvasElement = {
+            id: `qr-${Date.now()}`,
+            type: 'qr',
+            x: 100,
+            y: 100,
+            width: 100,
+            height: 100,
+            properties: { url: qrUrl }
+          };
+          
+          setCanvasElements(prev => [...prev, newElement]);
+          toast({
+            title: 'QR code added to canvas',
+          });
+        }
       });
     } catch (error) {
-      toast.error('Failed to generate QR code');
+      toast({
+        title: 'Failed to generate QR code',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -144,7 +168,9 @@ export const useCanvasEditor = (template: Template) => {
     };
 
     setCanvasElements(prev => [...prev, newElement]);
-    toast.success('Text added to canvas');
+    toast({
+      title: 'Text added to canvas',
+    });
   };
 
   const addShape = (shapeType: 'rectangle' | 'circle') => {
@@ -187,7 +213,9 @@ export const useCanvasEditor = (template: Template) => {
     };
 
     setCanvasElements(prev => [...prev, newElement]);
-    toast.success(`${shapeType} added to canvas`);
+    toast({
+      title: `${shapeType} added to canvas`,
+    });
   };
 
   const uploadImage = (file: File) => {
@@ -197,29 +225,33 @@ export const useCanvasEditor = (template: Template) => {
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string;
       
-      FabricImage.fromURL(imageUrl).then((img) => {
-        img.set({
-          left: 150,
-          top: 150,
-          scaleX: 0.5,
-          scaleY: 0.5,
-        });
+      FabricImage.fromURL(imageUrl, {}, (img) => {
+        if (img) {
+          img.set({
+            left: 150,
+            top: 150,
+            scaleX: 0.5,
+            scaleY: 0.5,
+          });
 
-        fabricCanvas.add(img);
-        fabricCanvas.setActiveObject(img);
+          fabricCanvas.add(img);
+          fabricCanvas.setActiveObject(img);
 
-        const newElement: CanvasElement = {
-          id: `image-${Date.now()}`,
-          type: 'image',
-          x: 150,
-          y: 150,
-          width: img.width! * 0.5,
-          height: img.height! * 0.5,
-          properties: { src: imageUrl }
-        };
+          const newElement: CanvasElement = {
+            id: `image-${Date.now()}`,
+            type: 'image',
+            x: 150,
+            y: 150,
+            width: img.width! * 0.5,
+            height: img.height! * 0.5,
+            properties: { src: imageUrl }
+          };
 
-        setCanvasElements(prev => [...prev, newElement]);
-        toast.success('Image added to canvas');
+          setCanvasElements(prev => [...prev, newElement]);
+          toast({
+            title: 'Image added to canvas',
+          });
+        }
       });
     };
     reader.readAsDataURL(file);
@@ -230,7 +262,9 @@ export const useCanvasEditor = (template: Template) => {
 
     fabricCanvas.remove(selectedObject);
     setSelectedObject(null);
-    toast.success('Object deleted');
+    toast({
+      title: 'Object deleted',
+    });
   };
 
   const updateSelectedObjectProperty = (property: string, value: any) => {
@@ -259,20 +293,24 @@ export const useCanvasEditor = (template: Template) => {
     
     // Reload template background
     if (template.preview) {
-      FabricImage.fromURL(template.preview).then((img) => {
-        img.set({
-          left: 0,
-          top: 0,
-          selectable: false,
-          evented: false,
-        });
-        img.scaleToWidth(800);
-        fabricCanvas.add(img);
-        fabricCanvas.sendObjectToBack(img);
+      FabricImage.fromURL(template.preview, {}, (img) => {
+        if (img) {
+          img.set({
+            left: 0,
+            top: 0,
+            selectable: false,
+            evented: false,
+          });
+          img.scaleToWidth(800);
+          fabricCanvas.add(img);
+          fabricCanvas.sendObjectToBack(img);
+        }
       });
     }
     
-    toast.success('Canvas reset');
+    toast({
+      title: 'Canvas reset',
+    });
   };
 
   return {

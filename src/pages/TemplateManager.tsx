@@ -5,6 +5,7 @@ import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { TemplateManagerHeader } from "@/components/template/TemplateManagerHeader";
 import { TemplateManagerTabsContent } from "@/components/template/TemplateManagerTabsContent";
+import { TemplateEditor } from "@/components/template/TemplateEditor";
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
 
@@ -153,6 +154,27 @@ const TemplateManager = () => {
             <DashboardTopbar />
             <main className="flex-1 overflow-auto flex items-center justify-center">
               <div className="text-lg">Loading templates...</div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  // Show template editor if editing
+  if (editingTemplate) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
+            <DashboardTopbar />
+            <main className="flex-1 overflow-auto">
+              <TemplateEditor
+                template={editingTemplate}
+                onSave={handleTemplateCustomizationSave}
+                onCancel={handleTemplateCustomizationCancel}
+              />
             </main>
           </div>
         </div>
