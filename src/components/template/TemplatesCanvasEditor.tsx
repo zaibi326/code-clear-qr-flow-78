@@ -26,9 +26,9 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
   // Helper to load image as Fabric object (Fabric.js v6 pattern)
   const addBackgroundImage = async (imgSrc: string, canvas: Canvas) => {
     try {
-      // Fabric.js v6: Use callback-style and wrap in a Promise for async/await
+      // Fabric.js v6: Use proper signature FabricImage.fromURL(url, options, callback)
       const img = await new Promise<FabricImage>((resolve, reject) =>
-        FabricImage.fromURL(imgSrc, (oimg) => {
+        FabricImage.fromURL(imgSrc, {}, (oimg) => {
           if (oimg) resolve(oimg as FabricImage);
           else reject(new Error("Failed to load image"));
         })
@@ -42,8 +42,8 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         scaleY: canvasHeight / (img.height || canvasHeight),
       });
       canvas.add(img);
-      // sendToBack moves image to canvas background
-      canvas.sendToBack(img);
+      // moveTo (object, 0) to send image to back
+      canvas.moveTo(img, 0);
     } catch (e) {
       // noop
     }
@@ -92,7 +92,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     if (!canvas) return;
     try {
       const img = await new Promise<FabricImage>((resolve, reject) =>
-        FabricImage.fromURL("/sample-qr.png", (oimg) => {
+        FabricImage.fromURL("/sample-qr.png", {}, (oimg) => {
           if (oimg) resolve(oimg as FabricImage);
           else reject(new Error("Failed to load QR image"));
         })
@@ -107,7 +107,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
         lockUniScaling: false,
       });
       canvas.add(img);
-      canvas.setActiveObject?.(img); // In Fabric v6, this is a method on Canvas
+      canvas.setActiveObject?.(img); // still works in v6
       toast({ title: "QR code placeholder added!" });
     } catch (e) {
       toast({ title: "Failed to add QR code" });
@@ -170,7 +170,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
     reader.onload = async (e) => {
       try {
         const img = await new Promise<FabricImage>((resolve, reject) =>
-          FabricImage.fromURL(e.target?.result as string, (oimg) => {
+          FabricImage.fromURL(e.target?.result as string, {}, (oimg) => {
             if (oimg) resolve(oimg as FabricImage);
             else reject(new Error("Failed to load image from upload"));
           })
