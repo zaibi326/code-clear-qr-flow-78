@@ -226,6 +226,54 @@ export type Database = {
           },
         ]
       }
+      launched_campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          export_url: string | null
+          id: string
+          layout_json: Json
+          qr_metadata: Json | null
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          export_url?: string | null
+          id?: string
+          layout_json: Json
+          qr_metadata?: Json | null
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          export_url?: string | null
+          id?: string
+          layout_json?: Json
+          qr_metadata?: Json | null
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launched_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launched_campaigns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_lists: {
         Row: {
           created_at: string | null
@@ -843,52 +891,67 @@ export type Database = {
       }
       templates: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           dimensions: Json
+          editable_json: Json | null
           file_size: number
           file_type: string
           file_url: string
           id: string
+          is_builtin: boolean
           is_public: boolean
           name: string
           preview_url: string
           qr_position: Json | null
           tags: string[] | null
+          template_url: string | null
+          thumbnail_url: string | null
           updated_at: string
           usage_count: number
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           dimensions?: Json
+          editable_json?: Json | null
           file_size: number
           file_type: string
           file_url: string
           id?: string
+          is_builtin?: boolean
           is_public?: boolean
           name: string
           preview_url: string
           qr_position?: Json | null
           tags?: string[] | null
+          template_url?: string | null
+          thumbnail_url?: string | null
           updated_at?: string
           usage_count?: number
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           dimensions?: Json
+          editable_json?: Json | null
           file_size?: number
           file_type?: string
           file_url?: string
           id?: string
+          is_builtin?: boolean
           is_public?: boolean
           name?: string
           preview_url?: string
           qr_position?: Json | null
           tags?: string[] | null
+          template_url?: string | null
+          thumbnail_url?: string | null
           updated_at?: string
           usage_count?: number
           user_id?: string

@@ -16,6 +16,7 @@ const TemplateManager = () => {
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
   // Load templates from localStorage on component mount
   useEffect(() => {
@@ -161,42 +162,62 @@ const TemplateManager = () => {
     );
   }
 
-  // If editing a template, show the TemplateEditor with all tools
-  if (editingTemplate) {
+  // NEW: If editing a template (selected in gallery), show the new canvas editor
+  if (selectedTemplate) {
     return (
-      <TemplateEditor
-        template={editingTemplate}
-        onSave={handleTemplateCustomizationSave}
-        onCancel={handleTemplateCustomizationCancel}
-      />
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
+            <DashboardTopbar />
+            <main className="flex-1 overflow-auto">
+              <div className="max-w-7xl mx-auto px-6 py-8">
+                <TemplatesCanvasEditor
+                  template={selectedTemplate}
+                  onBack={() => setSelectedTemplate(null)}
+                  onSave={(layoutJson, exportUrl) => {
+                    // Save locally plus optionally upload to Supabase
+                    setTemplates((prev) =>
+                      prev.map((tpl) =>
+                        tpl.id === selectedTemplate.id
+                          ? { ...tpl, editable_json: layoutJson, updatedAt: new Date() }
+                          : tpl
+                      )
+                    );
+                    toast({
+                      title: "Template Saved",
+                      description: "Your customized template has been saved.",
+                    });
+                    setSelectedTemplate(null);
+                  }}
+                />
+              </div>
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
     );
   }
 
+  // MAIN GALLERY UI: show built-in + user template galleries
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
         <AppSidebar />
-        
         <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
           <DashboardTopbar />
-          
           <main className="flex-1 overflow-auto">
             <div className="max-w-7xl mx-auto px-6 py-8">
-              <TemplateManagerHeader onUploadClick={() => handleTabChange('upload')} />
-              
-              <TemplateManagerStats templateCount={templates.length} />
-
-              <TemplateManagerTabsContent
-                activeTab={activeTab}
-                setActiveTab={handleTabChange}
+              <h2 className="text-3xl font-bold mb-2">Templates</h2>
+              <p className="text-gray-600 mb-8">
+                Browse built-in or upload your own template. Click any card to edit with drag-and-drop tools.
+              </p>
+              <TemplatesTabGallery
                 templates={templates}
-                onTemplateSelect={handleTemplateSelect}
-                onTemplateUpload={handleTemplateUpload}
-                onTemplateEdit={handleTemplateEdit}
-                onTemplateDelete={handleTemplateDelete}
-                onTemplateDuplicate={handleTemplateDuplicate}
-                onUploadNew={handleUploadNew}
+                onSelect={(tpl) => setSelectedTemplate(tpl)}
+                onUpload={() => setActiveTab('upload')}
               />
+              {/* Optionally: keep TemplateManagerTabsContent here for legacy features */}
             </div>
           </main>
         </div>
