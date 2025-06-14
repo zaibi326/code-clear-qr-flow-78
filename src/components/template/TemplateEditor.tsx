@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Template } from '@/types/template';
 import { useCanvasEditor } from '@/hooks/useCanvasEditor';
@@ -77,7 +76,8 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     
     const dataURL = fabricCanvas.toDataURL({
       format: 'png',
-      quality: 1
+      quality: 1,
+      multiplier: 1
     });
     
     const link = document.createElement('a');
