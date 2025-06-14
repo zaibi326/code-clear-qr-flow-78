@@ -44,41 +44,52 @@ export const TemplateManageTab = ({
     console.log('Preview template:', template);
     
     if (template.file?.type === 'application/pdf') {
-      // For PDF files, create a blob URL and open in new window
+      // For PDF files, use a different approach to avoid Chrome blocking
       if (template.file) {
         try {
-          const url = URL.createObjectURL(template.file);
-          const previewWindow = window.open(url, '_blank', 'width=800,height=600');
-          if (previewWindow) {
-            // Clean up the blob URL after the window is loaded
-            previewWindow.onload = () => {
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
-            };
-            toast.success(`Opened PDF preview for ${template.name}`);
-          } else {
-            toast.error('Could not open preview window. Please check your browser settings.');
-          }
+          // Create a new window with PDF data
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const pdfData = e.target?.result;
+            if (pdfData) {
+              const previewWindow = window.open('', '_blank', 'width=900,height=700');
+              if (previewWindow) {
+                previewWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>PDF Preview - ${template.name}</title>
+                      <style>
+                        body { margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif; }
+                        .header { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                        .pdf-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                        embed { width: 100%; height: 600px; border: none; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <h2>PDF Template Preview: ${template.name}</h2>
+                        <p>Template Type: PDF Document</p>
+                      </div>
+                      <div class="pdf-container">
+                        <embed src="${pdfData}" type="application/pdf" />
+                      </div>
+                    </body>
+                  </html>
+                `);
+                previewWindow.document.close();
+                toast.success(`Opened PDF preview for ${template.name}`);
+              } else {
+                toast.error('Could not open preview window. Please check your browser settings.');
+              }
+            }
+          };
+          reader.readAsDataURL(template.file);
         } catch (error) {
           console.error('Error opening PDF preview:', error);
           toast.error('Failed to open PDF preview');
         }
-      } else if (template.preview) {
-        // Fallback to preview image if available
-        const previewWindow = window.open('', '_blank', 'width=800,height=600');
-        if (previewWindow) {
-          previewWindow.document.write(`
-            <html>
-              <head><title>Template Preview - ${template.name}</title></head>
-              <body style="margin:0; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                <img src="${template.preview}" alt="${template.name}" style="max-width:100%; max-height:100%; object-fit:contain;" />
-              </body>
-            </html>
-          `);
-          previewWindow.document.close();
-          toast.success(`Opened preview for ${template.name}`);
-        }
       } else {
-        toast.error('PDF preview not available - no file or preview image found');
+        toast.error('PDF file not available for preview');
       }
     } else if (template.preview) {
       // For image templates, show preview image

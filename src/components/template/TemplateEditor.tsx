@@ -17,19 +17,21 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
     template.qrPosition || { x: 50, y: 50, width: 80, height: 80 }
   );
   const [isDragging, setIsDragging] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Create PDF URL when component mounts or template changes
+  // Create PDF data URL when component mounts or template changes
   useEffect(() => {
     if (template.file && template.file.type === 'application/pdf') {
-      const url = URL.createObjectURL(template.file);
-      setPdfUrl(url);
-      
-      // Cleanup function to revoke the URL when component unmounts
-      return () => {
-        URL.revokeObjectURL(url);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const result = e.target?.result;
+        if (result && typeof result === 'string') {
+          setPdfDataUrl(result);
+          console.log('PDF data URL created for editor');
+        }
       };
+      reader.readAsDataURL(template.file);
     }
   }, [template.file]);
 
@@ -98,16 +100,17 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
               <div 
                 ref={containerRef}
                 className="relative bg-gray-100 rounded-lg overflow-hidden mx-auto border-2 border-dashed border-gray-300"
-                style={{ maxWidth: '800px', aspectRatio: '4/3' }}
+                style={{ maxWidth: '800px', aspectRatio: '4/3', minHeight: '600px' }}
               >
-                {isPdfTemplate && pdfUrl ? (
+                {isPdfTemplate && pdfDataUrl ? (
                   <div className="w-full h-full relative">
-                    <iframe
-                      src={pdfUrl}
-                      className="w-full h-full border-0"
-                      title={`PDF Preview - ${template.name}`}
+                    <embed
+                      src={pdfDataUrl}
+                      type="application/pdf"
+                      className="w-full h-full"
+                      title={`PDF Editor - ${template.name}`}
                     />
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs z-10">
                       PDF Template - {template.name}
                     </div>
                   </div>
@@ -147,7 +150,7 @@ const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => 
                   bounds="parent"
                 >
                   <div 
-                    className={`absolute cursor-move border-2 border-blue-500 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center transition-all z-10 ${
+                    className={`absolute cursor-move border-2 border-blue-500 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center transition-all z-20 ${
                       isDragging ? 'scale-110 shadow-xl' : 'hover:scale-105'
                     }`}
                     style={{ 
