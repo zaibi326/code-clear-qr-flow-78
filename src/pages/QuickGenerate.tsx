@@ -16,20 +16,44 @@ const QuickGenerate = () => {
     qrName: '',
     foregroundColor: '#000000',
     backgroundColor: '#FFFFFF',
-    logoUrl: ''
+    logoUrl: '',
+    project: '',
+    listType: '',
+    firstName: '',
+    lastName: '',
+    propertyAddress: '',
+    propertyState: '',
+    propertyCity: '',
+    propertyZip: '',
+    mailingAddress: '',
+    mailingState: '',
+    mailingCity: '',
+    mailingZip: ''
   });
 
   const handleTypeSelect = (type: QRCodeType) => {
     setSelectedType(type);
     console.log('QR Type selected:', type);
     
-    // Reset form data when type changes
+    // Reset form data when type changes with initial values for URL types
     setFormData({
       url: type.id === 'url' || type.id === 'website' || type.id === 'website-static' ? 'https://www.example.com' : '',
       qrName: type.id === 'url' || type.id === 'website' || type.id === 'website-static' ? 'My Website QR Code' : '',
       foregroundColor: '#000000',
       backgroundColor: '#FFFFFF',
-      logoUrl: ''
+      logoUrl: '',
+      project: '',
+      listType: '',
+      firstName: '',
+      lastName: '',
+      propertyAddress: '',
+      propertyState: '',
+      propertyCity: '',
+      propertyZip: '',
+      mailingAddress: '',
+      mailingState: '',
+      mailingCity: '',
+      mailingZip: ''
     });
   };
 
