@@ -64,37 +64,39 @@ export function ComprehensiveQRForm({ formData, onInputChange, mode = 'both' }: 
 
   // For both mode, show tabs with single and bulk options
   return (
-    <FormTabsManager
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      showBulkTab={true}
-    >
-      <SingleRecordContent
-        formData={formData}
-        logoFile={logoFile}
-        onInputChange={handleInputChangeWithColorUpdate}
-        onLogoFileChange={handleLogoFileChange}
-        onSave={handleSave}
-        generatedQR={generatedQR}
-        canvasRef={canvasRef}
-        showAsTab={true}
-      />
+    <div className="space-y-6">
+      <FormTabsManager
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        showBulkTab={true}
+      >
+        <SingleRecordContent
+          formData={formData}
+          logoFile={logoFile}
+          onInputChange={handleInputChangeWithColorUpdate}
+          onLogoFileChange={handleLogoFileChange}
+          onSave={handleSave}
+          generatedQR={generatedQR}
+          canvasRef={canvasRef}
+          showAsTab={true}
+        />
 
-      <BulkRecordContent
-        csvFile={csvFile}
-        csvData={csvData}
-        onCSVDataChange={setCsvData}
-        onCSVFileChange={setCsvFile}
-        onBulkSave={handleBulkSave}
-        styling={{
-          foregroundColor: formData.foregroundColor,
-          backgroundColor: formData.backgroundColor,
-          logoUrl: formData.logoUrl
-        }}
-        onStyleChange={handleInputChangeWithColorUpdate}
-        logoFile={logoFile}
-        onLogoFileChange={handleLogoFileChange}
-      />
-    </FormTabsManager>
+        <BulkRecordContent
+          csvFile={csvFile}
+          csvData={csvData}
+          onCSVDataChange={setCsvData}
+          onCSVFileChange={setCsvFile}
+          onBulkSave={handleBulkSave}
+          styling={{
+            foregroundColor: formData.foregroundColor,
+            backgroundColor: formData.backgroundColor,
+            logoUrl: formData.logoUrl
+          }}
+          onStyleChange={handleInputChangeWithColorUpdate}
+          logoFile={logoFile}
+          onLogoFileChange={handleLogoFileChange}
+        />
+      </FormTabsManager>
+    </div>
   );
 }

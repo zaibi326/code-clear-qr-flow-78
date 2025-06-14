@@ -42,7 +42,7 @@ const QuickGenerate = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Check if this is a URL/Link type that should use comprehensive form
+  // Check if this is a URL/Link type that should use comprehensive form with tabs
   const shouldUseComprehensiveForm = selectedType && (
     selectedType.id === 'url' || 
     selectedType.id === 'website' || 
