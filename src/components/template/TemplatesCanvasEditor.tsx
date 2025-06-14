@@ -44,7 +44,7 @@ const TemplatesCanvasEditor: React.FC<TemplatesCanvasEditorProps> = ({
       });
       canvas.add(img);
       // sendObjectToBack to send image to back
-      canvas.sendObjectToBack(img);
+      canvas.sendToBack(img);
     } catch (e) {
       // noop
     }
