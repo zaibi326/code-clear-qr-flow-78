@@ -24,6 +24,8 @@ export const useCanvasEditor = (template: Template) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    console.log('Initializing canvas for template:', template.name);
+    
     const canvas = new Canvas(canvasRef.current, {
       width: 800,
       height: 600,
@@ -36,15 +38,19 @@ export const useCanvasEditor = (template: Template) => {
       canvas.freeDrawingBrush.width = 2;
     }
 
-    // Only load existing customization JSON if it exists, don't load preview images
+    // Load existing customization JSON if it exists
     if (template.editable_json) {
       try {
+        console.log('Loading existing canvas data');
         canvas.loadFromJSON(template.editable_json, () => {
           canvas.renderAll();
+          console.log('Canvas data loaded successfully');
         });
       } catch (error) {
         console.warn('Failed to load existing customization:', error);
       }
+    } else {
+      console.log('No existing canvas data, starting with blank canvas');
     }
 
     // Event listeners for object selection
@@ -73,11 +79,13 @@ export const useCanvasEditor = (template: Template) => {
     });
 
     setFabricCanvas(canvas);
+    
+    console.log('Canvas initialized successfully');
 
     return () => {
       canvas.dispose();
     };
-  }, [template.editable_json]);
+  }, [template.editable_json, template.id]);
 
   const addQRCode = async (qrUrl: string) => {
     if (!fabricCanvas) {

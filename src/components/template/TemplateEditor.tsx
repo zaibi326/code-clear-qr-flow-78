@@ -103,71 +103,77 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="max-w-full mx-auto">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Template Customizer</h1>
-          <p className="text-lg text-gray-600">Customize your template with drag-and-drop tools</p>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Tools Panel - Left Side */}
-          <div className="col-span-12 lg:col-span-3">
-            <CanvasToolbar
-              qrUrl={qrUrl}
-              setQrUrl={setQrUrl}
-              textContent={textContent}
-              setTextContent={setTextContent}
-              onAddQRCode={handleAddQRCode}
-              onAddText={handleAddText}
-              onAddShape={addShape}
-              onUploadImage={handleUploadImage}
-              onZoomCanvas={zoomCanvas}
-              onResetCanvas={resetCanvas}
-              onDeleteSelected={handleDelete}
-              hasSelectedObject={!!selectedObject}
-            />
-          </div>
-
-          {/* Canvas Area - Center */}
-          <div className="col-span-12 lg:col-span-6">
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="p-6">
-                <div className="relative">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 p-6 flex items-center justify-center min-h-[600px]">
-                    <div className="bg-white rounded shadow-lg p-2">
-                      <canvas
-                        ref={canvasRef}
-                        className="border border-gray-200 rounded max-w-full"
-                        style={{ maxWidth: '100%', height: 'auto' }}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Canvas Info Bar */}
-                  <div className="mt-4 flex items-center justify-center space-x-4 text-sm text-gray-500">
-                    <span>Zoom: {Math.round(zoom * 100)}%</span>
-                    <span>•</span>
-                    <span>Click and drag to move objects</span>
-                    <span>•</span>
-                    <span>Select objects to edit properties</span>
-                  </div>
-                </div>
+        <div className="bg-white shadow-sm border-b px-6 py-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Template Customizer</h1>
+                <p className="text-sm text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleSave}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Save Template
+                </button>
+                <button
+                  onClick={onCancel}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Properties Panel - Right Side */}
-          <div className="col-span-12 lg:col-span-3">
-            <PropertiesPanel
-              selectedObject={selectedObject}
-              onUpdateProperty={updateSelectedObjectProperty}
-              onSave={handleSave}
-              onDownload={handleDownload}
-              onCancel={onCancel}
-            />
+        {/* Main Content */}
+        <div className="flex h-[calc(100vh-120px)]">
+          {/* Left Sidebar - Tools */}
+          <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+            <div className="p-6">
+              <CanvasToolbar
+                qrUrl={qrUrl}
+                setQrUrl={setQrUrl}
+                textContent={textContent}
+                setTextContent={setTextContent}
+                onAddQRCode={handleAddQRCode}
+                onAddText={handleAddText}
+                onAddShape={addShape}
+                onUploadImage={handleUploadImage}
+                onZoomCanvas={zoomCanvas}
+                onResetCanvas={resetCanvas}
+                onDeleteSelected={handleDelete}
+                hasSelectedObject={!!selectedObject}
+              />
+            </div>
+          </div>
+
+          {/* Center - Canvas Area */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 p-6">
+              <CanvasArea 
+                canvasRef={canvasRef} 
+                zoom={zoom}
+              />
+            </div>
+          </div>
+
+          {/* Right Sidebar - Properties */}
+          <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
+            <div className="p-6">
+              <PropertiesPanel
+                selectedObject={selectedObject}
+                onUpdateProperty={updateSelectedObjectProperty}
+                onSave={handleSave}
+                onDownload={handleDownload}
+                onCancel={onCancel}
+              />
+            </div>
           </div>
         </div>
       </div>
