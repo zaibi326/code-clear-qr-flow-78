@@ -1,11 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export type QRContentType = 'url' | 'text' | 'email' | 'phone' | 'sms' | 'wifi' | 'vcard' | 'location' | 'social_media';
+
 export interface EnhancedQRCode {
   id: string;
   name?: string;
   content: string;
-  content_type: 'url' | 'text' | 'email' | 'phone' | 'sms' | 'wifi' | 'vcard' | 'location' | 'social_media';
+  content_type: QRContentType;
   project_id?: string;
   campaign_id?: string;
   tags: string[];

@@ -6,7 +6,6 @@ import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { EnhancedDashboardStats } from '@/components/dashboard/EnhancedDashboardStats';
 import { QRCodeDatabase } from '@/components/dashboard/QRCodeDatabase';
 import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaignHierarchy';
-import { QRCreationModeSelector } from '@/components/dashboard/QRCreationModeSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
@@ -78,14 +77,7 @@ const Dashboard = () => {
                   
                   <div className="p-6">
                     <TabsContent value="qr-codes" className="space-y-6 m-0">
-                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div className="xl:col-span-2">
-                          <QRCodeDatabase />
-                        </div>
-                        <div>
-                          <QRCreationModeSelector />
-                        </div>
-                      </div>
+                      <QRCodeDatabase />
                     </TabsContent>
                     
                     <TabsContent value="projects" className="m-0">
