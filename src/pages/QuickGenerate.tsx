@@ -42,8 +42,12 @@ const QuickGenerate = () => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  // Check if this is a URL/Link type that should use direct form
-  const isDirectFormType = selectedType && (selectedType.id === 'url' || selectedType.id === 'website');
+  // Check if this is a URL/Link type that should use comprehensive form
+  const shouldUseComprehensiveForm = selectedType && (
+    selectedType.id === 'url' || 
+    selectedType.id === 'website' || 
+    selectedType.id === 'website-static'
+  );
 
   return (
     <SidebarProvider>
@@ -72,7 +76,7 @@ const QuickGenerate = () => {
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                       Quick QR Generator
                     </h1>
-                    <p className="text-lg text-gray-600">Create QR codes instantly without any complex setup</p>
+                    <p className="text-lg text-gray-600">Create QR codes instantly with single record or bulk generation options</p>
                   </div>
                 </div>
               </div>
@@ -81,11 +85,11 @@ const QuickGenerate = () => {
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-8 animate-fade-in">
                   <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your QR Code Type</h2>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">Select from our collection of QR code types for instant generation</p>
+                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">Select from our collection of QR code types for instant generation with single or bulk options</p>
                   </div>
                   <QRTypeSelector onTypeSelect={handleTypeSelect} />
                 </div>
-              ) : isDirectFormType ? (
+              ) : shouldUseComprehensiveForm ? (
                 <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl p-8 animate-fade-in">
                   <div className="mb-6">
                     <div className="flex items-center gap-3 mb-4">
@@ -102,7 +106,7 @@ const QuickGenerate = () => {
                   <ComprehensiveQRForm 
                     formData={formData}
                     onInputChange={handleInputChange}
-                    mode="quick"
+                    mode="both"
                   />
                 </div>
               ) : (

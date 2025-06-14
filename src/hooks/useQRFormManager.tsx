@@ -17,7 +17,7 @@ export function useQRFormManager({ formData, onInputChange, mode = 'both' }: Use
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const { toast } = useToast();
 
-  // For quick mode, don't show tabs at all
+  // Determine if tabs should be shown
   const showTabs = mode === 'both';
   const showBulkTab = mode === 'both';
 
@@ -82,14 +82,14 @@ export function useQRFormManager({ formData, onInputChange, mode = 'both' }: Use
     try {
       toast({
         title: "Success",
-        description: `${activeTab === 'single' ? 'Single' : 'Bulk'} QR Code saved successfully!`,
+        description: "QR Code saved successfully!",
       });
       
       console.log('QR Code data to save:', {
         ...formData,
         qrImageData: generatedQR,
         logoFile: logoFile?.name,
-        mode: activeTab
+        mode: 'single'
       });
       
     } catch (error) {
