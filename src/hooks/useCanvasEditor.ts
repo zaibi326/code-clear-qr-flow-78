@@ -20,10 +20,11 @@ interface CanvasState {
 }
 
 export const useCanvasEditor = (template: Template) => {
-  // All hooks declared at the top level in consistent order
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
-  const isInitializingRef = useRef(false);
+  const isInitializedRef = useRef(false);
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   const [zoom, setZoom] = useState(1);
@@ -35,7 +36,7 @@ export const useCanvasEditor = (template: Template) => {
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  // Save canvas state to history
+  // Stabilized save to history function
   const saveToHistory = useCallback((canvas: Canvas) => {
     if (!canvas || canvas.disposed) return;
     
@@ -63,8 +64,8 @@ export const useCanvasEditor = (template: Template) => {
     }
   }, [historyIndex]);
 
-  // Load template background
-  const loadBackgroundTemplate = useCallback(async (canvas: Canvas) => {
+  // Stabilized background loading function
+  const loadBackgroundTemplate = useCallback(async (canvas: Canvas): Promise<boolean> => {
     if (!canvas || canvas.disposed) {
       console.log('Canvas not available for background loading');
       return false;
@@ -80,29 +81,23 @@ export const useCanvasEditor = (template: Template) => {
         console.log('Loading template file:', template.file.name, template.file.type);
         
         if (template.file.type === 'application/pdf') {
-          // For PDF files, create a simple placeholder
-          console.log('PDF template detected - using placeholder');
+          // Create PDF placeholder
+          console.log('PDF template detected - creating placeholder');
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = 800;
           tempCanvas.height = 600;
           const ctx = tempCanvas.getContext('2d');
           
           if (ctx) {
-            // Create a nice PDF placeholder
             ctx.fillStyle = '#f8f9fa';
             ctx.fillRect(0, 0, 800, 600);
-            
-            // Add border
             ctx.strokeStyle = '#dee2e6';
             ctx.lineWidth = 2;
             ctx.strokeRect(10, 10, 780, 580);
-            
-            // Add PDF icon and text
             ctx.fillStyle = '#dc3545';
             ctx.font = 'bold 32px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('📄 PDF Template', 400, 280);
-            
             ctx.fillStyle = '#6c757d';
             ctx.font = '18px Arial';
             ctx.fillText('Ready for editing and customization', 400, 320);
@@ -137,7 +132,6 @@ export const useCanvasEditor = (template: Template) => {
           const imgWidth = img.width || canvasWidth;
           const imgHeight = img.height || canvasHeight;
           
-          // Scale image to fit canvas while maintaining aspect ratio
           const scaleX = canvasWidth / imgWidth;
           const scaleY = canvasHeight / imgHeight;
           const scale = Math.min(scaleX, scaleY);
@@ -157,12 +151,7 @@ export const useCanvasEditor = (template: Template) => {
           canvas.renderAll();
           
           console.log('Background template loaded successfully');
-          return true;
         }
-      } else {
-        // No background image, just use white background
-        console.log('No background image, using white background');
-        return true;
       }
       
       return true;
@@ -170,49 +159,36 @@ export const useCanvasEditor = (template: Template) => {
       console.error('Error loading background template:', error);
       return false;
     }
-  }, [template]);
+  }, [template.file, template.preview, template.template_url, template.thumbnail_url, template.name]);
 
-  // Initialize canvas
+  // Initialize canvas with proper cleanup and timeout
   useEffect(() => {
-    let mounted = true;
-    
+    // Prevent multiple initializations
+    if (isInitializedRef.current || !canvasRef.current) {
+      return;
+    }
+
+    console.log('Starting canvas initialization for template:', template.name);
+    isInitializedRef.current = true;
+    setBackgroundLoaded(false);
+    setBackgroundError(null);
+
     const initializeCanvas = async () => {
-      // Prevent multiple initializations
-      if (!canvasRef.current || fabricCanvasRef.current || isInitializingRef.current) {
-        return;
-      }
-
-      console.log('Starting canvas initialization for template:', template.name);
-      isInitializingRef.current = true;
-      setBackgroundLoaded(false);
-      setBackgroundError(null);
-
       try {
-        // Small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        if (!mounted || !canvasRef.current) {
-          console.log('Component unmounted or canvas ref not available');
-          return;
-        }
+        // Set timeout fallback
+        initTimeoutRef.current = setTimeout(() => {
+          console.warn('Canvas initialization timeout');
+          setBackgroundError('Canvas initialization timed out');
+          setBackgroundLoaded(true);
+        }, 10000);
 
-        console.log('Creating new Fabric canvas');
-        const canvas = new Canvas(canvasRef.current, {
+        const canvas = new Canvas(canvasRef.current!, {
           width: 800,
           height: 600,
           backgroundColor: '#ffffff',
         });
 
-        if (!mounted) {
-          console.log('Component unmounted during canvas creation');
-          canvas.dispose();
-          return;
-        }
-
         fabricCanvasRef.current = canvas;
-
-        // Set initial zoom to 100%
-        canvas.setZoom(1);
         setZoom(1);
 
         // Initialize drawing brush
@@ -223,74 +199,72 @@ export const useCanvasEditor = (template: Template) => {
 
         // Set up event listeners
         canvas.on('selection:created', (e) => {
-          if (e.selected && e.selected.length > 0 && mounted) {
+          if (e.selected && e.selected.length > 0) {
             setSelectedObject(e.selected[0]);
           }
         });
 
         canvas.on('selection:updated', (e) => {
-          if (e.selected && e.selected.length > 0 && mounted) {
+          if (e.selected && e.selected.length > 0) {
             setSelectedObject(e.selected[0]);
           }
         });
 
         canvas.on('selection:cleared', () => {
-          if (mounted) {
-            setSelectedObject(null);
-          }
+          setSelectedObject(null);
         });
 
         canvas.on('object:modified', () => {
-          if (!canvas.disposed && mounted) {
+          if (!canvas.disposed) {
             canvas.renderAll();
             saveToHistory(canvas);
           }
         });
 
-        console.log('Canvas created successfully, loading template data');
-
-        // Load existing customization JSON if it exists
-        if (template.editable_json && !canvas.disposed && mounted) {
+        // Load existing JSON if available
+        if (template.editable_json && !canvas.disposed) {
           console.log('Loading existing canvas JSON data');
           try {
-            await new Promise<void>((resolve, reject) => {
+            await new Promise<void>((resolve) => {
               canvas.loadFromJSON(template.editable_json, () => {
-                if (!canvas.disposed && mounted) {
+                if (!canvas.disposed) {
                   canvas.renderAll();
                   console.log('Canvas JSON loaded successfully');
-                  resolve();
-                } else {
-                  reject(new Error('Canvas disposed during JSON load'));
                 }
+                resolve();
               });
             });
           } catch (jsonError) {
             console.error('Error loading JSON data:', jsonError);
-            // Continue with background loading even if JSON fails
           }
         }
 
         // Load background template
         console.log('Loading background template');
-        const backgroundSuccess = await loadBackgroundTemplate(canvas);
+        await loadBackgroundTemplate(canvas);
         
-        if (mounted && !canvas.disposed) {
-          console.log('Canvas initialization completed successfully');
-          setBackgroundLoaded(true);
-          setBackgroundError(null);
-          
-          // Save initial state to history
-          saveToHistory(canvas);
+        // Clear timeout and set success state
+        if (initTimeoutRef.current) {
+          clearTimeout(initTimeoutRef.current);
+          initTimeoutRef.current = null;
         }
+        
+        console.log('Canvas initialization completed successfully');
+        setBackgroundLoaded(true);
+        setBackgroundError(null);
+        
+        // Save initial state
+        saveToHistory(canvas);
 
       } catch (error) {
         console.error('Error during canvas initialization:', error);
-        if (mounted) {
-          setBackgroundError('Failed to initialize canvas editor');
-          setBackgroundLoaded(true); // Set to true to stop loading spinner
+        setBackgroundError('Failed to initialize canvas editor');
+        setBackgroundLoaded(true);
+        
+        if (initTimeoutRef.current) {
+          clearTimeout(initTimeoutRef.current);
+          initTimeoutRef.current = null;
         }
-      } finally {
-        isInitializingRef.current = false;
       }
     };
 
@@ -298,8 +272,12 @@ export const useCanvasEditor = (template: Template) => {
 
     return () => {
       console.log('Cleaning up canvas');
-      mounted = false;
-      isInitializingRef.current = false;
+      isInitializedRef.current = false;
+      
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
+      }
       
       if (fabricCanvasRef.current && !fabricCanvasRef.current.disposed) {
         try {
@@ -310,7 +288,7 @@ export const useCanvasEditor = (template: Template) => {
       }
       fabricCanvasRef.current = null;
     };
-  }, [template.id, loadBackgroundTemplate, saveToHistory]);
+  }, [template.id]); // Only depend on template.id to prevent infinite loops
 
   const undoCanvas = () => {
     const canvas = fabricCanvasRef.current;
