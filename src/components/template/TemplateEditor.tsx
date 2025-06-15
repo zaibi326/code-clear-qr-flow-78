@@ -21,6 +21,8 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     selectedObject,
     canvasElements,
     zoom,
+    backgroundLoaded,
+    backgroundError,
     addQRCode,
     addText,
     addShape,
@@ -40,24 +42,55 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
 
   const handleAddQRCode = () => {
     console.log('Adding QR code with URL:', qrUrl);
-    addQRCode(qrUrl);
+    if (!qrUrl || qrUrl.trim() === '') {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please enter a valid URL for the QR code',
+        variant: 'destructive'
+      });
+      return;
+    }
+    addQRCode(qrUrl.trim());
   };
 
   const handleAddText = () => {
     console.log('Adding text:', textContent);
-    addText(textContent, 16, '#000000');
+    if (!textContent || textContent.trim() === '') {
+      toast({
+        title: 'Invalid text',
+        description: 'Please enter some text content',
+        variant: 'destructive'
+      });
+      return;
+    }
+    addText(textContent.trim(), 16, '#000000');
   };
 
   const handleUploadImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('Uploading image:', file.name, file.type);
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please select an image file (JPG, PNG, etc.)',
+          variant: 'destructive'
+        });
+        return;
+      }
       uploadImage(file);
     }
   };
 
   const handleSave = () => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      toast({
+        title: 'Canvas not ready',
+        description: 'Please wait for the canvas to load',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     const canvasData = fabricCanvas.toJSON();
     const updatedTemplate: Template = {
@@ -75,13 +108,20 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     
     onSave(updatedTemplate);
     toast({
-      title: "Template saved successfully",
-      description: "Your changes have been saved",
+      title: 'Template saved successfully',
+      description: 'Your changes have been saved',
     });
   };
 
   const handleDownload = () => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      toast({
+        title: 'Canvas not ready',
+        description: 'Please wait for the canvas to load',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     const dataURL = fabricCanvas.toDataURL({
       format: 'png',
@@ -97,8 +137,8 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     document.body.removeChild(link);
     
     toast({
-      title: "Template downloaded",
-      description: "Template has been downloaded as PNG",
+      title: 'Template downloaded',
+      description: 'Template has been downloaded as PNG',
     });
   };
 
@@ -107,14 +147,24 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     deleteSelected();
   };
 
+  // Show template file info
+  const getTemplateFileInfo = () => {
+    if (template.file) {
+      return `${template.file.type} - ${(template.file.size / 1024 / 1024).toFixed(2)} MB`;
+    }
+    return 'Built-in template';
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Template Customizer</h1>
-            <p className="text-xs text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
+            <h1 className="text-lg font-semibold text-gray-900">Template Editor</h1>
+            <p className="text-xs text-gray-600 mt-1">
+              Editing: {template.name} ({getTemplateFileInfo()})
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -158,6 +208,8 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           <CanvasArea 
             canvasRef={canvasRef} 
             zoom={zoom}
+            backgroundLoaded={backgroundLoaded}
+            backgroundError={backgroundError}
           />
           
           {/* Zoom indicator */}

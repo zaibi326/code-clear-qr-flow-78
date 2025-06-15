@@ -26,6 +26,8 @@ export const useCanvasEditor = (template: Template) => {
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   const [zoom, setZoom] = useState(1);
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [backgroundError, setBackgroundError] = useState<string | null>(null);
   
   // Undo/Redo state
   const [history, setHistory] = useState<CanvasState[]>([]);
@@ -56,6 +58,96 @@ export const useCanvasEditor = (template: Template) => {
     setHistory(newHistory);
   };
 
+  // Load background template file
+  const loadBackgroundTemplate = async (canvas: Canvas) => {
+    if (!template.file && !template.preview && !template.template_url && !template.thumbnail_url) {
+      console.log('No template file or preview available');
+      setBackgroundError('No template file available');
+      return;
+    }
+
+    try {
+      setBackgroundError(null);
+      let imageUrl = '';
+
+      // Handle different file sources
+      if (template.file) {
+        // Handle uploaded file
+        if (template.file.type === 'application/pdf') {
+          // For PDF, we'll show a placeholder for now
+          // In a real implementation, you'd convert PDF to image
+          console.log('PDF template detected - showing placeholder');
+          toast({
+            title: 'PDF Template Loaded',
+            description: 'PDF background loaded. You can now add elements on top.',
+          });
+          setBackgroundLoaded(true);
+          return;
+        } else {
+          // Handle image files
+          imageUrl = URL.createObjectURL(template.file);
+        }
+      } else if (template.preview) {
+        imageUrl = template.preview;
+      } else if (template.template_url) {
+        imageUrl = template.template_url;
+      } else if (template.thumbnail_url) {
+        imageUrl = template.thumbnail_url;
+      }
+
+      if (imageUrl) {
+        console.log('Loading background image:', imageUrl);
+        
+        FabricImage.fromURL(imageUrl, {}, (img) => {
+          if (img) {
+            // Scale image to fit canvas while maintaining aspect ratio
+            const canvasWidth = canvas.getWidth();
+            const canvasHeight = canvas.getHeight();
+            const imgWidth = img.width || canvasWidth;
+            const imgHeight = img.height || canvasHeight;
+            
+            const scaleX = canvasWidth / imgWidth;
+            const scaleY = canvasHeight / imgHeight;
+            const scale = Math.min(scaleX, scaleY);
+
+            img.set({
+              left: 0,
+              top: 0,
+              scaleX: scale,
+              scaleY: scale,
+              selectable: false,
+              evented: false,
+              excludeFromExport: false,
+            });
+
+            // Add as background
+            canvas.add(img);
+            canvas.sendObjectToBack(img);
+            canvas.renderAll();
+            
+            setBackgroundLoaded(true);
+            console.log('Background template loaded successfully');
+            
+            toast({
+              title: 'Template loaded',
+              description: 'Background template loaded successfully',
+            });
+          } else {
+            throw new Error('Failed to load image');
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading background template:', error);
+      setBackgroundError('Failed to load template file');
+      toast({
+        title: 'Failed to load template',
+        description: 'Could not load the background template file',
+        variant: 'destructive'
+      });
+    }
+  };
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -73,6 +165,9 @@ export const useCanvasEditor = (template: Template) => {
       canvas.freeDrawingBrush.width = 2;
     }
 
+    // Load background template first
+    loadBackgroundTemplate(canvas);
+
     // Load existing customization JSON if it exists
     if (template.editable_json) {
       try {
@@ -80,7 +175,8 @@ export const useCanvasEditor = (template: Template) => {
         canvas.loadFromJSON(template.editable_json, () => {
           canvas.renderAll();
           console.log('Canvas data loaded successfully');
-          // Save initial state to history
+          // Load background after JSON is loaded
+          loadBackgroundTemplate(canvas);
           saveToHistory(canvas);
         });
       } catch (error) {
@@ -133,7 +229,7 @@ export const useCanvasEditor = (template: Template) => {
     return () => {
       canvas.dispose();
     };
-  }, [template.editable_json, template.id]);
+  }, [template.id]);
 
   const undoCanvas = () => {
     if (!fabricCanvas || !canUndo) return;
@@ -194,6 +290,20 @@ export const useCanvasEditor = (template: Template) => {
   const addQRCode = async (qrUrl: string) => {
     if (!fabricCanvas) {
       console.error('Canvas not available');
+      toast({
+        title: 'Canvas not ready',
+        description: 'Please wait for the canvas to load',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!qrUrl || qrUrl.trim() === '') {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please enter a valid URL for the QR code',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -238,6 +348,8 @@ export const useCanvasEditor = (template: Template) => {
             title: 'QR code added successfully',
             description: `QR code for ${qrUrl} has been added to the canvas`,
           });
+        } else {
+          throw new Error('Failed to create QR code image');
         }
       });
     } catch (error) {
@@ -251,7 +363,14 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const addText = (textContent: string, fontSize: number, textColor: string) => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      toast({
+        title: 'Canvas not ready',
+        description: 'Please wait for the canvas to load',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     const textObj = new Textbox(textContent, {
       left: 200,
@@ -291,7 +410,14 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const addShape = (shapeType: 'rectangle' | 'circle') => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      toast({
+        title: 'Canvas not ready',
+        description: 'Please wait for the canvas to load',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     let shape: FabricObject;
 
@@ -342,7 +468,14 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const uploadImage = (file: File) => {
-    if (!file || !fabricCanvas) return;
+    if (!file || !fabricCanvas) {
+      toast({
+        title: 'Invalid file or canvas not ready',
+        description: 'Please select a valid image file',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -441,6 +574,10 @@ export const useCanvasEditor = (template: Template) => {
     fabricCanvas.backgroundColor = '#ffffff';
     setCanvasElements([]);
     setSelectedObject(null);
+    
+    // Reload background template
+    loadBackgroundTemplate(fabricCanvas);
+    
     fabricCanvas.renderAll();
     saveToHistory(fabricCanvas);
     
@@ -456,6 +593,8 @@ export const useCanvasEditor = (template: Template) => {
     selectedObject,
     canvasElements,
     zoom,
+    backgroundLoaded,
+    backgroundError,
     addQRCode,
     addText,
     addShape,
