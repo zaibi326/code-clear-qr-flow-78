@@ -27,6 +27,7 @@ export const useCanvasEditor = (template: Template) => {
   const [zoom, setZoom] = useState(1);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [backgroundError, setBackgroundError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   // Undo/Redo state
   const [history, setHistory] = useState<CanvasState[]>([]);
@@ -37,45 +38,50 @@ export const useCanvasEditor = (template: Template) => {
 
   // Save canvas state to history
   const saveToHistory = (canvas: Canvas) => {
-    const canvasJson = canvas.toJSON();
-    const newState: CanvasState = {
-      json: canvasJson,
-      timestamp: Date.now()
-    };
+    if (!canvas || canvas.isDisposed?.()) return;
+    
+    try {
+      const canvasJson = canvas.toJSON();
+      const newState: CanvasState = {
+        json: canvasJson,
+        timestamp: Date.now()
+      };
 
-    // Remove any states after current index (when user makes new change after undo)
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newState);
+      // Remove any states after current index (when user makes new change after undo)
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(newState);
 
-    // Limit history to 50 states
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    } else {
-      setHistoryIndex(historyIndex + 1);
+      // Limit history to 50 states
+      if (newHistory.length > 50) {
+        newHistory.shift();
+      } else {
+        setHistoryIndex(historyIndex + 1);
+      }
+
+      setHistory(newHistory);
+    } catch (error) {
+      console.error('Error saving canvas to history:', error);
     }
-
-    setHistory(newHistory);
   };
 
   // Load background template file
   const loadBackgroundTemplate = async (canvas: Canvas) => {
+    if (!canvas || canvas.isDisposed?.()) {
+      console.log('Canvas is not available or disposed');
+      setBackgroundLoaded(true);
+      return;
+    }
+
     console.log('Loading background template for:', template.name);
     console.log('Template file:', template.file);
     console.log('Template preview:', template.preview);
     
-    if (!template.file && !template.preview && !template.template_url && !template.thumbnail_url) {
-      console.log('No template file or preview available');
-      setBackgroundError('No template file available');
-      setBackgroundLoaded(true); // Set as loaded even without background
-      return;
-    }
-
     try {
       setBackgroundError(null);
       let imageUrl = '';
 
-      // Handle different file sources
-      if (template.file) {
+      // Handle different file sources with proper validation
+      if (template.file && template.file instanceof File) {
         console.log('Template file type:', template.file.type);
         // Handle uploaded file
         if (template.file.type === 'application/pdf') {
@@ -87,10 +93,15 @@ export const useCanvasEditor = (template: Template) => {
             description: 'PDF background loaded. You can now add elements on top.',
           });
           return;
-        } else {
+        } else if (template.file.type.startsWith('image/')) {
           // Handle image files
           imageUrl = URL.createObjectURL(template.file);
           console.log('Created object URL for image:', imageUrl);
+        } else {
+          console.log('Unsupported file type:', template.file.type);
+          setBackgroundError('Unsupported file type');
+          setBackgroundLoaded(true);
+          return;
         }
       } else if (template.preview) {
         imageUrl = template.preview;
@@ -101,14 +112,20 @@ export const useCanvasEditor = (template: Template) => {
       } else if (template.thumbnail_url) {
         imageUrl = template.thumbnail_url;
         console.log('Using thumbnail URL:', imageUrl);
+      } else {
+        console.log('No template file or preview available');
+        setBackgroundLoaded(true); // Set as loaded even without background
+        return;
       }
 
-      if (imageUrl) {
+      if (imageUrl && !canvas.isDisposed?.()) {
         console.log('Loading background image from URL:', imageUrl);
         
-        FabricImage.fromURL(imageUrl).then((img) => {
-          console.log('Image loaded callback called, img:', img);
-          if (img) {
+        try {
+          const img = await FabricImage.fromURL(imageUrl);
+          console.log('Image loaded successfully, img:', img);
+          
+          if (!canvas.isDisposed?.() && img) {
             // Scale image to fit canvas while maintaining aspect ratio
             const canvasWidth = canvas.getWidth();
             const canvasHeight = canvas.getHeight();
@@ -147,23 +164,23 @@ export const useCanvasEditor = (template: Template) => {
               description: 'Background template loaded successfully',
             });
           } else {
-            console.error('Failed to load image - img is null');
-            setBackgroundError('Failed to load template image');
-            setBackgroundLoaded(true); // Still mark as loaded to show canvas
+            console.log('Canvas disposed or img is null during image loading');
+            setBackgroundError('Canvas not available');
+            setBackgroundLoaded(true);
           }
-        }).catch((error) => {
-          console.error('Error in FabricImage.fromURL:', error);
+        } catch (error) {
+          console.error('Error loading image from URL:', error);
           setBackgroundError('Failed to load template image');
-          setBackgroundLoaded(true); // Still mark as loaded to show canvas
-        });
+          setBackgroundLoaded(true);
+        }
       } else {
-        console.log('No image URL available, marking as loaded');
+        console.log('No image URL available or canvas disposed');
         setBackgroundLoaded(true);
       }
     } catch (error) {
       console.error('Error loading background template:', error);
       setBackgroundError('Failed to load template file');
-      setBackgroundLoaded(true); // Still mark as loaded to show canvas
+      setBackgroundLoaded(true);
       toast({
         title: 'Failed to load template',
         description: 'Could not load the background template file',
@@ -179,6 +196,7 @@ export const useCanvasEditor = (template: Template) => {
     }
 
     console.log('Initializing canvas for template:', template.name);
+    setIsInitializing(true);
     
     const canvas = new Canvas(canvasRef.current, {
       width: 800,
@@ -216,52 +234,82 @@ export const useCanvasEditor = (template: Template) => {
 
     // Listen for object modifications to save to history
     canvas.on('object:modified', () => {
-      canvas.renderAll();
-      saveToHistory(canvas);
+      if (!canvas.isDisposed?.()) {
+        canvas.renderAll();
+        saveToHistory(canvas);
+      }
     });
 
     canvas.on('object:added', () => {
-      canvas.renderAll();
+      if (!canvas.isDisposed?.()) {
+        canvas.renderAll();
+      }
     });
 
     canvas.on('object:removed', () => {
-      canvas.renderAll();
+      if (!canvas.isDisposed?.()) {
+        canvas.renderAll();
+      }
     });
 
     setFabricCanvas(canvas);
     
     // Load existing customization JSON if it exists
-    if (template.editable_json) {
+    const initializeCanvas = async () => {
       try {
-        console.log('Loading existing canvas data');
-        canvas.loadFromJSON(template.editable_json, () => {
-          console.log('Canvas JSON loaded, now loading background');
-          canvas.renderAll();
+        if (template.editable_json && !canvas.isDisposed?.()) {
+          console.log('Loading existing canvas data');
+          await new Promise<void>((resolve, reject) => {
+            canvas.loadFromJSON(template.editable_json, () => {
+              if (!canvas.isDisposed?.()) {
+                console.log('Canvas JSON loaded, now loading background');
+                canvas.renderAll();
+                resolve();
+              } else {
+                reject(new Error('Canvas disposed during JSON loading'));
+              }
+            });
+          });
+          
           // Load background after JSON is loaded
-          loadBackgroundTemplate(canvas);
-          saveToHistory(canvas);
-        });
+          if (!canvas.isDisposed?.()) {
+            await loadBackgroundTemplate(canvas);
+            saveToHistory(canvas);
+          }
+        } else {
+          console.log('No existing canvas data, loading background template');
+          if (!canvas.isDisposed?.()) {
+            await loadBackgroundTemplate(canvas);
+            saveToHistory(canvas);
+          }
+        }
       } catch (error) {
-        console.warn('Failed to load existing customization:', error);
-        loadBackgroundTemplate(canvas);
-        saveToHistory(canvas);
+        console.warn('Failed to initialize canvas:', error);
+        if (!canvas.isDisposed?.()) {
+          await loadBackgroundTemplate(canvas);
+          saveToHistory(canvas);
+        }
+      } finally {
+        setIsInitializing(false);
       }
-    } else {
-      console.log('No existing canvas data, loading background template');
-      loadBackgroundTemplate(canvas);
-      saveToHistory(canvas);
-    }
+    };
+
+    initializeCanvas();
 
     console.log('Canvas initialized successfully');
 
     return () => {
       console.log('Disposing canvas');
-      canvas.dispose();
+      try {
+        canvas.dispose();
+      } catch (error) {
+        console.error('Error disposing canvas:', error);
+      }
     };
   }, [template.id]);
 
   const undoCanvas = () => {
-    if (!fabricCanvas || !canUndo) return;
+    if (!fabricCanvas || !canUndo || fabricCanvas.isDisposed?.()) return;
 
     const newIndex = historyIndex - 1;
     const stateToRestore = history[newIndex];
@@ -271,25 +319,29 @@ export const useCanvasEditor = (template: Template) => {
       fabricCanvas.off('object:modified');
       
       fabricCanvas.loadFromJSON(stateToRestore.json, () => {
-        fabricCanvas.renderAll();
-        setHistoryIndex(newIndex);
-        
-        // Re-add event listeners
-        fabricCanvas.on('object:modified', () => {
+        if (!fabricCanvas.isDisposed?.()) {
           fabricCanvas.renderAll();
-          saveToHistory(fabricCanvas);
-        });
-        
-        toast({
-          title: 'Undo successful',
-          description: 'Canvas state restored',
-        });
+          setHistoryIndex(newIndex);
+          
+          // Re-add event listeners
+          fabricCanvas.on('object:modified', () => {
+            if (!fabricCanvas.isDisposed?.()) {
+              fabricCanvas.renderAll();
+              saveToHistory(fabricCanvas);
+            }
+          });
+          
+          toast({
+            title: 'Undo successful',
+            description: 'Canvas state restored',
+          });
+        }
       });
     }
   };
 
   const redoCanvas = () => {
-    if (!fabricCanvas || !canRedo) return;
+    if (!fabricCanvas || !canRedo || fabricCanvas.isDisposed?.()) return;
 
     const newIndex = historyIndex + 1;
     const stateToRestore = history[newIndex];
@@ -299,19 +351,23 @@ export const useCanvasEditor = (template: Template) => {
       fabricCanvas.off('object:modified');
       
       fabricCanvas.loadFromJSON(stateToRestore.json, () => {
-        fabricCanvas.renderAll();
-        setHistoryIndex(newIndex);
-        
-        // Re-add event listeners
-        fabricCanvas.on('object:modified', () => {
+        if (!fabricCanvas.isDisposed?.()) {
           fabricCanvas.renderAll();
-          saveToHistory(fabricCanvas);
-        });
-        
-        toast({
-          title: 'Redo successful',
-          description: 'Canvas state restored',
-        });
+          setHistoryIndex(newIndex);
+          
+          // Re-add event listeners
+          fabricCanvas.on('object:modified', () => {
+            if (!fabricCanvas.isDisposed?.()) {
+              fabricCanvas.renderAll();
+              saveToHistory(fabricCanvas);
+            }
+          });
+          
+          toast({
+            title: 'Redo successful',
+            description: 'Canvas state restored',
+          });
+        }
       });
     }
   };
@@ -319,7 +375,7 @@ export const useCanvasEditor = (template: Template) => {
   const addQRCode = async (qrUrl: string) => {
     console.log('addQRCode called with URL:', qrUrl);
     
-    if (!fabricCanvas) {
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) {
       console.error('Canvas not available');
       toast({
         title: 'Canvas not ready',
@@ -344,57 +400,50 @@ export const useCanvasEditor = (template: Template) => {
       const qrResult = await generateQRCode(qrUrl, { size: 150 });
       console.log('QR code generated:', qrResult);
       
-      FabricImage.fromURL(qrResult.dataURL).then((qrImg) => {
-        console.log('QR image created:', qrImg);
-        if (qrImg) {
-          qrImg.set({
-            left: 100,
-            top: 100,
-            width: 150,
-            height: 150,
-            selectable: true,
-            evented: true,
-          });
-          
-          // Store QR metadata
-          qrImg.set('qrData', {
-            url: qrUrl,
-            type: 'qr'
-          });
-
-          fabricCanvas.add(qrImg);
-          fabricCanvas.setActiveObject(qrImg);
-          fabricCanvas.renderAll();
-          saveToHistory(fabricCanvas);
-          
-          const newElement: CanvasElement = {
-            id: `qr-${Date.now()}`,
-            type: 'qr',
-            x: 100,
-            y: 100,
-            width: 150,
-            height: 150,
-            properties: { url: qrUrl }
-          };
-          
-          setCanvasElements(prev => [...prev, newElement]);
-          console.log('QR code added successfully');
-          toast({
-            title: 'QR code added successfully',
-            description: `QR code for ${qrUrl} has been added to the canvas`,
-          });
-        } else {
-          console.error('Failed to create QR code image');
-          throw new Error('Failed to create QR code image');
-        }
-      }).catch((error) => {
-        console.error('QR image creation error:', error);
-        toast({
-          title: 'Failed to generate QR code',
-          description: 'Please check the URL and try again',
-          variant: 'destructive'
+      const qrImg = await FabricImage.fromURL(qrResult.dataURL);
+      console.log('QR image created:', qrImg);
+      
+      if (qrImg && !fabricCanvas.isDisposed?.()) {
+        qrImg.set({
+          left: 100,
+          top: 100,
+          width: 150,
+          height: 150,
+          selectable: true,
+          evented: true,
         });
-      });
+        
+        // Store QR metadata
+        qrImg.set('qrData', {
+          url: qrUrl,
+          type: 'qr'
+        });
+
+        fabricCanvas.add(qrImg);
+        fabricCanvas.setActiveObject(qrImg);
+        fabricCanvas.renderAll();
+        saveToHistory(fabricCanvas);
+        
+        const newElement: CanvasElement = {
+          id: `qr-${Date.now()}`,
+          type: 'qr',
+          x: 100,
+          y: 100,
+          width: 150,
+          height: 150,
+          properties: { url: qrUrl }
+        };
+        
+        setCanvasElements(prev => [...prev, newElement]);
+        console.log('QR code added successfully');
+        toast({
+          title: 'QR code added successfully',
+          description: `QR code for ${qrUrl} has been added to the canvas`,
+        });
+      } else {
+        console.error('Failed to create QR code image or canvas disposed');
+        throw new Error('Failed to create QR code image');
+      }
     } catch (error) {
       console.error('QR generation error:', error);
       toast({
@@ -406,7 +455,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const addText = (textContent: string, fontSize: number, textColor: string) => {
-    if (!fabricCanvas) {
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) {
       toast({
         title: 'Canvas not ready',
         description: 'Please wait for the canvas to load',
@@ -453,7 +502,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const addShape = (shapeType: 'rectangle' | 'circle') => {
-    if (!fabricCanvas) {
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) {
       toast({
         title: 'Canvas not ready',
         description: 'Please wait for the canvas to load',
@@ -511,7 +560,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const uploadImage = (file: File) => {
-    if (!file || !fabricCanvas) {
+    if (!file || !fabricCanvas || fabricCanvas.isDisposed?.()) {
       toast({
         title: 'Invalid file or canvas not ready',
         description: 'Please select a valid image file',
@@ -521,11 +570,12 @@ export const useCanvasEditor = (template: Template) => {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const imageUrl = e.target?.result as string;
       
-      FabricImage.fromURL(imageUrl).then((img) => {
-        if (img) {
+      try {
+        const img = await FabricImage.fromURL(imageUrl);
+        if (img && !fabricCanvas.isDisposed?.()) {
           img.set({
             left: 150,
             top: 150,
@@ -555,20 +605,20 @@ export const useCanvasEditor = (template: Template) => {
             title: 'Image added to canvas',
           });
         }
-      }).catch((error) => {
+      } catch (error) {
         console.error('Error loading image:', error);
         toast({
           title: 'Failed to load image',
           description: 'Please try a different image file',
           variant: 'destructive'
         });
-      });
+      }
     };
     reader.readAsDataURL(file);
   };
 
   const deleteSelected = () => {
-    if (!fabricCanvas) {
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) {
       console.error('Canvas not available');
       return;
     }
@@ -597,7 +647,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const updateSelectedObjectProperty = (property: string, value: any) => {
-    if (!selectedObject || !fabricCanvas) return;
+    if (!selectedObject || !fabricCanvas || fabricCanvas.isDisposed?.()) return;
 
     console.log(`Updating property ${property} to ${value}`);
     selectedObject.set(property, value);
@@ -607,7 +657,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const zoomCanvas = (direction: 'in' | 'out') => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) return;
 
     const newZoom = direction === 'in' ? zoom * 1.1 : zoom * 0.9;
     const clampedZoom = Math.max(0.1, Math.min(3, newZoom));
@@ -618,7 +668,7 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const resetCanvas = () => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas || fabricCanvas.isDisposed?.()) return;
 
     fabricCanvas.clear();
     fabricCanvas.backgroundColor = '#ffffff';
@@ -643,7 +693,7 @@ export const useCanvasEditor = (template: Template) => {
     selectedObject,
     canvasElements,
     zoom,
-    backgroundLoaded,
+    backgroundLoaded: backgroundLoaded && !isInitializing,
     backgroundError,
     addQRCode,
     addText,

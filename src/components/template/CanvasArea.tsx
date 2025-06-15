@@ -22,7 +22,7 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
           <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-20 rounded-lg">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <div className="text-sm text-gray-600">Loading template...</div>
+              <div className="text-sm text-gray-600">Loading canvas...</div>
             </div>
           </div>
         )}
@@ -33,6 +33,7 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
           style={{ 
             width: '600px',
             height: '450px',
+            visibility: backgroundLoaded ? 'visible' : 'hidden'
           }}
         />
       </div>
