@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface CanvasAreaProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -9,10 +11,14 @@ interface CanvasAreaProps {
 }
 
 export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError }: CanvasAreaProps) => {
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="h-full w-full flex items-center justify-center p-4 bg-gray-100 overflow-auto">
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 relative min-w-fit">
-        {/* Canvas Container - Always rendered */}
+        {/* Canvas Container */}
         <div className="relative">
           <canvas
             ref={canvasRef}
@@ -41,12 +47,15 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
               <div className="text-center p-4">
                 <div className="text-lg font-medium mb-2">Canvas initialization failed</div>
                 <div className="text-sm mb-4">{backgroundError}</div>
-                <button 
-                  onClick={() => window.location.reload()} 
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                <Button 
+                  onClick={handleRetry}
+                  variant="destructive"
+                  size="sm"
+                  className="flex items-center gap-2"
                 >
+                  <RefreshCw className="w-4 h-4" />
                   Retry
-                </button>
+                </Button>
               </div>
             </div>
           )}
