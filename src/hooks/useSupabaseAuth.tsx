@@ -110,18 +110,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(userProfile);
       }
 
-      // Load user role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      // Load user role with proper error handling
+      try {
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
 
-      if (roleData) {
-        setUserRole(roleData.role);
-      } else {
-        // Default role for new users
-        setUserRole('user');
+        if (error) {
+          // Check if error is due to no rows returned (PGRST116)
+          if (error.code === 'PGRST116') {
+            console.log('No role found for user, setting default role');
+            setUserRole('user');
+          } else {
+            console.error('Error loading user role:', error);
+            setUserRole('user'); // Default fallback
+          }
+        } else if (roleData) {
+          setUserRole(roleData.role);
+        } else {
+          // Fallback to default role
+          setUserRole('user');
+        }
+      } catch (roleError) {
+        console.error('Unexpected error loading user role:', roleError);
+        setUserRole('user'); // Default fallback
       }
       
     } catch (error) {
