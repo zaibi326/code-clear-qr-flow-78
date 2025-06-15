@@ -29,6 +29,7 @@ export const useCanvasEditor = (template: Template) => {
   const [backgroundError, setBackgroundError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const isMountedRef = useRef(true);
+  const initializationRef = useRef(false);
   
   // Undo/Redo state
   const [history, setHistory] = useState<CanvasState[]>([]);
@@ -68,7 +69,7 @@ export const useCanvasEditor = (template: Template) => {
   // Load background template file
   const loadBackgroundTemplate = async (canvas: Canvas) => {
     if (!canvas || canvas.disposed || !isMountedRef.current) {
-      console.log('Canvas is not available, disposed, or component unmounted');
+      console.log('Canvas not available for background loading');
       if (isMountedRef.current) {
         setBackgroundLoaded(true);
       }
@@ -207,80 +208,84 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (initializationRef.current) {
+      console.log('Canvas already initializing or initialized');
+      return;
+    }
+
     if (!canvasRef.current) {
       console.log('Canvas ref not available yet');
       return;
     }
 
-    console.log('Initializing canvas for template:', template.name);
+    console.log('Starting canvas initialization for template:', template.name);
+    initializationRef.current = true;
     setIsInitializing(true);
     isMountedRef.current = true;
     
     let canvas: Canvas | null = null;
     
-    try {
-      canvas = new Canvas(canvasRef.current, {
-        width: 800,
-        height: 600,
-        backgroundColor: '#ffffff',
-      });
+    const initializeCanvas = async () => {
+      try {
+        canvas = new Canvas(canvasRef.current!, {
+          width: 800,
+          height: 600,
+          backgroundColor: '#ffffff',
+        });
 
-      console.log('Canvas created successfully');
+        console.log('Canvas created successfully');
 
-      // Initialize drawing brush
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = '#000000';
-        canvas.freeDrawingBrush.width = 2;
-      }
-
-      // Set up event listeners first
-      canvas.on('selection:created', (e) => {
-        console.log('Selection created:', e.selected);
-        if (e.selected && e.selected.length > 0 && isMountedRef.current) {
-          setSelectedObject(e.selected[0]);
+        // Initialize drawing brush
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = '#000000';
+          canvas.freeDrawingBrush.width = 2;
         }
-      });
 
-      canvas.on('selection:updated', (e) => {
-        console.log('Selection updated:', e.selected);
-        if (e.selected && e.selected.length > 0 && isMountedRef.current) {
-          setSelectedObject(e.selected[0]);
-        }
-      });
+        // Set up event listeners first
+        canvas.on('selection:created', (e) => {
+          if (e.selected && e.selected.length > 0 && isMountedRef.current) {
+            setSelectedObject(e.selected[0]);
+          }
+        });
 
-      canvas.on('selection:cleared', () => {
-        console.log('Selection cleared');
+        canvas.on('selection:updated', (e) => {
+          if (e.selected && e.selected.length > 0 && isMountedRef.current) {
+            setSelectedObject(e.selected[0]);
+          }
+        });
+
+        canvas.on('selection:cleared', () => {
+          if (isMountedRef.current) {
+            setSelectedObject(null);
+          }
+        });
+
+        // Listen for object modifications to save to history
+        canvas.on('object:modified', () => {
+          if (!canvas?.disposed && isMountedRef.current) {
+            canvas.renderAll();
+            saveToHistory(canvas);
+          }
+        });
+
+        canvas.on('object:added', () => {
+          if (!canvas?.disposed && isMountedRef.current) {
+            canvas.renderAll();
+          }
+        });
+
+        canvas.on('object:removed', () => {
+          if (!canvas?.disposed && isMountedRef.current) {
+            canvas.renderAll();
+          }
+        });
+
         if (isMountedRef.current) {
-          setSelectedObject(null);
+          setFabricCanvas(canvas);
         }
-      });
-
-      // Listen for object modifications to save to history
-      canvas.on('object:modified', () => {
-        if (!canvas?.disposed && isMountedRef.current) {
-          canvas.renderAll();
-          saveToHistory(canvas);
-        }
-      });
-
-      canvas.on('object:added', () => {
-        if (!canvas?.disposed && isMountedRef.current) {
-          canvas.renderAll();
-        }
-      });
-
-      canvas.on('object:removed', () => {
-        if (!canvas?.disposed && isMountedRef.current) {
-          canvas.renderAll();
-        }
-      });
-
-      if (isMountedRef.current) {
-        setFabricCanvas(canvas);
-      }
-      
-      // Load existing customization JSON if it exists
-      const initializeCanvas = async () => {
+        
+        // Load existing customization JSON if it exists
         try {
           if (template.editable_json && !canvas?.disposed && isMountedRef.current) {
             console.log('Loading existing canvas data');
@@ -319,28 +324,28 @@ export const useCanvasEditor = (template: Template) => {
             await loadBackgroundTemplate(canvas);
             saveToHistory(canvas);
           }
-        } finally {
-          if (isMountedRef.current) {
-            setIsInitializing(false);
-          }
         }
-      };
 
-      initializeCanvas();
-
-      console.log('Canvas initialized successfully');
-    } catch (error) {
-      console.error('Error creating canvas:', error);
-      if (isMountedRef.current) {
-        setBackgroundError('Failed to create canvas');
-        setBackgroundLoaded(true);
-        setIsInitializing(false);
+        console.log('Canvas initialized successfully');
+      } catch (error) {
+        console.error('Error creating canvas:', error);
+        if (isMountedRef.current) {
+          setBackgroundError('Failed to create canvas');
+          setBackgroundLoaded(true);
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setIsInitializing(false);
+        }
       }
-    }
+    };
+
+    initializeCanvas();
 
     return () => {
       console.log('Disposing canvas');
       isMountedRef.current = false;
+      initializationRef.current = false;
       try {
         if (canvas && !canvas.disposed) {
           canvas.dispose();
