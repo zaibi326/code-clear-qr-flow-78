@@ -200,12 +200,16 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
   const getTemplateFileInfo = useCallback(() => {
     if (template.file) {
       const sizeInMB = (template.file.size / 1024 / 1024).toFixed(2);
-      let fileTypeDisplay = template.file.type;
+      let fileTypeDisplay = 'Unknown';
       
-      if (template.file.type === 'application/pdf') {
-        fileTypeDisplay = 'PDF';
-      } else if (template.file.type.startsWith('image/')) {
-        fileTypeDisplay = template.file.type.split('/')[1].toUpperCase();
+      if (template.file.type) {
+        if (template.file.type === 'application/pdf') {
+          fileTypeDisplay = 'PDF';
+        } else if (template.file.type.startsWith('image/')) {
+          fileTypeDisplay = template.file.type.split('/')[1].toUpperCase();
+        } else {
+          fileTypeDisplay = template.file.type;
+        }
       }
       
       return `${fileTypeDisplay} - ${sizeInMB} MB`;
