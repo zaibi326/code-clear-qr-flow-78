@@ -10,8 +10,8 @@ interface CanvasAreaProps {
 
 export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError }: CanvasAreaProps) => {
   return (
-    <div className="h-full w-full flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-3 relative">
+    <div className="h-full w-full flex items-center justify-center p-4 bg-gray-100">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 relative">
         {backgroundError && (
           <div className="absolute top-2 left-2 bg-red-100 border border-red-300 text-red-700 px-3 py-1 rounded-md text-xs z-10">
             {backgroundError}
@@ -19,18 +19,20 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
         )}
         
         {!backgroundLoaded && !backgroundError && (
-          <div className="absolute top-2 left-2 bg-blue-100 border border-blue-300 text-blue-700 px-3 py-1 rounded-md text-xs z-10">
-            Loading template...
+          <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-20 rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <div className="text-sm text-gray-600">Loading template...</div>
+            </div>
           </div>
         )}
         
         <canvas
           ref={canvasRef}
-          className="border border-gray-100 rounded max-w-full max-h-full"
+          className="border border-gray-200 rounded max-w-full max-h-full block"
           style={{ 
             width: '600px',
             height: '450px',
-            display: 'block'
           }}
         />
       </div>

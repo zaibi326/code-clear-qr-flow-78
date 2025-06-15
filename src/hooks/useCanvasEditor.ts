@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
 import { toast } from '@/hooks/use-toast';
@@ -60,9 +59,14 @@ export const useCanvasEditor = (template: Template) => {
 
   // Load background template file
   const loadBackgroundTemplate = async (canvas: Canvas) => {
+    console.log('Loading background template for:', template.name);
+    console.log('Template file:', template.file);
+    console.log('Template preview:', template.preview);
+    
     if (!template.file && !template.preview && !template.template_url && !template.thumbnail_url) {
       console.log('No template file or preview available');
       setBackgroundError('No template file available');
+      setBackgroundLoaded(true); // Set as loaded even without background
       return;
     }
 
@@ -72,33 +76,38 @@ export const useCanvasEditor = (template: Template) => {
 
       // Handle different file sources
       if (template.file) {
+        console.log('Template file type:', template.file.type);
         // Handle uploaded file
         if (template.file.type === 'application/pdf') {
-          // For PDF, we'll show a placeholder for now
-          // In a real implementation, you'd convert PDF to image
+          // For PDF, we'll show a placeholder for now and mark as loaded
           console.log('PDF template detected - showing placeholder');
+          setBackgroundLoaded(true);
           toast({
             title: 'PDF Template Loaded',
             description: 'PDF background loaded. You can now add elements on top.',
           });
-          setBackgroundLoaded(true);
           return;
         } else {
           // Handle image files
           imageUrl = URL.createObjectURL(template.file);
+          console.log('Created object URL for image:', imageUrl);
         }
       } else if (template.preview) {
         imageUrl = template.preview;
+        console.log('Using preview URL:', imageUrl);
       } else if (template.template_url) {
         imageUrl = template.template_url;
+        console.log('Using template URL:', imageUrl);
       } else if (template.thumbnail_url) {
         imageUrl = template.thumbnail_url;
+        console.log('Using thumbnail URL:', imageUrl);
       }
 
       if (imageUrl) {
-        console.log('Loading background image:', imageUrl);
+        console.log('Loading background image from URL:', imageUrl);
         
         FabricImage.fromURL(imageUrl, {}, (img) => {
+          console.log('Image loaded callback called, img:', img);
           if (img) {
             // Scale image to fit canvas while maintaining aspect ratio
             const canvasWidth = canvas.getWidth();
@@ -106,9 +115,14 @@ export const useCanvasEditor = (template: Template) => {
             const imgWidth = img.width || canvasWidth;
             const imgHeight = img.height || canvasHeight;
             
+            console.log('Canvas dimensions:', canvasWidth, canvasHeight);
+            console.log('Image dimensions:', imgWidth, imgHeight);
+            
             const scaleX = canvasWidth / imgWidth;
             const scaleY = canvasHeight / imgHeight;
             const scale = Math.min(scaleX, scaleY);
+
+            console.log('Calculated scale:', scale);
 
             img.set({
               left: 0,
@@ -133,13 +147,23 @@ export const useCanvasEditor = (template: Template) => {
               description: 'Background template loaded successfully',
             });
           } else {
-            throw new Error('Failed to load image');
+            console.error('Failed to load image - img is null');
+            setBackgroundError('Failed to load template image');
+            setBackgroundLoaded(true); // Still mark as loaded to show canvas
           }
+        }, (error) => {
+          console.error('Error in FabricImage.fromURL:', error);
+          setBackgroundError('Failed to load template image');
+          setBackgroundLoaded(true); // Still mark as loaded to show canvas
         });
+      } else {
+        console.log('No image URL available, marking as loaded');
+        setBackgroundLoaded(true);
       }
     } catch (error) {
       console.error('Error loading background template:', error);
       setBackgroundError('Failed to load template file');
+      setBackgroundLoaded(true); // Still mark as loaded to show canvas
       toast({
         title: 'Failed to load template',
         description: 'Could not load the background template file',
@@ -149,7 +173,10 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current) {
+      console.log('Canvas ref not available yet');
+      return;
+    }
 
     console.log('Initializing canvas for template:', template.name);
     
@@ -159,36 +186,15 @@ export const useCanvasEditor = (template: Template) => {
       backgroundColor: '#ffffff',
     });
 
+    console.log('Canvas created successfully');
+
     // Initialize drawing brush
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = '#000000';
       canvas.freeDrawingBrush.width = 2;
     }
 
-    // Load background template first
-    loadBackgroundTemplate(canvas);
-
-    // Load existing customization JSON if it exists
-    if (template.editable_json) {
-      try {
-        console.log('Loading existing canvas data');
-        canvas.loadFromJSON(template.editable_json, () => {
-          canvas.renderAll();
-          console.log('Canvas data loaded successfully');
-          // Load background after JSON is loaded
-          loadBackgroundTemplate(canvas);
-          saveToHistory(canvas);
-        });
-      } catch (error) {
-        console.warn('Failed to load existing customization:', error);
-        saveToHistory(canvas);
-      }
-    } else {
-      console.log('No existing canvas data, starting with blank canvas');
-      saveToHistory(canvas);
-    }
-
-    // Event listeners for object selection
+    // Set up event listeners first
     canvas.on('selection:created', (e) => {
       console.log('Selection created:', e.selected);
       if (e.selected && e.selected.length > 0) {
@@ -224,9 +230,32 @@ export const useCanvasEditor = (template: Template) => {
 
     setFabricCanvas(canvas);
     
+    // Load existing customization JSON if it exists
+    if (template.editable_json) {
+      try {
+        console.log('Loading existing canvas data');
+        canvas.loadFromJSON(template.editable_json, () => {
+          console.log('Canvas JSON loaded, now loading background');
+          canvas.renderAll();
+          // Load background after JSON is loaded
+          loadBackgroundTemplate(canvas);
+          saveToHistory(canvas);
+        });
+      } catch (error) {
+        console.warn('Failed to load existing customization:', error);
+        loadBackgroundTemplate(canvas);
+        saveToHistory(canvas);
+      }
+    } else {
+      console.log('No existing canvas data, loading background template');
+      loadBackgroundTemplate(canvas);
+      saveToHistory(canvas);
+    }
+
     console.log('Canvas initialized successfully');
 
     return () => {
+      console.log('Disposing canvas');
       canvas.dispose();
     };
   }, [template.id]);
@@ -288,6 +317,8 @@ export const useCanvasEditor = (template: Template) => {
   };
 
   const addQRCode = async (qrUrl: string) => {
+    console.log('addQRCode called with URL:', qrUrl);
+    
     if (!fabricCanvas) {
       console.error('Canvas not available');
       toast({
@@ -299,6 +330,7 @@ export const useCanvasEditor = (template: Template) => {
     }
 
     if (!qrUrl || qrUrl.trim() === '') {
+      console.error('Invalid QR URL:', qrUrl);
       toast({
         title: 'Invalid URL',
         description: 'Please enter a valid URL for the QR code',
@@ -310,8 +342,10 @@ export const useCanvasEditor = (template: Template) => {
     try {
       console.log('Generating QR code for:', qrUrl);
       const qrResult = await generateQRCode(qrUrl, { size: 150 });
+      console.log('QR code generated:', qrResult);
       
       FabricImage.fromURL(qrResult.dataURL, {}, (qrImg) => {
+        console.log('QR image created:', qrImg);
         if (qrImg) {
           qrImg.set({
             left: 100,
@@ -344,11 +378,13 @@ export const useCanvasEditor = (template: Template) => {
           };
           
           setCanvasElements(prev => [...prev, newElement]);
+          console.log('QR code added successfully');
           toast({
             title: 'QR code added successfully',
             description: `QR code for ${qrUrl} has been added to the canvas`,
           });
         } else {
+          console.error('Failed to create QR code image');
           throw new Error('Failed to create QR code image');
         }
       });
