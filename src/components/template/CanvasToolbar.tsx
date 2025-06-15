@@ -45,10 +45,10 @@ export const CanvasToolbar = ({
 }: CanvasToolbarProps) => {
   return (
     <div className="h-full overflow-y-auto">
-      <div className="p-4 space-y-6">
+      <div className="p-3 space-y-4">
         <ToolsHeader title="Tools" />
         
-        <div className="space-y-6">
+        <div className="space-y-4">
           <AddElementsSection
             onAddQRCode={onAddQRCode}
             onAddText={onAddText}
@@ -56,7 +56,7 @@ export const CanvasToolbar = ({
             onUploadImage={onUploadImage}
           />
 
-          <Separator />
+          <Separator className="my-3" />
 
           <CanvasControlsSection
             onZoomCanvas={onZoomCanvas}
@@ -69,7 +69,7 @@ export const CanvasToolbar = ({
             canRedo={canRedo}
           />
 
-          <Separator />
+          <Separator className="my-3" />
 
           <QuickSettingsSection
             qrUrl={qrUrl}

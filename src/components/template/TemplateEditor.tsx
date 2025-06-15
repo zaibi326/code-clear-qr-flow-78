@@ -108,20 +108,20 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-white border-b px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Template Customizer</h1>
-            <p className="text-sm text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
+            <h1 className="text-lg font-semibold text-gray-900">Template Customizer</h1>
+            <p className="text-xs text-gray-600 mt-1">Customize your template with drag-and-drop tools</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="sm"
               onClick={onCancel}
-              className="text-gray-600"
+              className="text-gray-600 text-sm px-3 py-1"
             >
               Cancel
             </Button>
@@ -130,9 +130,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Tools */}
-        <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+        <div className="w-60 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto">
           <CanvasToolbar
             qrUrl={qrUrl}
             setQrUrl={setQrUrl}
@@ -154,7 +154,7 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
         </div>
 
         {/* Center - Canvas Area */}
-        <div className="flex-1 bg-gray-100 relative">
+        <div className="flex-1 bg-gray-100 relative overflow-hidden">
           <CanvasArea 
             canvasRef={canvasRef} 
             zoom={zoom}
@@ -162,14 +162,14 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           
           {/* Zoom indicator */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-            <div className="bg-white px-3 py-1 rounded-full shadow-sm border text-sm text-gray-600">
+            <div className="bg-white px-2 py-1 rounded-md shadow-sm border text-xs text-gray-600">
               Zoom: {Math.round(zoom * 100)}%
             </div>
           </div>
         </div>
 
         {/* Right Sidebar - Properties */}
-        <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
+        <div className="w-72 bg-white border-l border-gray-200 flex-shrink-0 overflow-y-auto">
           <PropertiesPanel
             selectedObject={selectedObject}
             onUpdateProperty={updateSelectedObjectProperty}
