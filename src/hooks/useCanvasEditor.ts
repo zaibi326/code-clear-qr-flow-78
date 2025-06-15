@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Rect, Circle, Textbox, FabricImage, FabricObject } from 'fabric';
 import { toast } from '@/hooks/use-toast';
@@ -74,8 +73,6 @@ export const useCanvasEditor = (template: Template) => {
     }
 
     console.log('Loading background template for:', template.name);
-    console.log('Template file:', template.file);
-    console.log('Template preview:', template.preview);
     
     try {
       setBackgroundError(null);
@@ -124,7 +121,7 @@ export const useCanvasEditor = (template: Template) => {
         
         try {
           const img = await FabricImage.fromURL(imageUrl);
-          console.log('Image loaded successfully, img:', img);
+          console.log('Image loaded successfully');
           
           if (!canvas.disposed && img) {
             // Scale image to fit canvas while maintaining aspect ratio
@@ -199,110 +196,126 @@ export const useCanvasEditor = (template: Template) => {
     console.log('Initializing canvas for template:', template.name);
     setIsInitializing(true);
     
-    const canvas = new Canvas(canvasRef.current, {
-      width: 800,
-      height: 600,
-      backgroundColor: '#ffffff',
-    });
-
-    console.log('Canvas created successfully');
-
-    // Initialize drawing brush
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = '#000000';
-      canvas.freeDrawingBrush.width = 2;
-    }
-
-    // Set up event listeners first
-    canvas.on('selection:created', (e) => {
-      console.log('Selection created:', e.selected);
-      if (e.selected && e.selected.length > 0) {
-        setSelectedObject(e.selected[0]);
-      }
-    });
-
-    canvas.on('selection:updated', (e) => {
-      console.log('Selection updated:', e.selected);
-      if (e.selected && e.selected.length > 0) {
-        setSelectedObject(e.selected[0]);
-      }
-    });
-
-    canvas.on('selection:cleared', () => {
-      console.log('Selection cleared');
-      setSelectedObject(null);
-    });
-
-    // Listen for object modifications to save to history
-    canvas.on('object:modified', () => {
-      if (!canvas.disposed) {
-        canvas.renderAll();
-        saveToHistory(canvas);
-      }
-    });
-
-    canvas.on('object:added', () => {
-      if (!canvas.disposed) {
-        canvas.renderAll();
-      }
-    });
-
-    canvas.on('object:removed', () => {
-      if (!canvas.disposed) {
-        canvas.renderAll();
-      }
-    });
-
-    setFabricCanvas(canvas);
+    let canvas: Canvas | null = null;
     
-    // Load existing customization JSON if it exists
-    const initializeCanvas = async () => {
-      try {
-        if (template.editable_json && !canvas.disposed) {
-          console.log('Loading existing canvas data');
-          await new Promise<void>((resolve, reject) => {
-            canvas.loadFromJSON(template.editable_json, () => {
-              if (!canvas.disposed) {
-                console.log('Canvas JSON loaded, now loading background');
-                canvas.renderAll();
-                resolve();
-              } else {
-                reject(new Error('Canvas disposed during JSON loading'));
-              }
-            });
-          });
-          
-          // Load background after JSON is loaded
-          if (!canvas.disposed) {
-            await loadBackgroundTemplate(canvas);
-            saveToHistory(canvas);
-          }
-        } else {
-          console.log('No existing canvas data, loading background template');
-          if (!canvas.disposed) {
-            await loadBackgroundTemplate(canvas);
-            saveToHistory(canvas);
-          }
+    try {
+      canvas = new Canvas(canvasRef.current, {
+        width: 800,
+        height: 600,
+        backgroundColor: '#ffffff',
+      });
+
+      console.log('Canvas created successfully');
+
+      // Initialize drawing brush
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = '#000000';
+        canvas.freeDrawingBrush.width = 2;
+      }
+
+      // Set up event listeners first
+      canvas.on('selection:created', (e) => {
+        console.log('Selection created:', e.selected);
+        if (e.selected && e.selected.length > 0) {
+          setSelectedObject(e.selected[0]);
         }
-      } catch (error) {
-        console.warn('Failed to initialize canvas:', error);
-        if (!canvas.disposed) {
-          await loadBackgroundTemplate(canvas);
+      });
+
+      canvas.on('selection:updated', (e) => {
+        console.log('Selection updated:', e.selected);
+        if (e.selected && e.selected.length > 0) {
+          setSelectedObject(e.selected[0]);
+        }
+      });
+
+      canvas.on('selection:cleared', () => {
+        console.log('Selection cleared');
+        setSelectedObject(null);
+      });
+
+      // Listen for object modifications to save to history
+      canvas.on('object:modified', () => {
+        if (!canvas?.disposed) {
+          canvas.renderAll();
           saveToHistory(canvas);
         }
-      } finally {
-        setIsInitializing(false);
-      }
-    };
+      });
 
-    initializeCanvas();
+      canvas.on('object:added', () => {
+        if (!canvas?.disposed) {
+          canvas.renderAll();
+        }
+      });
 
-    console.log('Canvas initialized successfully');
+      canvas.on('object:removed', () => {
+        if (!canvas?.disposed) {
+          canvas.renderAll();
+        }
+      });
+
+      setFabricCanvas(canvas);
+      
+      // Load existing customization JSON if it exists
+      const initializeCanvas = async () => {
+        try {
+          if (template.editable_json && !canvas?.disposed) {
+            console.log('Loading existing canvas data');
+            await new Promise<void>((resolve, reject) => {
+              if (!canvas) {
+                reject(new Error('Canvas is null'));
+                return;
+              }
+              
+              canvas.loadFromJSON(template.editable_json, () => {
+                if (!canvas?.disposed) {
+                  console.log('Canvas JSON loaded, now loading background');
+                  canvas.renderAll();
+                  resolve();
+                } else {
+                  reject(new Error('Canvas disposed during JSON loading'));
+                }
+              });
+            });
+            
+            // Load background after JSON is loaded
+            if (!canvas?.disposed) {
+              await loadBackgroundTemplate(canvas);
+              saveToHistory(canvas);
+            }
+          } else {
+            console.log('No existing canvas data, loading background template');
+            if (!canvas?.disposed) {
+              await loadBackgroundTemplate(canvas);
+              saveToHistory(canvas);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to initialize canvas:', error);
+          if (!canvas?.disposed) {
+            await loadBackgroundTemplate(canvas);
+            saveToHistory(canvas);
+          }
+        } finally {
+          setIsInitializing(false);
+        }
+      };
+
+      initializeCanvas();
+
+      console.log('Canvas initialized successfully');
+    } catch (error) {
+      console.error('Error creating canvas:', error);
+      setBackgroundError('Failed to create canvas');
+      setBackgroundLoaded(true);
+      setIsInitializing(false);
+    }
 
     return () => {
       console.log('Disposing canvas');
       try {
-        canvas.dispose();
+        if (canvas && !canvas.disposed) {
+          canvas.dispose();
+        }
       } catch (error) {
         console.error('Error disposing canvas:', error);
       }
