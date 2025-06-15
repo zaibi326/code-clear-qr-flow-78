@@ -11,8 +11,19 @@ export const useTemplateStorage = () => {
   const fileToDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onload = () => {
+        const result = reader.result as string;
+        console.log('File converted to data URL:', {
+          originalSize: file.size,
+          dataUrlLength: result.length,
+          type: file.type
+        });
+        resolve(result);
+      };
+      reader.onerror = (error) => {
+        console.error('Error converting file to data URL:', error);
+        reject(error);
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -32,50 +43,66 @@ export const useTemplateStorage = () => {
             updatedAt: new Date(template.updatedAt),
           };
           
-          // Ensure preview exists for editing - prioritize data URLs
-          if (!processedTemplate.preview) {
-            processedTemplate.preview = processedTemplate.template_url || processedTemplate.thumbnail_url;
+          // Ensure all image fields are available for editing
+          if (processedTemplate.preview && !processedTemplate.template_url) {
+            processedTemplate.template_url = processedTemplate.preview;
+          }
+          if (processedTemplate.preview && !processedTemplate.thumbnail_url) {
+            processedTemplate.thumbnail_url = processedTemplate.preview;
           }
           
-          console.log('Processed template for editing:', processedTemplate.name, {
+          console.log('Loaded template for editing:', processedTemplate.name, {
             hasPreview: !!processedTemplate.preview,
             hasTemplateUrl: !!processedTemplate.template_url,
             hasThumbnail: !!processedTemplate.thumbnail_url,
-            previewType: processedTemplate.preview?.substring(0, 20)
+            previewLength: processedTemplate.preview?.length || 0,
+            dataType: processedTemplate.preview?.substring(0, 20) || 'none'
           });
           
           return processedTemplate;
         });
-        console.log('Loaded templates:', templatesWithDates);
+        console.log('Successfully loaded', templatesWithDates.length, 'templates from storage');
         setTemplates(templatesWithDates);
       } catch (error) {
         console.error('Error loading templates from localStorage:', error);
         setTemplates([]);
       }
     } else {
-      console.log('No saved templates found');
+      console.log('No saved templates found in localStorage');
     }
     setIsLoaded(true);
   }, []);
 
   // Save templates to localStorage whenever templates state changes (but only after initial load)
   useEffect(() => {
-    if (isLoaded && templates.length > 0) {
-      console.log('Saving templates to localStorage:', templates.length, 'templates');
-      // Convert templates for storage (remove File objects but keep data URLs)
+    if (isLoaded && templates.length >= 0) {
+      console.log('Saving', templates.length, 'templates to localStorage');
+      
+      // Convert templates for storage (remove File objects but keep all data URLs)
       const templatesForStorage = templates.map(template => {
         const { file, ...templateWithoutFile } = template;
         
-        // Log what we're saving for each template
-        console.log('Saving template:', template.name, {
-          hasPreview: !!templateWithoutFile.preview,
-          hasTemplateUrl: !!templateWithoutFile.template_url,
-          previewLength: templateWithoutFile.preview?.length || 0
+        // Ensure all image URLs are preserved for editing capability
+        const storageTemplate = {
+          ...templateWithoutFile,
+          // Make sure preview data is preserved
+          preview: templateWithoutFile.preview,
+          template_url: templateWithoutFile.template_url || templateWithoutFile.preview,
+          thumbnail_url: templateWithoutFile.thumbnail_url || templateWithoutFile.preview
+        };
+        
+        console.log('Saving template to storage:', template.name, {
+          hasPreview: !!storageTemplate.preview,
+          hasTemplateUrl: !!storageTemplate.template_url,
+          hasThumbnail: !!storageTemplate.thumbnail_url,
+          previewLength: storageTemplate.preview?.length || 0
         });
         
-        return templateWithoutFile;
+        return storageTemplate;
       });
+      
       localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templatesForStorage));
+      console.log('Templates saved to localStorage successfully');
     }
   }, [templates, isLoaded]);
 
