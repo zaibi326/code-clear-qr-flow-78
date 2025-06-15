@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
+import { QrCode, Eye, EyeOff, AlertCircle, Shield, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 
@@ -67,11 +66,24 @@ const Login = () => {
       
       if (error) {
         console.log('Login failed:', error);
+        
+        // Show more specific error messages
         toast({
           title: "Login failed",
-          description: "Invalid email or password. Please check your credentials.",
+          description: error.message || "Invalid email or password. Please check your credentials.",
           variant: "destructive"
         });
+        
+        // If it's an invalid credentials error, show additional help
+        if (error.message === 'Invalid login credentials' || error.message.includes('email or password')) {
+          setTimeout(() => {
+            toast({
+              title: "Need help?",
+              description: "Make sure you're using the correct email and password. If you don't have an account yet, please register first.",
+              variant: "default"
+            });
+          }, 3000);
+        }
       } else {
         console.log('Login successful');
         toast({
@@ -112,6 +124,15 @@ const Login = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Info banner for new users */}
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 flex items-start space-x-2">
+              <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-200">
+                <p className="font-medium">New to ClearQR.io?</p>
+                <p>You'll need to create an account first before you can sign in.</p>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">Email</Label>

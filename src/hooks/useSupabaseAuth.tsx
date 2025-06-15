@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,19 +134,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting sign in for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
       
       if (error) {
-        console.error('Sign in error:', error);
+        console.error('Sign in error details:', {
+          message: error.message,
+          status: error.status,
+          code: error.name
+        });
+        
+        // Provide more specific error messages
+        let userFriendlyError = error;
+        
+        if (error.message === 'Invalid login credentials') {
+          userFriendlyError = {
+            ...error,
+            message: 'The email or password you entered is incorrect. Please check your credentials and try again.'
+          };
+        } else if (error.message.includes('Email not confirmed')) {
+          userFriendlyError = {
+            ...error,
+            message: 'Please check your email and click the confirmation link before signing in.'
+          };
+        } else if (error.message.includes('Too many requests')) {
+          userFriendlyError = {
+            ...error,
+            message: 'Too many login attempts. Please wait a few minutes before trying again.'
+          };
+        }
+        
+        return { error: userFriendlyError };
       }
       
-      return { error };
+      if (data.user) {
+        console.log('Sign in successful for user:', data.user.id);
+      }
+      
+      return { error: null };
     } catch (error) {
       console.error('Unexpected sign in error:', error);
-      return { error };
+      return { 
+        error: {
+          message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
+        }
+      };
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +194,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: redirectUrl
@@ -168,9 +203,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign up error:', error);
+        
+        // Provide more specific error messages
+        let userFriendlyError = error;
+        
+        if (error.message.includes('User already registered')) {
+          userFriendlyError = {
+            ...error,
+            message: 'An account with this email already exists. Please try signing in instead.'
+          };
+        } else if (error.message.includes('Password should be at least')) {
+          userFriendlyError = {
+            ...error,
+            message: 'Password must be at least 6 characters long.'
+          };
+        }
+        
+        return { error: userFriendlyError };
       }
       
-      return { error };
+      return { error: null };
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +236,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
@@ -209,7 +261,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           // Create user profile in Supabase
           const profileData: Omit<DatabaseUser, 'id'> = {
-            email,
+            email: email.trim().toLowerCase(),
             name: fullName,
             company: company || '',
             phone: null,
@@ -257,7 +309,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Also sync with userProfileService for immediate local access
           await userProfileService.updateProfile({
             name: fullName,
-            email: email,
+            email: email.trim().toLowerCase(),
             company: company
           });
           
