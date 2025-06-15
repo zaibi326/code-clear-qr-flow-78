@@ -14,70 +14,44 @@ export const useBackgroundLoader = () => {
     
     try {
       let imageUrl = '';
-      let fileType = '';
 
-      // Handle different file sources with priority order
-      if (template.file && template.file instanceof File) {
-        console.log('Loading template file:', template.file.name, template.file.type, 'Size:', template.file.size);
-        fileType = template.file.type.toLowerCase();
-        
-        if (fileType === 'application/pdf') {
-          // Handle PDF files - convert first page to image
-          console.log('PDF template detected - converting first page');
-          try {
-            const pdfImageUrl = await convertPDFToImage(template.file);
-            if (pdfImageUrl) {
-              imageUrl = pdfImageUrl;
-              fileType = 'image/png'; // PDF converted to PNG
-            }
-          } catch (pdfError) {
-            console.error('PDF conversion failed:', pdfError);
-            // Create PDF placeholder
-            imageUrl = createPDFPlaceholder(template.file.name);
-            fileType = 'image/png';
-          }
-        } else if (fileType.startsWith('image/')) {
-          // Handle JPG, PNG, and other image files
-          console.log('Image template detected:', fileType);
-          imageUrl = URL.createObjectURL(template.file);
-        } else {
-          console.warn('Unsupported file type:', fileType);
-          return false;
-        }
-      } else if (template.preview) {
-        console.log('Loading from preview URL');
+      // Handle different image sources with priority order
+      if (template.preview) {
+        console.log('Loading from preview URL/data');
         imageUrl = template.preview;
-        fileType = 'image/unknown';
       } else if (template.template_url) {
         console.log('Loading from template URL');
         imageUrl = template.template_url;
-        fileType = 'image/unknown';
       } else if (template.thumbnail_url) {
         console.log('Loading from thumbnail URL');
         imageUrl = template.thumbnail_url;
-        fileType = 'image/unknown';
+      } else {
+        console.log('No image source available, using white background');
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
+        return true;
       }
 
       if (imageUrl && !canvas.disposed) {
-        console.log('Loading background image from URL:', imageUrl.substring(0, 100));
+        console.log('Loading background image from source');
         
-        // Create image with timeout and better error handling
-        const img = await Promise.race([
-          new Promise<FabricImage>((resolve, reject) => {
-            FabricImage.fromURL(imageUrl, {
-              crossOrigin: 'anonymous'
-            }, (fabricImg, isError) => {
-              if (isError || !fabricImg) {
-                reject(new Error('Failed to load image'));
-              } else {
-                resolve(fabricImg);
-              }
-            });
-          }),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Image loading timeout')), 10000)
-          )
-        ]);
+        // Create image with better error handling
+        const img = await new Promise<FabricImage>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Image loading timeout'));
+          }, 8000);
+
+          FabricImage.fromURL(imageUrl, {
+            crossOrigin: 'anonymous'
+          }, (fabricImg, isError) => {
+            clearTimeout(timeout);
+            if (isError || !fabricImg) {
+              reject(new Error('Failed to load image'));
+            } else {
+              resolve(fabricImg);
+            }
+          });
+        });
         
         if (!canvas.disposed && img) {
           const canvasWidth = canvas.getWidth();
@@ -108,11 +82,6 @@ export const useBackgroundLoader = () => {
           console.log('Background template loaded successfully');
           return true;
         }
-      } else {
-        console.log('No image URL available, using white background');
-        canvas.backgroundColor = '#ffffff';
-        canvas.renderAll();
-        return true;
       }
       
       return true;
@@ -126,73 +95,6 @@ export const useBackgroundLoader = () => {
       return false;
     }
   }, []);
-
-  // Convert PDF first page to image using canvas
-  const convertPDFToImage = async (pdfFile: File): Promise<string | null> => {
-    try {
-      // For now, we'll create a better PDF placeholder
-      // In a production app, you'd use PDF.js here
-      return createPDFPlaceholder(pdfFile.name);
-    } catch (error) {
-      console.error('PDF conversion error:', error);
-      return null;
-    }
-  };
-
-  // Create a professional PDF placeholder
-  const createPDFPlaceholder = (fileName: string): string => {
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = 800;
-    tempCanvas.height = 600;
-    const ctx = tempCanvas.getContext('2d');
-    
-    if (ctx) {
-      // Create gradient background
-      const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-      gradient.addColorStop(0, '#f8fafc');
-      gradient.addColorStop(1, '#e2e8f0');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 800, 600);
-      
-      // Add border
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(10, 10, 780, 580);
-      
-      // Add inner border
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(30, 30, 740, 540);
-      
-      // Add PDF icon
-      ctx.fillStyle = '#dc2626';
-      ctx.font = 'bold 64px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('📄', 400, 220);
-      
-      // Add title
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 32px Arial';
-      ctx.fillText('PDF Template', 400, 280);
-      
-      // Add subtitle
-      ctx.fillStyle = '#64748b';
-      ctx.font = '18px Arial';
-      ctx.fillText('Ready for editing and customization', 400, 320);
-      
-      // Add filename
-      ctx.font = '16px Arial';
-      ctx.fillText(`File: ${fileName}`, 400, 350);
-      
-      // Add instructions
-      ctx.font = '14px Arial';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText('Add text, shapes, QR codes and images', 400, 390);
-      ctx.fillText('Use the toolbar on the left to get started', 400, 410);
-    }
-    
-    return tempCanvas.toDataURL('image/png');
-  };
 
   return { loadBackgroundTemplate };
 };

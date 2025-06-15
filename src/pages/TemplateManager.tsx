@@ -16,6 +16,16 @@ const TemplateManager = () => {
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Convert File to data URL for storage
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Load templates from localStorage on component mount
   useEffect(() => {
     console.log('Loading templates from localStorage...');
@@ -23,11 +33,13 @@ const TemplateManager = () => {
     if (savedTemplates) {
       try {
         const parsedTemplates = JSON.parse(savedTemplates);
-        // Convert date strings back to Date objects
+        // Convert date strings back to Date objects and ensure proper data structure
         const templatesWithDates = parsedTemplates.map((template: any) => ({
           ...template,
           createdAt: new Date(template.createdAt),
-          updatedAt: new Date(template.updatedAt)
+          updatedAt: new Date(template.updatedAt),
+          // Ensure preview exists for editing
+          preview: template.preview || template.template_url || template.thumbnail_url
         }));
         console.log('Loaded templates:', templatesWithDates);
         setTemplates(templatesWithDates);
@@ -45,24 +57,55 @@ const TemplateManager = () => {
   useEffect(() => {
     if (isLoaded) {
       console.log('Saving templates to localStorage:', templates);
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+      // Convert templates for storage (remove File objects)
+      const templatesForStorage = templates.map(template => {
+        const { file, ...templateWithoutFile } = template;
+        return templateWithoutFile;
+      });
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templatesForStorage));
     }
   }, [templates, isLoaded]);
 
-  const handleTemplateUpload = (template: Template) => {
+  const handleTemplateUpload = async (template: Template) => {
     console.log('Template uploaded:', template);
-    setTemplates(prev => {
-      const newTemplates = [...prev, template];
-      console.log('New templates array:', newTemplates);
-      // Force immediate save to localStorage
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
-      return newTemplates;
-    });
     
-    toast({
-      title: "Template uploaded successfully!",
-      description: `${template.name} has been added to your library.`,
-    });
+    try {
+      let processedTemplate = { ...template };
+      
+      // If template has a file, convert it to data URL for preview and storage
+      if (template.file) {
+        console.log('Converting file to data URL for template:', template.name);
+        const dataUrl = await fileToDataUrl(template.file);
+        
+        // Set preview to data URL for editing capability
+        processedTemplate.preview = dataUrl;
+        processedTemplate.template_url = dataUrl;
+        
+        // Store file metadata but remove actual File object for localStorage
+        processedTemplate.fileSize = template.file.size;
+        processedTemplate.type = template.file.type;
+        
+        console.log('Template processed with data URL');
+      }
+      
+      setTemplates(prev => {
+        const newTemplates = [...prev, processedTemplate];
+        console.log('New templates array:', newTemplates);
+        return newTemplates;
+      });
+      
+      toast({
+        title: "Template uploaded successfully!",
+        description: `${template.name} has been added to your library and is ready for editing.`,
+      });
+    } catch (error) {
+      console.error('Error processing template upload:', error);
+      toast({
+        title: "Upload error",
+        description: "There was an error processing your template file.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleTemplateSelect = (template: Template) => {
@@ -76,14 +119,23 @@ const TemplateManager = () => {
 
   const handleTemplateEdit = (template: Template) => {
     console.log('Editing template:', template);
+    
+    // Ensure template has preview data for editing
+    if (!template.preview && (!template.template_url || !template.thumbnail_url)) {
+      toast({
+        title: "Cannot edit template",
+        description: "Template data is missing. Please re-upload the template.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setEditingTemplate(template);
   };
 
   const handleTemplateCustomizationSave = (customizedTemplate: Template) => {
     setTemplates(prev => {
       const updatedTemplates = prev.map(t => t.id === customizedTemplate.id ? customizedTemplate : t);
-      // Force immediate save to localStorage
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(updatedTemplates));
       return updatedTemplates;
     });
     setEditingTemplate(null);
@@ -98,12 +150,7 @@ const TemplateManager = () => {
   };
 
   const handleTemplateDelete = (templateId: string) => {
-    setTemplates(prev => {
-      const filteredTemplates = prev.filter(template => template.id !== templateId);
-      // Force immediate save to localStorage
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(filteredTemplates));
-      return filteredTemplates;
-    });
+    setTemplates(prev => prev.filter(template => template.id !== templateId));
     toast({
       title: "Template deleted",
       description: "Template has been removed from your library",
@@ -120,12 +167,7 @@ const TemplateManager = () => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      setTemplates(prev => {
-        const newTemplates = [...prev, duplicatedTemplate];
-        // Force immediate save to localStorage
-        localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
-        return newTemplates;
-      });
+      setTemplates(prev => [...prev, duplicatedTemplate]);
       toast({
         title: "Template duplicated",
         description: `Created a copy of ${templateToDuplicate.name}`,
