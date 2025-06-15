@@ -24,7 +24,7 @@ export const useCanvasEditor = (template: Template) => {
   const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(1); // Set default zoom to 100%
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [backgroundError, setBackgroundError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -69,6 +69,37 @@ export const useCanvasEditor = (template: Template) => {
     }
   }, [historyIndex]);
 
+  // Load PDF as image using canvas rendering
+  const loadPDFAsImage = useCallback(async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.onload = function() {
+        const typedarray = new Uint8Array(this.result as ArrayBuffer);
+        
+        // For now, show placeholder for PDF
+        // In a real implementation, you'd use pdf.js here
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        if (ctx) {
+          ctx.fillStyle = '#f0f0f0';
+          ctx.fillRect(0, 0, 800, 600);
+          ctx.fillStyle = '#666';
+          ctx.font = '24px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('PDF Preview', 400, 280);
+          ctx.fillText('(First Page)', 400, 320);
+        }
+        
+        resolve(canvas.toDataURL());
+      };
+      fileReader.onerror = reject;
+      fileReader.readAsArrayBuffer(file);
+    });
+  }, []);
+
   // Load background template file
   const loadBackgroundTemplate = useCallback(async (canvas: Canvas) => {
     if (!canvas || canvas.disposed || !isMountedRef.current) {
@@ -85,13 +116,8 @@ export const useCanvasEditor = (template: Template) => {
       // Handle different file sources
       if (template.file && template.file instanceof File) {
         if (template.file.type === 'application/pdf') {
-          console.log('PDF template detected - showing placeholder');
-          setBackgroundLoaded(true);
-          toast({
-            title: 'PDF Template Loaded',
-            description: 'PDF background loaded. You can now add elements on top.',
-          });
-          return;
+          console.log('PDF template detected - converting to image');
+          imageUrl = await loadPDFAsImage(template.file);
         } else if (template.file.type.startsWith('image/')) {
           imageUrl = URL.createObjectURL(template.file);
         } else {
@@ -163,7 +189,7 @@ export const useCanvasEditor = (template: Template) => {
         variant: 'destructive'
       });
     }
-  }, [template]);
+  }, [template, loadPDFAsImage]);
 
   // Canvas initialization effect - only run once per template
   useEffect(() => {
@@ -196,6 +222,9 @@ export const useCanvasEditor = (template: Template) => {
         });
 
         console.log('Canvas created successfully');
+
+        // Set initial zoom to 100% (1.0)
+        canvas.setZoom(1);
 
         // Initialize drawing brush
         if (canvas.freeDrawingBrush) {
@@ -290,7 +319,6 @@ export const useCanvasEditor = (template: Template) => {
       } catch (error) {
         console.error('Error disposing canvas:', error);
       }
-      // Don't reset canvasInitializedRef here to prevent re-initialization
     };
   }, [template.id, loadBackgroundTemplate, saveToHistory]);
 

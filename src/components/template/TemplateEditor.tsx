@@ -156,7 +156,7 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col min-w-[1024px]">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -179,10 +179,10 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Tools */}
-        <div className="w-60 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto">
+      {/* Main Content -  Using CSS Grid for proper layout */}
+      <div className="flex-1 grid grid-cols-[280px_1fr_320px] overflow-hidden min-h-0">
+        {/* Left Sidebar - Tools - Fixed width, scrollable */}
+        <div className="bg-white border-r border-gray-200 overflow-y-auto">
           <CanvasToolbar
             qrUrl={qrUrl}
             setQrUrl={setQrUrl}
@@ -203,8 +203,8 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           />
         </div>
 
-        {/* Center - Canvas Area */}
-        <div className="flex-1 bg-gray-100 relative overflow-hidden">
+        {/* Center - Canvas Area - Flexible, centered */}
+        <div className="bg-gray-100 relative overflow-auto min-w-0">
           <CanvasArea 
             canvasRef={canvasRef} 
             zoom={zoom}
@@ -214,14 +214,14 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           
           {/* Zoom indicator */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-            <div className="bg-white px-2 py-1 rounded-md shadow-sm border text-xs text-gray-600">
+            <div className="bg-white px-3 py-2 rounded-md shadow-sm border text-sm text-gray-600">
               Zoom: {Math.round(zoom * 100)}%
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar - Properties */}
-        <div className="w-72 bg-white border-l border-gray-200 flex-shrink-0 overflow-y-auto">
+        {/* Right Sidebar - Properties - Fixed width, scrollable */}
+        <div className="bg-white border-l border-gray-200 overflow-y-auto">
           <PropertiesPanel
             selectedObject={selectedObject}
             onUpdateProperty={updateSelectedObjectProperty}

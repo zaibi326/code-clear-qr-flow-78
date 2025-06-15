@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
@@ -161,24 +160,14 @@ const TemplateManager = () => {
     );
   }
 
-  // Show template editor if editing
+  // Show template editor if editing - Full screen editor
   if (editingTemplate) {
     return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
-            <DashboardTopbar />
-            <main className="flex-1 overflow-auto">
-              <TemplateEditor
-                template={editingTemplate}
-                onSave={handleTemplateCustomizationSave}
-                onCancel={handleTemplateCustomizationCancel}
-              />
-            </main>
-          </div>
-        </div>
-      </SidebarProvider>
+      <TemplateEditor
+        template={editingTemplate}
+        onSave={handleTemplateCustomizationSave}
+        onCancel={handleTemplateCustomizationCancel}
+      />
     );
   }
 
