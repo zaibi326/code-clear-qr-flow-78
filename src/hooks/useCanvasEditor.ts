@@ -106,7 +106,7 @@ export const useCanvasEditor = (template: Template) => {
       if (imageUrl) {
         console.log('Loading background image from URL:', imageUrl);
         
-        FabricImage.fromURL(imageUrl, {}, (img) => {
+        FabricImage.fromURL(imageUrl).then((img) => {
           console.log('Image loaded callback called, img:', img);
           if (img) {
             // Scale image to fit canvas while maintaining aspect ratio
@@ -151,7 +151,7 @@ export const useCanvasEditor = (template: Template) => {
             setBackgroundError('Failed to load template image');
             setBackgroundLoaded(true); // Still mark as loaded to show canvas
           }
-        }, (error) => {
+        }).catch((error) => {
           console.error('Error in FabricImage.fromURL:', error);
           setBackgroundError('Failed to load template image');
           setBackgroundLoaded(true); // Still mark as loaded to show canvas
@@ -344,7 +344,7 @@ export const useCanvasEditor = (template: Template) => {
       const qrResult = await generateQRCode(qrUrl, { size: 150 });
       console.log('QR code generated:', qrResult);
       
-      FabricImage.fromURL(qrResult.dataURL, {}, (qrImg) => {
+      FabricImage.fromURL(qrResult.dataURL).then((qrImg) => {
         console.log('QR image created:', qrImg);
         if (qrImg) {
           qrImg.set({
@@ -387,6 +387,13 @@ export const useCanvasEditor = (template: Template) => {
           console.error('Failed to create QR code image');
           throw new Error('Failed to create QR code image');
         }
+      }).catch((error) => {
+        console.error('QR image creation error:', error);
+        toast({
+          title: 'Failed to generate QR code',
+          description: 'Please check the URL and try again',
+          variant: 'destructive'
+        });
       });
     } catch (error) {
       console.error('QR generation error:', error);
@@ -517,7 +524,7 @@ export const useCanvasEditor = (template: Template) => {
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string;
       
-      FabricImage.fromURL(imageUrl, {}, (img) => {
+      FabricImage.fromURL(imageUrl).then((img) => {
         if (img) {
           img.set({
             left: 150,
@@ -548,6 +555,13 @@ export const useCanvasEditor = (template: Template) => {
             title: 'Image added to canvas',
           });
         }
+      }).catch((error) => {
+        console.error('Error loading image:', error);
+        toast({
+          title: 'Failed to load image',
+          description: 'Please try a different image file',
+          variant: 'destructive'
+        });
       });
     };
     reader.readAsDataURL(file);
