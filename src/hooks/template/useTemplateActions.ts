@@ -17,23 +17,26 @@ export const useTemplateActions = ({ templates, setTemplates, fileToDataUrl }: U
       
       // If template has a file, convert it to data URL for preview and storage
       if (template.file) {
-        console.log('Converting file to data URL for template:', template.name);
+        console.log('Converting file to data URL for template:', template.name, template.file.type);
         const dataUrl = await fileToDataUrl(template.file);
         
-        // Set preview to data URL for editing capability
+        console.log('Data URL created, length:', dataUrl.length);
+        
+        // Set all URL fields to the data URL for maximum compatibility
         processedTemplate.preview = dataUrl;
         processedTemplate.template_url = dataUrl;
+        processedTemplate.thumbnail_url = dataUrl;
         
         // Store file metadata but remove actual File object for localStorage
         processedTemplate.fileSize = template.file.size;
         processedTemplate.type = template.file.type;
         
-        console.log('Template processed with data URL');
+        console.log('Template processed with data URL for editing capability');
       }
       
       setTemplates(prev => {
         const newTemplates = [...prev, processedTemplate];
-        console.log('New templates array:', newTemplates);
+        console.log('Added template to collection. Total templates:', newTemplates.length);
         return newTemplates;
       });
       
