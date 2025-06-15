@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { Canvas } from 'fabric';
 import { toast } from '@/hooks/use-toast';
 import { Template } from '@/types/template';
@@ -46,7 +46,9 @@ export const useCanvasEditor = (template: Template) => {
     zoomCanvas
   } = useCanvasOperations(fabricCanvasRef, saveToHistory, setCanvasElements, setSelectedObject);
 
-  // Stable callback to prevent re-initialization
+  const templateId = useMemo(() => template.id, [template.id]);
+
+  // Stable initialization function
   const initializeCanvas = useCallback(async () => {
     if (!canvasRef.current || isInitializedRef.current) {
       console.log('Canvas ref not available or already initialized');
@@ -65,7 +67,7 @@ export const useCanvasEditor = (template: Template) => {
         initTimeoutRef.current = null;
       }
 
-      // Create canvas with immediate feedback
+      // Create canvas
       console.log('Creating Fabric canvas...');
       const canvas = new Canvas(canvasRef.current, {
         width: 800,
@@ -114,7 +116,7 @@ export const useCanvasEditor = (template: Template) => {
           await new Promise<void>((resolve, reject) => {
             const timeoutId = setTimeout(() => {
               reject(new Error('JSON loading timeout'));
-            }, 5000);
+            }, 3000);
 
             canvas.loadFromJSON(template.editable_json, () => {
               clearTimeout(timeoutId);
@@ -127,22 +129,24 @@ export const useCanvasEditor = (template: Template) => {
           });
         } catch (jsonError) {
           console.warn('Error loading JSON data:', jsonError);
-          // Continue initialization even if JSON fails
         }
       }
 
-      // Load background template with shorter timeout
+      // Load background template
       console.log('Loading background template...');
-      const loadSuccess = await Promise.race([
-        loadBackgroundTemplate(canvas, template),
-        new Promise<boolean>((_, reject) => 
-          setTimeout(() => reject(new Error('Background loading timeout')), 8000)
-        )
-      ]);
-
-      console.log('Background loading result:', loadSuccess);
+      try {
+        const loadSuccess = await Promise.race([
+          loadBackgroundTemplate(canvas, template),
+          new Promise<boolean>((_, reject) => 
+            setTimeout(() => reject(new Error('Background loading timeout')), 5000)
+          )
+        ]);
+        console.log('Background loading result:', loadSuccess);
+      } catch (error) {
+        console.warn('Background loading failed:', error);
+      }
       
-      // Mark as loaded regardless of background loading success
+      // Mark as loaded
       setBackgroundLoaded(true);
       setBackgroundError(null);
       
@@ -168,7 +172,7 @@ export const useCanvasEditor = (template: Template) => {
         variant: 'destructive'
       });
     }
-  }, [template.name, template.editable_json, canvasRef, isInitializedRef, fabricCanvasRef, setZoom, setSelectedObject, setBackgroundLoaded, setBackgroundError, saveToHistory, loadBackgroundTemplate]);
+  }, [template, canvasRef, isInitializedRef, fabricCanvasRef, setZoom, setSelectedObject, setBackgroundLoaded, setBackgroundError, saveToHistory, loadBackgroundTemplate]);
 
   // Initialize canvas when template changes
   useEffect(() => {
@@ -185,10 +189,10 @@ export const useCanvasEditor = (template: Template) => {
     }
     fabricCanvasRef.current = null;
 
-    // Initialize new canvas
+    // Initialize new canvas with a small delay
     const timeoutId = setTimeout(() => {
       initializeCanvas();
-    }, 100); // Small delay to ensure DOM is ready
+    }, 50);
 
     return () => {
       clearTimeout(timeoutId);
@@ -209,7 +213,7 @@ export const useCanvasEditor = (template: Template) => {
       }
       fabricCanvasRef.current = null;
     };
-  }, [template.id, initializeCanvas]);
+  }, [templateId, initializeCanvas]);
 
   const resetCanvas = useCallback(() => {
     const canvas = fabricCanvasRef.current;

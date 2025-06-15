@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Template } from '@/types/template';
 import { useCanvasEditor } from '@/hooks/useCanvasEditor';
 import { CanvasArea } from './CanvasArea';
@@ -15,6 +15,12 @@ interface TemplateEditorProps {
 }
 
 export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorProps) => {
+  // Always call hooks in the same order
+  const [qrUrl, setQrUrl] = useState('https://example.com');
+  const [textContent, setTextContent] = useState('Sample Text');
+
+  const canvasEditor = useCanvasEditor(template);
+
   const {
     canvasRef,
     fabricCanvas,
@@ -35,12 +41,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     redoCanvas,
     canUndo,
     canRedo
-  } = useCanvasEditor(template);
+  } = canvasEditor;
 
-  const [qrUrl, setQrUrl] = React.useState('https://example.com');
-  const [textContent, setTextContent] = React.useState('Sample Text');
-
-  const handleAddQRCode = () => {
+  const handleAddQRCode = useCallback(() => {
     console.log('Adding QR code with URL:', qrUrl);
     if (!qrUrl || qrUrl.trim() === '') {
       toast({
@@ -51,9 +54,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       return;
     }
     addQRCode(qrUrl.trim());
-  };
+  }, [qrUrl, addQRCode]);
 
-  const handleAddText = () => {
+  const handleAddText = useCallback(() => {
     console.log('Adding text:', textContent);
     if (!textContent || textContent.trim() === '') {
       toast({
@@ -64,9 +67,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       return;
     }
     addText(textContent.trim(), 16, '#000000');
-  };
+  }, [textContent, addText]);
 
-  const handleUploadImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('Uploading image:', file.name, file.type);
@@ -80,9 +83,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       }
       uploadImage(file);
     }
-  };
+  }, [uploadImage]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!fabricCanvas) {
       toast({
         title: 'Canvas not ready',
@@ -111,9 +114,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       title: 'Template saved successfully',
       description: 'Your changes have been saved',
     });
-  };
+  }, [fabricCanvas, template, canvasElements, onSave]);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (!fabricCanvas) {
       toast({
         title: 'Canvas not ready',
@@ -140,20 +143,20 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       title: 'Template downloaded',
       description: 'Template has been downloaded as PNG',
     });
-  };
+  }, [fabricCanvas, template.name]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     console.log('Delete button clicked, selected object:', selectedObject);
     deleteSelected();
-  };
+  }, [deleteSelected, selectedObject]);
 
   // Show template file info
-  const getTemplateFileInfo = () => {
+  const getTemplateFileInfo = useCallback(() => {
     if (template.file) {
       return `${template.file.type} - ${(template.file.size / 1024 / 1024).toFixed(2)} MB`;
     }
     return 'Built-in template';
-  };
+  }, [template.file]);
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col min-w-[1024px]">
@@ -179,7 +182,7 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
         </div>
       </div>
 
-      {/* Main Content -  Using CSS Grid for proper layout */}
+      {/* Main Content - Using CSS Grid for proper layout */}
       <div className="flex-1 grid grid-cols-[280px_1fr_320px] overflow-hidden min-h-0">
         {/* Left Sidebar - Tools - Fixed width, scrollable */}
         <div className="bg-white border-r border-gray-200 overflow-y-auto">
