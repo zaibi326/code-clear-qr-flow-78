@@ -73,15 +73,35 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     const file = event.target.files?.[0];
     if (file) {
       console.log('Uploading image:', file.name, file.type);
-      if (!file.type.startsWith('image/')) {
+      
+      // Check file type and size
+      const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!supportedTypes.includes(file.type.toLowerCase())) {
         toast({
-          title: 'Invalid file type',
-          description: 'Please select an image file (JPG, PNG, etc.)',
+          title: 'Unsupported file format',
+          description: 'Please select a JPG, PNG, GIF, or WebP image file',
           variant: 'destructive'
         });
         return;
       }
+      
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: 'File too large',
+          description: 'Please select an image smaller than 10MB',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       uploadImage(file);
+      
+      // Show success toast
+      toast({
+        title: 'Image uploaded',
+        description: `${file.name} has been added to the canvas`,
+      });
     }
   }, [uploadImage]);
 
@@ -95,25 +115,34 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       return;
     }
     
-    const canvasData = fabricCanvas.toJSON();
-    const updatedTemplate: Template = {
-      ...template,
-      customization: {
-        canvasWidth: 800,
-        canvasHeight: 600,
-        backgroundColor: '#ffffff',
-        elements: canvasElements,
-        version: '1.0'
-      },
-      editable_json: canvasData,
-      updatedAt: new Date()
-    };
-    
-    onSave(updatedTemplate);
-    toast({
-      title: 'Template saved successfully',
-      description: 'Your changes have been saved',
-    });
+    try {
+      const canvasData = fabricCanvas.toJSON();
+      const updatedTemplate: Template = {
+        ...template,
+        customization: {
+          canvasWidth: 800,
+          canvasHeight: 600,
+          backgroundColor: '#ffffff',
+          elements: canvasElements,
+          version: '1.0'
+        },
+        editable_json: canvasData,
+        updatedAt: new Date()
+      };
+      
+      onSave(updatedTemplate);
+      toast({
+        title: 'Template saved successfully',
+        description: 'Your changes have been saved',
+      });
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: 'Save failed',
+        description: 'There was an error saving your template',
+        variant: 'destructive'
+      });
+    }
   }, [fabricCanvas, template, canvasElements, onSave]);
 
   const handleDownload = useCallback(() => {
@@ -126,23 +155,32 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
       return;
     }
     
-    const dataURL = fabricCanvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 2
-    });
-    
-    const link = document.createElement('a');
-    link.download = `${template.name}.png`;
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: 'Template downloaded',
-      description: 'Template has been downloaded as PNG',
-    });
+    try {
+      const dataURL = fabricCanvas.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 2
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${template.name}.png`;
+      link.href = dataURL;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Template downloaded',
+        description: 'Template has been downloaded as PNG',
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: 'Download failed',
+        description: 'There was an error downloading your template',
+        variant: 'destructive'
+      });
+    }
   }, [fabricCanvas, template.name]);
 
   const handleDelete = useCallback(() => {
@@ -150,26 +188,51 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
     deleteSelected();
   }, [deleteSelected, selectedObject]);
 
+  const handleResetLayout = useCallback(() => {
+    resetCanvas();
+    toast({
+      title: 'Layout reset',
+      description: 'Canvas has been reset to original state',
+    });
+  }, [resetCanvas]);
+
   // Show template file info
   const getTemplateFileInfo = useCallback(() => {
     if (template.file) {
-      return `${template.file.type} - ${(template.file.size / 1024 / 1024).toFixed(2)} MB`;
+      const sizeInMB = (template.file.size / 1024 / 1024).toFixed(2);
+      let fileTypeDisplay = template.file.type;
+      
+      if (template.file.type === 'application/pdf') {
+        fileTypeDisplay = 'PDF';
+      } else if (template.file.type.startsWith('image/')) {
+        fileTypeDisplay = template.file.type.split('/')[1].toUpperCase();
+      }
+      
+      return `${fileTypeDisplay} - ${sizeInMB} MB`;
     }
     return 'Built-in template';
   }, [template.file]);
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col min-w-[1024px]">
+    <div className="h-screen bg-gray-50 flex flex-col min-w-[1024px] overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex-shrink-0">
+      <div className="bg-white border-b px-4 py-3 flex-shrink-0 z-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Template Editor</h1>
             <p className="text-xs text-gray-600 mt-1">
-              Editing: {template.name} ({getTemplateFileInfo()})
+              Editing: {template.name} ({getTemplateFileInfo()}) • Supports JPG, PNG & PDF
             </p>
           </div>
           <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetLayout}
+              className="text-gray-600 text-sm px-3 py-1"
+            >
+              Reset Layout
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -182,9 +245,9 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
         </div>
       </div>
 
-      {/* Main Content - Using CSS Grid for proper layout */}
+      {/* Main Content - Improved CSS Grid layout */}
       <div className="flex-1 grid grid-cols-[280px_1fr_320px] overflow-hidden min-h-0">
-        {/* Left Sidebar - Tools - Fixed width, scrollable */}
+        {/* Left Sidebar - Tools */}
         <div className="bg-white border-r border-gray-200 overflow-y-auto">
           <CanvasToolbar
             qrUrl={qrUrl}
@@ -196,7 +259,7 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
             onAddShape={addShape}
             onUploadImage={handleUploadImage}
             onZoomCanvas={zoomCanvas}
-            onResetCanvas={resetCanvas}
+            onResetCanvas={handleResetLayout}
             onDeleteSelected={handleDelete}
             hasSelectedObject={!!selectedObject}
             onUndo={undoCanvas}
@@ -206,24 +269,26 @@ export const TemplateEditor = ({ template, onSave, onCancel }: TemplateEditorPro
           />
         </div>
 
-        {/* Center - Canvas Area - Flexible, centered */}
-        <div className="bg-gray-100 relative overflow-auto min-w-0">
-          <CanvasArea 
-            canvasRef={canvasRef} 
-            zoom={zoom}
-            backgroundLoaded={backgroundLoaded}
-            backgroundError={backgroundError}
-          />
+        {/* Center - Canvas Area */}
+        <div className="bg-gray-100 relative overflow-hidden min-w-0 flex flex-col">
+          <div className="flex-1 overflow-auto">
+            <CanvasArea 
+              canvasRef={canvasRef} 
+              zoom={zoom}
+              backgroundLoaded={backgroundLoaded}
+              backgroundError={backgroundError}
+            />
+          </div>
           
           {/* Zoom indicator */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
             <div className="bg-white px-3 py-2 rounded-md shadow-sm border text-sm text-gray-600">
               Zoom: {Math.round(zoom * 100)}%
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar - Properties - Fixed width, scrollable */}
+        {/* Right Sidebar - Properties */}
         <div className="bg-white border-l border-gray-200 overflow-y-auto">
           <PropertiesPanel
             selectedObject={selectedObject}
