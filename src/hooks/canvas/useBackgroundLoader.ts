@@ -15,12 +15,12 @@ export const useBackgroundLoader = () => {
     try {
       let imageUrl = '';
 
-      // Handle different file sources
+      // Handle different file sources with priority order
       if (template.file && template.file instanceof File) {
-        console.log('Loading template file:', template.file.name, template.file.type);
+        console.log('Loading template file:', template.file.name, template.file.type, 'Size:', template.file.size);
         
         if (template.file.type === 'application/pdf') {
-          // Create PDF placeholder
+          // Create PDF placeholder with better styling
           console.log('PDF template detected - creating placeholder');
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = 800;
@@ -28,21 +28,35 @@ export const useBackgroundLoader = () => {
           const ctx = tempCanvas.getContext('2d');
           
           if (ctx) {
-            ctx.fillStyle = '#f8f9fa';
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+            gradient.addColorStop(0, '#f8fafc');
+            gradient.addColorStop(1, '#e2e8f0');
+            ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, 800, 600);
-            ctx.strokeStyle = '#dee2e6';
+            
+            // Add border
+            ctx.strokeStyle = '#cbd5e1';
             ctx.lineWidth = 2;
             ctx.strokeRect(10, 10, 780, 580);
-            ctx.fillStyle = '#dc3545';
-            ctx.font = 'bold 32px Arial';
+            
+            // Add PDF icon and text
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 48px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('📄 PDF Template', 400, 280);
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '18px Arial';
-            ctx.fillText('Ready for editing and customization', 400, 320);
+            ctx.fillText('📄', 400, 250);
+            
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('PDF Template', 400, 300);
+            
+            ctx.fillStyle = '#64748b';
+            ctx.font = '16px Arial';
+            ctx.fillText('Ready for editing and customization', 400, 330);
+            ctx.fillText(`File: ${template.file.name}`, 400, 360);
           }
           
-          imageUrl = tempCanvas.toDataURL();
+          imageUrl = tempCanvas.toDataURL('image/png');
         } else if (template.file.type.startsWith('image/')) {
           console.log('Image template detected');
           imageUrl = URL.createObjectURL(template.file);
@@ -59,11 +73,17 @@ export const useBackgroundLoader = () => {
       }
 
       if (imageUrl && !canvas.disposed) {
-        console.log('Loading background image from URL');
+        console.log('Loading background image from URL:', imageUrl.substring(0, 100));
         
-        const img = await FabricImage.fromURL(imageUrl, {
-          crossOrigin: 'anonymous'
-        });
+        // Create image with timeout
+        const img = await Promise.race([
+          FabricImage.fromURL(imageUrl, {
+            crossOrigin: 'anonymous'
+          }),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Image loading timeout')), 5000)
+          )
+        ]);
         
         if (!canvas.disposed && img) {
           const canvasWidth = canvas.getWidth();
@@ -71,6 +91,7 @@ export const useBackgroundLoader = () => {
           const imgWidth = img.width || canvasWidth;
           const imgHeight = img.height || canvasHeight;
           
+          // Scale to fit canvas while maintaining aspect ratio
           const scaleX = canvasWidth / imgWidth;
           const scaleY = canvasHeight / imgHeight;
           const scale = Math.min(scaleX, scaleY);
@@ -90,12 +111,24 @@ export const useBackgroundLoader = () => {
           canvas.renderAll();
           
           console.log('Background template loaded successfully');
+          return true;
         }
+      } else {
+        console.log('No image URL available, using white background');
+        // Just use white background if no image is available
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
+        return true;
       }
       
       return true;
     } catch (error) {
       console.error('Error loading background template:', error);
+      // Set white background as fallback
+      if (!canvas.disposed) {
+        canvas.backgroundColor = '#ffffff';
+        canvas.renderAll();
+      }
       return false;
     }
   }, []);
