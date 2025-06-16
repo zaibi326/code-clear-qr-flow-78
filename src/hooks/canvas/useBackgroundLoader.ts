@@ -106,12 +106,14 @@ export const useBackgroundLoader = () => {
             scaleY: scale,
             selectable: false,
             evented: false,
-            excludeFromExport: false,
-            name: 'background-template'
+            excludeFromExport: false
           });
 
-          // Clear any existing background objects
-          const existingBackground = canvas.getObjects().find(obj => obj.name === 'background-template');
+          // Add custom data to identify background objects
+          (img as any).isBackgroundTemplate = true;
+
+          // Clear any existing background objects using the custom property
+          const existingBackground = canvas.getObjects().find(obj => (obj as any).isBackgroundTemplate);
           if (existingBackground) {
             canvas.remove(existingBackground);
           }
