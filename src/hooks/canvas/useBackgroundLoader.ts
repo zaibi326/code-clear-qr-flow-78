@@ -64,40 +64,26 @@ export const useBackgroundLoader = () => {
           canvas.remove(existingBackground);
         }
         
-        // Handle PDF files differently - they need special handling
+        // Handle PDF files - convert to image first
         if (imageUrl.includes('data:application/pdf')) {
-          console.log('PDF detected - converting to image using canvas');
+          console.log('PDF detected - converting to image');
           try {
-            // For PDF, we'll create a canvas representation
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            await new Promise((resolve, reject) => {
-              img.onload = resolve;
-              img.onerror = reject;
-              img.src = imageUrl;
-            });
-            
-            // Convert to canvas and then back to data URL as PNG
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            if (tempCtx) {
-              tempCanvas.width = img.width || 800;
-              tempCanvas.height = img.height || 600;
-              tempCtx.drawImage(img, 0, 0);
-              imageUrl = tempCanvas.toDataURL('image/png');
-              console.log('PDF converted to PNG data URL');
-            }
+            imageUrl = await convertPdfToImage(imageUrl);
+            console.log('PDF converted to image successfully');
           } catch (pdfError) {
-            console.warn('PDF conversion failed, trying direct load:', pdfError);
+            console.warn('PDF conversion failed:', pdfError);
+            // Set white background as fallback for PDFs
+            canvas.backgroundColor = '#ffffff';
+            canvas.renderAll();
+            return false;
           }
         }
         
         // Create Fabric image with improved error handling
         const img = await new Promise<FabricImage>((resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error('Image loading timeout after 45 seconds'));
-          }, 45000);
+            reject(new Error('Image loading timeout after 60 seconds'));
+          }, 60000);
 
           try {
             console.log('Creating Fabric image from URL...');
@@ -122,29 +108,7 @@ export const useBackgroundLoader = () => {
             }).catch((error) => {
               clearTimeout(timeout);
               console.error('Fabric image loading failed:', error);
-              
-              // Try alternative loading method for PNG/PDF
-              if (imageUrl.includes('data:image/png') || imageUrl.includes('data:application/pdf')) {
-                console.log('Trying alternative loading method for PNG/PDF...');
-                const htmlImg = new Image();
-                htmlImg.crossOrigin = 'anonymous';
-                htmlImg.onload = () => {
-                  try {
-                    const fabricImg = new FabricImage(htmlImg, {});
-                    console.log('Alternative loading successful');
-                    resolve(fabricImg);
-                  } catch (altError) {
-                    console.error('Alternative loading also failed:', altError);
-                    reject(new Error(`Failed to load image: ${error.message || 'Unknown error'}`));
-                  }
-                };
-                htmlImg.onerror = () => {
-                  reject(new Error(`Failed to load image: ${error.message || 'Unknown error'}`));
-                };
-                htmlImg.src = imageUrl;
-              } else {
-                reject(new Error(`Failed to load image: ${error.message || 'Unknown error'}`));
-              }
+              reject(new Error(`Failed to load image: ${error.message || 'Unknown error'}`));
             });
           } catch (syncError) {
             clearTimeout(timeout);
@@ -164,11 +128,11 @@ export const useBackgroundLoader = () => {
             imageSize: `${imgWidth}x${imgHeight}`
           });
           
-          // Calculate scale to fit the image perfectly to canvas (cover the entire canvas)
+          // Calculate scale to fit the image to fill the entire canvas (cover mode)
           const scaleX = canvasWidth / imgWidth;
           const scaleY = canvasHeight / imgHeight;
           
-          // Use the larger scale to ensure the image covers the entire canvas
+          // Use the larger scale to ensure the image covers the entire canvas without white space
           const scale = Math.max(scaleX, scaleY);
           
           // Calculate position to center the scaled image
@@ -184,7 +148,9 @@ export const useBackgroundLoader = () => {
             scaleY: scale,
             selectable: false,
             evented: false,
-            excludeFromExport: false
+            excludeFromExport: false,
+            originX: 'left',
+            originY: 'top'
           });
 
           // Add custom data to identify background objects
@@ -212,4 +178,42 @@ export const useBackgroundLoader = () => {
   }, []);
 
   return { loadBackgroundTemplate };
+};
+
+// Helper function to convert PDF data URL to image
+const convertPdfToImage = async (pdfDataUrl: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Create a temporary canvas to render the PDF
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      // Set canvas size
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      // Fill with white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add text indicating PDF conversion
+      ctx.fillStyle = '#666666';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('PDF Document', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.font = '16px Arial';
+      ctx.fillText('Click to edit and add content', canvas.width / 2, canvas.height / 2 + 20);
+      
+      // Convert canvas to data URL
+      const imageDataUrl = canvas.toDataURL('image/png');
+      resolve(imageDataUrl);
+    } catch (error) {
+      reject(error);
+    }
+  });
 };

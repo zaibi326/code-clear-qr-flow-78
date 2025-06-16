@@ -81,13 +81,22 @@ export const useCanvasEditor = (template: Template) => {
       }
 
       // Wait for DOM to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       if (!canvasRef.current) {
         throw new Error('Canvas element no longer available');
       }
 
-      // Create canvas
+      // Dispose any existing canvas
+      if (fabricCanvasRef.current && !fabricCanvasRef.current.disposed) {
+        try {
+          fabricCanvasRef.current.dispose();
+        } catch (error) {
+          console.error('Error disposing previous canvas:', error);
+        }
+      }
+
+      // Create canvas with proper dimensions
       console.log('Creating Fabric canvas...');
       const canvas = new Canvas(canvasRef.current, {
         width: 800,
@@ -147,29 +156,33 @@ export const useCanvasEditor = (template: Template) => {
         }
       });
 
-      // Load background template FIRST
+      // Load background template FIRST with proper error handling
       console.log('Loading background template...');
       try {
         const loadSuccess = await loadBackgroundTemplate(canvas, template);
         console.log('Background loading result:', loadSuccess);
         
         if (!loadSuccess) {
-          console.warn('Background loading failed, but continuing with initialization');
+          console.warn('Background loading failed');
+          setBackgroundError('Failed to load template background');
         }
       } catch (error) {
-        console.warn('Background loading error:', error);
-        // Continue without background
+        console.error('Background loading error:', error);
+        setBackgroundError(`Background loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       // THEN load existing JSON if available (so it appears on top of background)
       if (template.editable_json && !canvas.disposed) {
         console.log('Loading existing canvas JSON data');
         try {
-          canvas.loadFromJSON(template.editable_json, () => {
-            if (!canvas.disposed) {
-              canvas.renderAll();
-              console.log('Canvas JSON loaded successfully');
-            }
+          await new Promise<void>((resolve) => {
+            canvas.loadFromJSON(template.editable_json, () => {
+              if (!canvas.disposed) {
+                canvas.renderAll();
+                console.log('Canvas JSON loaded successfully');
+              }
+              resolve();
+            });
           });
         } catch (jsonError) {
           console.warn('Error loading JSON data:', jsonError);
@@ -178,7 +191,9 @@ export const useCanvasEditor = (template: Template) => {
       
       // Mark as loaded
       setBackgroundLoaded(true);
-      setBackgroundError(null);
+      if (!backgroundError) {
+        setBackgroundError(null);
+      }
       isInitializedRef.current = true;
       
       console.log('Canvas initialization completed successfully');
@@ -206,7 +221,7 @@ export const useCanvasEditor = (template: Template) => {
       // Mark initialization as complete
       initializationRef.current.inProgress = false;
     }
-  }, [template, templateId, canvasRef, fabricCanvasRef, setZoom, setSelectedObject, setBackgroundLoaded, setBackgroundError, saveToHistory, loadBackgroundTemplate, isInitializedRef]);
+  }, [template, templateId, canvasRef, fabricCanvasRef, setZoom, setSelectedObject, setBackgroundLoaded, setBackgroundError, saveToHistory, loadBackgroundTemplate, isInitializedRef, backgroundError]);
 
   // Initialize canvas when template changes
   useEffect(() => {
@@ -236,7 +251,7 @@ export const useCanvasEditor = (template: Template) => {
     // Initialize canvas with a delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       initializeCanvas();
-    }, 200);
+    }, 300);
 
     return () => {
       clearTimeout(timeoutId);
