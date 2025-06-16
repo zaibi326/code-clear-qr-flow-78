@@ -81,7 +81,7 @@ export const useCanvasEditor = (template: Template) => {
       }
 
       // Wait for DOM to be ready
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       if (!canvasRef.current) {
         throw new Error('Canvas element no longer available');
@@ -147,7 +147,21 @@ export const useCanvasEditor = (template: Template) => {
         }
       });
 
-      // Load existing JSON if available
+      // Load background template FIRST
+      console.log('Loading background template...');
+      try {
+        const loadSuccess = await loadBackgroundTemplate(canvas, template);
+        console.log('Background loading result:', loadSuccess);
+        
+        if (!loadSuccess) {
+          console.warn('Background loading failed, but continuing with initialization');
+        }
+      } catch (error) {
+        console.warn('Background loading error:', error);
+        // Continue without background
+      }
+
+      // THEN load existing JSON if available (so it appears on top of background)
       if (template.editable_json && !canvas.disposed) {
         console.log('Loading existing canvas JSON data');
         try {
@@ -160,20 +174,6 @@ export const useCanvasEditor = (template: Template) => {
         } catch (jsonError) {
           console.warn('Error loading JSON data:', jsonError);
         }
-      }
-
-      // Load background template
-      console.log('Loading background template...');
-      try {
-        const loadSuccess = await loadBackgroundTemplate(canvas, template);
-        console.log('Background loading result:', loadSuccess);
-        
-        if (!loadSuccess) {
-          console.warn('Background loading failed, but continuing with initialization');
-        }
-      } catch (error) {
-        console.warn('Background loading error:', error);
-        // Continue without background
       }
       
       // Mark as loaded
@@ -188,8 +188,8 @@ export const useCanvasEditor = (template: Template) => {
 
       // Show success toast
       toast({
-        title: 'Canvas ready',
-        description: 'Template editor is now ready for editing',
+        title: 'Template loaded successfully',
+        description: 'Your template is now ready for editing',
       });
 
     } catch (error) {
@@ -236,7 +236,7 @@ export const useCanvasEditor = (template: Template) => {
     // Initialize canvas with a delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       initializeCanvas();
-    }, 100);
+    }, 200);
 
     return () => {
       clearTimeout(timeoutId);

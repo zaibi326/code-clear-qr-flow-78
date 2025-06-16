@@ -52,29 +52,39 @@ export const useBackgroundLoader = () => {
           mimeType: imageUrl.startsWith('data:') ? imageUrl.split(';')[0] : 'external'
         });
         
-        // Create image with enhanced error handling for data URLs
+        // Clear any existing background objects first
+        const existingBackground = canvas.getObjects().find(obj => (obj as any).isBackgroundTemplate);
+        if (existingBackground) {
+          canvas.remove(existingBackground);
+        }
+        
+        // Create image with proper error handling
         const img = await new Promise<FabricImage>((resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error('Image loading timeout after 20 seconds'));
-          }, 20000);
+            reject(new Error('Image loading timeout after 30 seconds'));
+          }, 30000);
 
           try {
-            FabricImage.fromURL(imageUrl, {
-              crossOrigin: 'anonymous'
-            }, (fabricImg, isError) => {
+            // Use the static fromURL method properly
+            FabricImage.fromURL(imageUrl).then((fabricImg) => {
               clearTimeout(timeout);
               
-              if (isError || !fabricImg) {
-                console.error('Fabric image loading failed:', isError);
-                reject(new Error(`Failed to load image: ${isError || 'Unknown error'}`));
-              } else {
-                console.log('Fabric image loaded successfully:', {
-                  width: fabricImg.width,
-                  height: fabricImg.height,
-                  type: typeof fabricImg
-                });
-                resolve(fabricImg);
+              if (!fabricImg) {
+                console.error('Fabric image loading failed: No image returned');
+                reject(new Error('Failed to load image: No image returned'));
+                return;
               }
+              
+              console.log('Fabric image loaded successfully:', {
+                width: fabricImg.width,
+                height: fabricImg.height,
+                type: typeof fabricImg
+              });
+              resolve(fabricImg);
+            }).catch((error) => {
+              clearTimeout(timeout);
+              console.error('Fabric image loading failed:', error);
+              reject(new Error(`Failed to load image: ${error.message || 'Unknown error'}`));
             });
           } catch (syncError) {
             clearTimeout(timeout);
@@ -111,12 +121,6 @@ export const useBackgroundLoader = () => {
 
           // Add custom data to identify background objects
           (img as any).isBackgroundTemplate = true;
-
-          // Clear any existing background objects using the custom property
-          const existingBackground = canvas.getObjects().find(obj => (obj as any).isBackgroundTemplate);
-          if (existingBackground) {
-            canvas.remove(existingBackground);
-          }
 
           canvas.add(img);
           canvas.sendObjectToBack(img);
