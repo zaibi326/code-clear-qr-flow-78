@@ -64,18 +64,37 @@ export const useBackgroundLoader = () => {
           canvas.remove(existingBackground);
         }
         
-        // Handle PDF files - convert to image first
+        // Handle PDF files - render actual PDF content
         if (imageUrl.includes('data:application/pdf')) {
-          console.log('PDF detected - converting to image');
+          console.log('PDF detected - rendering PDF content');
           try {
-            imageUrl = await convertPdfToImage(imageUrl);
-            console.log('PDF converted to image successfully');
+            const pdfImageUrl = await renderPDFToImage(imageUrl);
+            console.log('PDF rendered to image successfully');
+            imageUrl = pdfImageUrl;
           } catch (pdfError) {
-            console.warn('PDF conversion failed:', pdfError);
-            // Set white background as fallback for PDFs
-            canvas.backgroundColor = '#ffffff';
+            console.warn('PDF rendering failed:', pdfError);
+            // Create a better fallback for PDFs that shows it's editable
+            canvas.backgroundColor = '#f8f9fa';
+            
+            // Add a text indicator that this is a PDF ready for editing
+            const { IText } = await import('fabric');
+            const pdfText = new IText('PDF Document Ready for Editing\n\nAdd your QR codes, text, and other elements\nusing the tools on the left', {
+              left: canvas.getWidth() / 2,
+              top: canvas.getHeight() / 2,
+              originX: 'center',
+              originY: 'center',
+              fontSize: 18,
+              fill: '#666666',
+              fontFamily: 'Arial, sans-serif',
+              textAlign: 'center',
+              selectable: false,
+              evented: false
+            });
+            
+            (pdfText as any).isBackgroundTemplate = true;
+            canvas.add(pdfText);
             canvas.renderAll();
-            return false;
+            return true;
           }
         }
         
@@ -180,11 +199,75 @@ export const useBackgroundLoader = () => {
   return { loadBackgroundTemplate };
 };
 
-// Helper function to convert PDF data URL to image
-const convertPdfToImage = async (pdfDataUrl: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
+// Enhanced PDF to image renderer using PDF.js
+const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
     try {
-      // Create a temporary canvas to render the PDF
+      // Load PDF.js dynamically
+      const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+      
+      // Set worker source
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+      
+      // Convert data URL to array buffer
+      const base64Data = pdfDataUrl.split(',')[1];
+      const binaryData = atob(base64Data);
+      const arrayBuffer = new ArrayBuffer(binaryData.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      for (let i = 0; i < binaryData.length; i++) {
+        uint8Array[i] = binaryData.charCodeAt(i);
+      }
+      
+      // Load PDF document
+      const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+      const page = await pdf.getPage(1); // Get first page
+      
+      // Set up canvas for rendering
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      if (!context) {
+        throw new Error('Could not get canvas context');
+      }
+      
+      // Calculate scale to fit 800x600 canvas
+      const viewport = page.getViewport({ scale: 1 });
+      const scaleX = 800 / viewport.width;
+      const scaleY = 600 / viewport.height;
+      const scale = Math.min(scaleX, scaleY);
+      
+      const scaledViewport = page.getViewport({ scale });
+      
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      // Fill with white background
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Center the PDF content
+      const offsetX = (canvas.width - scaledViewport.width) / 2;
+      const offsetY = (canvas.height - scaledViewport.height) / 2;
+      
+      context.save();
+      context.translate(offsetX, offsetY);
+      
+      // Render PDF page
+      await page.render({
+        canvasContext: context,
+        viewport: scaledViewport
+      }).promise;
+      
+      context.restore();
+      
+      // Convert to data URL
+      const imageDataUrl = canvas.toDataURL('image/png', 1.0);
+      resolve(imageDataUrl);
+      
+    } catch (error) {
+      console.error('PDF rendering error:', error);
+      // Fallback to a better placeholder
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
@@ -193,27 +276,40 @@ const convertPdfToImage = async (pdfDataUrl: string): Promise<string> => {
         return;
       }
 
-      // Set canvas size
       canvas.width = 800;
       canvas.height = 600;
       
-      // Fill with white background
+      // Create a document-like background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Add text indicating PDF conversion
-      ctx.fillStyle = '#666666';
-      ctx.font = '24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('PDF Document', canvas.width / 2, canvas.height / 2 - 20);
-      ctx.font = '16px Arial';
-      ctx.fillText('Click to edit and add content', canvas.width / 2, canvas.height / 2 + 20);
+      // Add border
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
       
-      // Convert canvas to data URL
+      // Add document icon representation
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
+      
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+      
+      // Add text
+      ctx.fillStyle = '#666666';
+      ctx.font = 'bold 24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('PDF Document', canvas.width / 2, canvas.height / 2 - 40);
+      
+      ctx.font = '18px Arial';
+      ctx.fillText('Ready for editing', canvas.width / 2, canvas.height / 2);
+      
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#888888';
+      ctx.fillText('Add QR codes, text, and other elements', canvas.width / 2, canvas.height / 2 + 30);
+      
       const imageDataUrl = canvas.toDataURL('image/png');
       resolve(imageDataUrl);
-    } catch (error) {
-      reject(error);
     }
   });
 };
