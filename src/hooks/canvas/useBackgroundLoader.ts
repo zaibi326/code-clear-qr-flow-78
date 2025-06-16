@@ -2,6 +2,10 @@
 import { useCallback } from 'react';
 import { Canvas, FabricImage } from 'fabric';
 import { Template } from '@/types/template';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
 export const useBackgroundLoader = () => {
   const loadBackgroundTemplate = useCallback(async (canvas: Canvas, template: Template): Promise<boolean> => {
@@ -203,12 +207,6 @@ export const useBackgroundLoader = () => {
 const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Load PDF.js dynamically
-      const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
-      
-      // Set worker source
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      
       // Convert data URL to array buffer
       const base64Data = pdfDataUrl.split(',')[1];
       const binaryData = atob(base64Data);
