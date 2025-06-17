@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 const TEMPLATES_STORAGE_KEY = 'qr-templates';
 const MAX_STORAGE_SIZE = 4 * 1024 * 1024; // 4MB limit to stay under localStorage quota
 const MAX_TEMPLATE_SIZE = 1 * 1024 * 1024; // 1MB per template
+const THUMBNAIL_SIZE = 200 * 1024; // 200KB for thumbnail
 
 export const useTemplateStorage = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -18,11 +19,9 @@ export const useTemplateStorage = () => {
         console.warn('File too large for localStorage storage:', file.size);
         toast({
           title: "File too large",
-          description: `File size (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds storage limit. Template will be stored without preview.`,
+          description: `File size (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds storage limit. Template will be stored with compressed preview.`,
           variant: "destructive"
         });
-        resolve(''); // Return empty string for oversized files
-        return;
       }
 
       const reader = new FileReader();
@@ -43,42 +42,115 @@ export const useTemplateStorage = () => {
     });
   };
 
+  // Create compressed thumbnail for storage
+  const createThumbnail = (imageDataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          resolve(imageDataUrl);
+          return;
+        }
+
+        // Calculate thumbnail dimensions (max 400x300)
+        const maxWidth = 400;
+        const maxHeight = 300;
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Get compressed thumbnail
+        const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+        console.log('Created thumbnail:', {
+          originalSize: imageDataUrl.length,
+          thumbnailSize: thumbnail.length,
+          compressionRatio: (thumbnail.length / imageDataUrl.length * 100).toFixed(1) + '%'
+        });
+        
+        resolve(thumbnail);
+      };
+      img.onerror = () => resolve(imageDataUrl);
+      img.src = imageDataUrl;
+    });
+  };
+
   // Calculate storage size estimate
   const calculateStorageSize = (templates: Template[]) => {
     const jsonString = JSON.stringify(templates.map(template => {
       const { file, ...templateWithoutFile } = template;
-      return {
-        ...templateWithoutFile,
-        preview: templateWithoutFile.preview,
-        template_url: templateWithoutFile.template_url || templateWithoutFile.preview,
-        thumbnail_url: templateWithoutFile.thumbnail_url || templateWithoutFile.preview
-      };
+      return templateWithoutFile;
     }));
     return new Blob([jsonString]).size;
   };
 
-  // Compress template data for storage
-  const compressTemplateForStorage = (template: Template) => {
+  // Smart compression that preserves usability
+  const compressTemplateForStorage = async (template: Template) => {
     const { file, ...templateWithoutFile } = template;
     
-    // For large templates, remove preview data but keep metadata
-    if (templateWithoutFile.preview && templateWithoutFile.preview.length > MAX_TEMPLATE_SIZE) {
-      console.log('Compressing large template:', template.name);
-      return {
-        ...templateWithoutFile,
-        preview: '', // Remove large preview
-        template_url: '', // Remove large template_url
-        thumbnail_url: '', // Remove large thumbnail
-        isCompressed: true, // Flag to indicate compression
-        originalSize: templateWithoutFile.preview.length
-      };
+    // Always ensure we have some image data for preview/editing
+    let workingImageData = templateWithoutFile.preview || templateWithoutFile.template_url || templateWithoutFile.thumbnail_url;
+    
+    // If we have a file but no image data, convert file to data URL
+    if (!workingImageData && file) {
+      try {
+        workingImageData = await fileToDataUrl(file);
+      } catch (error) {
+        console.error('Error converting file for storage:', error);
+      }
     }
     
+    if (!workingImageData) {
+      console.warn('No image data available for template:', template.name);
+      return {
+        ...templateWithoutFile,
+        preview: '',
+        template_url: '',
+        thumbnail_url: '',
+        isCompressed: true,
+        compressionLevel: 'no-data'
+      };
+    }
+
+    // For large images, create thumbnail but keep original structure
+    if (workingImageData.length > THUMBNAIL_SIZE) {
+      console.log('Creating thumbnail for large template:', template.name);
+      try {
+        const thumbnail = await createThumbnail(workingImageData);
+        return {
+          ...templateWithoutFile,
+          preview: thumbnail,
+          template_url: thumbnail, // Ensure both fields have data
+          thumbnail_url: thumbnail,
+          isCompressed: true,
+          compressionLevel: 'thumbnail',
+          originalSize: workingImageData.length
+        };
+      } catch (error) {
+        console.error('Error creating thumbnail:', error);
+      }
+    }
+    
+    // For smaller images, keep original
     return {
       ...templateWithoutFile,
-      preview: templateWithoutFile.preview,
-      template_url: templateWithoutFile.template_url || templateWithoutFile.preview,
-      thumbnail_url: templateWithoutFile.thumbnail_url || templateWithoutFile.preview
+      preview: workingImageData,
+      template_url: workingImageData,
+      thumbnail_url: workingImageData
     };
   };
 
@@ -97,11 +169,13 @@ export const useTemplateStorage = () => {
             updatedAt: new Date(template.updatedAt),
           };
           
-          // Handle compressed templates
+          // Handle templates and ensure they have usable data
           if (processedTemplate.isCompressed) {
             console.log('Loaded compressed template:', processedTemplate.name, {
-              originalSize: processedTemplate.originalSize,
-              wasCompressed: true
+              hasPreview: !!processedTemplate.preview,
+              hasTemplateUrl: !!processedTemplate.template_url,
+              compressionLevel: processedTemplate.compressionLevel,
+              originalSize: processedTemplate.originalSize
             });
           } else {
             // Ensure all image fields are available for editing
@@ -144,76 +218,69 @@ export const useTemplateStorage = () => {
     if (isLoaded && templates.length >= 0) {
       console.log('Saving', templates.length, 'templates to localStorage');
       
-      try {
-        // Convert templates for storage with compression
-        const templatesForStorage = templates.map(compressTemplateForStorage);
-        
-        // Check total storage size
-        const storageSize = calculateStorageSize(templatesForStorage);
-        console.log('Estimated storage size:', (storageSize / 1024 / 1024).toFixed(2), 'MB');
-        
-        if (storageSize > MAX_STORAGE_SIZE) {
-          console.warn('Storage size exceeds limit, applying additional compression');
+      const saveTemplates = async () => {
+        try {
+          // Convert templates for storage with smart compression
+          const templatesForStorage = await Promise.all(
+            templates.map(template => compressTemplateForStorage(template))
+          );
           
-          // Apply more aggressive compression
-          const compressedTemplates = templatesForStorage.map(template => ({
-            ...template,
-            preview: template.preview ? '' : template.preview, // Remove all previews
-            template_url: '',
-            thumbnail_url: '',
-            isCompressed: true,
-            compressionLevel: 'aggressive'
-          }));
+          // Check total storage size
+          const storageSize = calculateStorageSize(templatesForStorage);
+          console.log('Estimated storage size:', (storageSize / 1024 / 1024).toFixed(2), 'MB');
           
-          localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(compressedTemplates));
-          
-          toast({
-            title: "Storage optimized",
-            description: "Templates compressed to fit storage limits. Some previews may not be available.",
-          });
-        } else {
-          localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templatesForStorage));
-        }
-        
-        console.log('Templates saved to localStorage successfully');
-        
-      } catch (error) {
-        console.error('Error saving templates to localStorage:', error);
-        
-        if (error instanceof Error && error.name === 'QuotaExceededError') {
-          toast({
-            title: "Storage full",
-            description: "Cannot save more templates. Consider deleting some old templates to free up space.",
-            variant: "destructive"
-          });
-          
-          // Try to save with maximum compression
-          try {
-            const minimalTemplates = templates.map(template => {
-              const { file, preview, template_url, thumbnail_url, editable_json, ...minimal } = template;
-              return {
-                ...minimal,
-                isCompressed: true,
-                compressionLevel: 'maximum'
-              };
-            });
+          if (storageSize > MAX_STORAGE_SIZE) {
+            console.warn('Storage size exceeds limit, applying additional compression');
             
-            localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(minimalTemplates));
+            // Apply more aggressive compression but still preserve thumbnails
+            const aggressivelyCompressed = await Promise.all(
+              templatesForStorage.map(async (template) => {
+                if (template.preview && template.preview.length > THUMBNAIL_SIZE / 2) {
+                  try {
+                    const smallerThumbnail = await createThumbnail(template.preview);
+                    return {
+                      ...template,
+                      preview: smallerThumbnail,
+                      template_url: smallerThumbnail,
+                      thumbnail_url: smallerThumbnail,
+                      isCompressed: true,
+                      compressionLevel: 'aggressive'
+                    };
+                  } catch (error) {
+                    console.error('Error in aggressive compression:', error);
+                    return template;
+                  }
+                }
+                return template;
+              })
+            );
+            
+            localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(aggressivelyCompressed));
             
             toast({
-              title: "Templates saved with minimal data",
-              description: "Due to storage limits, only basic template information was saved.",
+              title: "Storage optimized",
+              description: "Templates compressed to fit storage limits. Preview quality reduced but functionality preserved.",
             });
-          } catch (finalError) {
-            console.error('Failed to save even compressed templates:', finalError);
+          } else {
+            localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templatesForStorage));
+          }
+          
+          console.log('Templates saved to localStorage successfully');
+          
+        } catch (error) {
+          console.error('Error saving templates to localStorage:', error);
+          
+          if (error instanceof Error && error.name === 'QuotaExceededError') {
             toast({
-              title: "Cannot save templates",
-              description: "Storage is completely full. Please delete some templates.",
+              title: "Storage full",
+              description: "Cannot save more templates. Consider deleting some old templates to free up space.",
               variant: "destructive"
             });
           }
         }
-      }
+      };
+
+      saveTemplates();
     }
   }, [templates, isLoaded]);
 
