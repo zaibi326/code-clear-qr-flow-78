@@ -1,185 +1,256 @@
 
-import React, { useState, useEffect } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/dashboard/AppSidebar';
-import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { CampaignCreatorTabs } from '@/components/campaign/CampaignCreatorTabs';
-import { CreateCampaignTab } from '@/components/campaign/CreateCampaignTab';
-import { ManageCampaignsTab } from '@/components/campaign/ManageCampaignsTab';
-import { CampaignAnalyticsTab } from '@/components/campaign/CampaignAnalyticsTab';
-import { Card, CardContent } from '@/components/ui/card';
-import { Campaign } from '@/types/campaign';
-import { 
-  Zap, 
-  Target, 
-  BarChart3, 
-  Users, 
-  TrendingUp
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Search, Calendar, Target, Users, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useUserCampaigns, Campaign } from '@/hooks/useUserCampaigns';
+import { useAuth } from '@/hooks/useSupabaseAuth';
+import { toast } from '@/hooks/use-toast';
 
 const CampaignCreator = () => {
-  const [activeTab, setActiveTab] = useState('create');
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const { campaigns, setCampaigns, isLoaded } = useUserCampaigns();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'active' | 'paused' | 'completed'>('all');
 
-  // Load campaigns from localStorage on component mount
-  useEffect(() => {
-    const savedCampaigns = localStorage.getItem('campaigns');
-    if (savedCampaigns) {
-      try {
-        const parsedCampaigns = JSON.parse(savedCampaigns);
-        // Convert date strings back to Date objects
-        const campaignsWithDates = parsedCampaigns.map((campaign: any) => ({
-          ...campaign,
-          createdAt: new Date(campaign.createdAt)
-        }));
-        setCampaigns(campaignsWithDates);
-      } catch (error) {
-        console.error('Error loading campaigns from localStorage:', error);
-        setCampaigns([]);
+  const filteredCampaigns = campaigns.filter(campaign => {
+    const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (campaign.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleCreateCampaign = () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create campaigns.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newCampaign: Campaign = {
+      id: `campaign-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: `Campaign ${campaigns.length + 1}`,
+      description: 'A new marketing campaign',
+      status: 'draft',
+      type: 'single',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expectedScans: 100,
+      settings: {
+        format: 'PNG',
+        qr_size: 300,
+        qr_color: '#000000',
+        background_color: '#FFFFFF',
+        error_correction: 'M'
       }
-    }
-  }, []);
+    };
 
-  const campaignStats = [
-    {
-      title: 'Active Campaigns',
-      value: campaigns.filter(c => c.status === 'active').length.toString(),
-      icon: Zap,
-      color: 'text-blue-600',
-      bgColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
-      lightBg: 'bg-blue-50',
-      change: '+8'
-    },
-    {
-      title: 'Total Campaigns',
-      value: campaigns.length.toString(),
-      icon: Target,
-      color: 'text-green-600',
-      bgColor: 'bg-gradient-to-r from-green-500 to-green-600',
-      lightBg: 'bg-green-50',
-      change: '+23%'
-    },
-    {
-      title: 'Total QR Codes',
-      value: campaigns.reduce((sum, c) => sum + c.qrCodes.length, 0).toString(),
-      icon: BarChart3,
-      color: 'text-purple-600',
-      bgColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
-      lightBg: 'bg-purple-50',
-      change: '+3.2%'
-    },
-    {
-      title: 'Total Scans',
-      value: campaigns.reduce((sum, c) => sum + (c.scans || 0), 0).toString(),
-      icon: Users,
-      color: 'text-orange-600',
-      bgColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
-      lightBg: 'bg-orange-50',
-      change: '+15%'
-    }
-  ];
-
-  const handleCampaignCreate = (campaign: Campaign) => {
-    setCampaigns(prev => {
-      const updated = [campaign, ...prev];
-      return updated;
+    setCampaigns(prev => [...prev, newCampaign]);
+    toast({
+      title: "Campaign created",
+      description: `${newCampaign.name} has been created successfully.`,
     });
   };
 
-  const handleCampaignUpdate = (updatedCampaign: Campaign) => {
-    setCampaigns(prev => {
-      const updated = prev.map(campaign => 
-        campaign.id === updatedCampaign.id ? updatedCampaign : campaign
-      );
-      return updated;
-    });
-  };
-
-  const handleCampaignDelete = (campaignId: string) => {
-    setCampaigns(prev => {
-      const updated = prev.filter(campaign => campaign.id !== campaignId);
-      return updated;
-    });
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'create':
-        return <CreateCampaignTab onCampaignCreate={handleCampaignCreate} />;
-      case 'manage':
-        return (
-          <ManageCampaignsTab 
-            campaigns={campaigns}
-            onCampaignUpdate={handleCampaignUpdate}
-            onCampaignDelete={handleCampaignDelete}
-          />
-        );
-      case 'analytics':
-        return <CampaignAnalyticsTab campaigns={campaigns} />;
-      default:
-        return <CreateCampaignTab onCampaignCreate={handleCampaignCreate} />;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'paused': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col min-w-0 ml-[240px]">
-          <DashboardTopbar />
-          
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-6 py-8">
-              {/* Header Section */}
-              <div className="mb-8 animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                      Campaign Creator
-                    </h1>
-                    <p className="text-lg text-gray-600">Design, launch, and manage powerful QR code campaigns</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
-                {campaignStats.map((stat, index) => (
-                  <Card key={index} className="group border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`p-4 rounded-2xl ${stat.bgColor} text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                          <stat.icon className="h-6 w-6" />
-                        </div>
-                        <div className={`flex items-center gap-1 ${stat.change.includes('+') || stat.change.includes('%') ? 'text-green-600' : 'text-blue-600'}`}>
-                          <TrendingUp className="h-4 w-4" />
-                          <span className="text-sm font-medium">{stat.change}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Campaign Creator Content */}
-              <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl animate-fade-in">
-                <div className="px-8 pt-8 pb-0">
-                  <CampaignCreatorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                </div>
-                <div className="p-8">
-                  {renderTabContent()}
-                </div>
-              </div>
-            </div>
-          </main>
+  if (authLoading || !isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading campaigns...</p>
         </div>
       </div>
-    </SidebarProvider>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h2>
+          <p className="text-gray-600 mb-6">Please sign in to view and manage your campaigns.</p>
+          <Button onClick={() => window.location.href = '/login'}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Campaigns</h1>
+              <p className="text-gray-600 mt-2">
+                Create and manage your QR code marketing campaigns
+              </p>
+            </div>
+            <Button onClick={handleCreateCampaign} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              New Campaign
+            </Button>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="flex gap-4 items-center">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search campaigns..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Campaigns Grid */}
+        {filteredCampaigns.length === 0 ? (
+          <div className="text-center py-12">
+            <Target className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {campaigns.length === 0 ? 'No campaigns yet' : 'No campaigns found'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {campaigns.length === 0 
+                ? 'Create your first campaign to start your QR marketing journey'
+                : 'Try adjusting your search or filter criteria'
+              }
+            </p>
+            {campaigns.length === 0 && (
+              <Button onClick={handleCreateCampaign} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Campaign
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCampaigns.map((campaign) => (
+              <Card key={campaign.id} className="hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                    <Badge className={getStatusColor(campaign.status)}>
+                      {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {campaign.description || 'No description provided'}
+                  </p>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Created {campaign.createdAt.toLocaleDateString()}
+                    </div>
+                    
+                    {campaign.expectedScans && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Users className="h-4 w-4 mr-2" />
+                        Target: {campaign.expectedScans.toLocaleString()} scans
+                      </div>
+                    )}
+                    
+                    {campaign.budget && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Budget: ${campaign.budget.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline">
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        View
+                      </Button>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {campaign.type.toUpperCase()}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Stats */}
+        {campaigns.length > 0 && (
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {campaigns.filter(c => c.status === 'active').length}
+                </div>
+                <div className="text-sm text-gray-600">Active</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-gray-600">
+                  {campaigns.filter(c => c.status === 'draft').length}
+                </div>
+                <div className="text-sm text-gray-600">Draft</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {campaigns.filter(c => c.status === 'paused').length}
+                </div>
+                <div className="text-sm text-gray-600">Paused</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {campaigns.filter(c => c.status === 'completed').length}
+                </div>
+                <div className="text-sm text-gray-600">Completed</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

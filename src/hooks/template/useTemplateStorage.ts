@@ -1,15 +1,23 @@
+
 import { useState, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useSupabaseAuth';
 
-const TEMPLATES_STORAGE_KEY = 'qr-templates';
 const MAX_STORAGE_SIZE = 4 * 1024 * 1024; // 4MB limit to stay under localStorage quota
 const MAX_TEMPLATE_SIZE = 1 * 1024 * 1024; // 1MB per template
 const THUMBNAIL_SIZE = 200 * 1024; // 200KB for thumbnail
 
 export const useTemplateStorage = () => {
+  const { user, loading: authLoading } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Get user-specific storage key
+  const getStorageKey = (userId?: string) => {
+    if (!userId) return null;
+    return `qr-templates-${userId}`;
+  };
 
   // Convert File to data URL for storage
   const fileToDataUrl = (file: File): Promise<string> => {
@@ -154,10 +162,21 @@ export const useTemplateStorage = () => {
     };
   };
 
-  // Load templates from localStorage on component mount
-  useEffect(() => {
-    console.log('Loading templates from localStorage...');
-    const savedTemplates = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+  // Clear templates when user signs out
+  const clearUserData = () => {
+    console.log('Clearing user templates data');
+    setTemplates([]);
+    setIsLoaded(false);
+  };
+
+  // Load templates from localStorage for the current user
+  const loadUserTemplates = (userId: string) => {
+    const storageKey = getStorageKey(userId);
+    if (!storageKey) return;
+
+    console.log('Loading templates for user:', userId);
+    const savedTemplates = localStorage.getItem(storageKey);
+    
     if (savedTemplates) {
       try {
         const parsedTemplates = JSON.parse(savedTemplates);
@@ -196,7 +215,7 @@ export const useTemplateStorage = () => {
           
           return processedTemplate;
         });
-        console.log('Successfully loaded', templatesWithDates.length, 'templates from storage');
+        console.log('Successfully loaded', templatesWithDates.length, 'templates for user:', userId);
         setTemplates(templatesWithDates);
       } catch (error) {
         console.error('Error loading templates from localStorage:', error);
@@ -208,86 +227,110 @@ export const useTemplateStorage = () => {
         });
       }
     } else {
-      console.log('No saved templates found in localStorage');
+      console.log('No saved templates found for user:', userId);
+      setTemplates([]);
     }
     setIsLoaded(true);
-  }, []);
+  };
 
-  // Save templates to localStorage whenever templates state changes (but only after initial load)
+  // Handle user authentication changes
   useEffect(() => {
-    if (isLoaded && templates.length >= 0) {
-      console.log('Saving', templates.length, 'templates to localStorage');
-      
-      const saveTemplates = async () => {
-        try {
-          // Convert templates for storage with smart compression
-          const templatesForStorage = await Promise.all(
-            templates.map(template => compressTemplateForStorage(template))
+    if (authLoading) {
+      console.log('Authentication still loading...');
+      return;
+    }
+
+    if (user?.id) {
+      console.log('User authenticated, loading templates for:', user.id);
+      loadUserTemplates(user.id);
+    } else {
+      console.log('User not authenticated, clearing templates');
+      clearUserData();
+      setIsLoaded(true);
+    }
+  }, [user, authLoading]);
+
+  // Save templates to localStorage for the current user
+  useEffect(() => {
+    if (!isLoaded || !user?.id || authLoading) {
+      return;
+    }
+
+    const storageKey = getStorageKey(user.id);
+    if (!storageKey) return;
+
+    console.log('Saving', templates.length, 'templates for user:', user.id);
+    
+    const saveTemplates = async () => {
+      try {
+        // Convert templates for storage with smart compression
+        const templatesForStorage = await Promise.all(
+          templates.map(template => compressTemplateForStorage(template))
+        );
+        
+        // Check total storage size
+        const storageSize = calculateStorageSize(templatesForStorage);
+        console.log('Estimated storage size:', (storageSize / 1024 / 1024).toFixed(2), 'MB');
+        
+        if (storageSize > MAX_STORAGE_SIZE) {
+          console.warn('Storage size exceeds limit, applying additional compression');
+          
+          // Apply more aggressive compression but still preserve thumbnails
+          const aggressivelyCompressed = await Promise.all(
+            templatesForStorage.map(async (template) => {
+              if (template.preview && template.preview.length > THUMBNAIL_SIZE / 2) {
+                try {
+                  const smallerThumbnail = await createThumbnail(template.preview);
+                  return {
+                    ...template,
+                    preview: smallerThumbnail,
+                    template_url: smallerThumbnail,
+                    thumbnail_url: smallerThumbnail,
+                    isCompressed: true,
+                    compressionLevel: 'aggressive'
+                  };
+                } catch (error) {
+                  console.error('Error in aggressive compression:', error);
+                  return template;
+                }
+              }
+              return template;
+            })
           );
           
-          // Check total storage size
-          const storageSize = calculateStorageSize(templatesForStorage);
-          console.log('Estimated storage size:', (storageSize / 1024 / 1024).toFixed(2), 'MB');
+          localStorage.setItem(storageKey, JSON.stringify(aggressivelyCompressed));
           
-          if (storageSize > MAX_STORAGE_SIZE) {
-            console.warn('Storage size exceeds limit, applying additional compression');
-            
-            // Apply more aggressive compression but still preserve thumbnails
-            const aggressivelyCompressed = await Promise.all(
-              templatesForStorage.map(async (template) => {
-                if (template.preview && template.preview.length > THUMBNAIL_SIZE / 2) {
-                  try {
-                    const smallerThumbnail = await createThumbnail(template.preview);
-                    return {
-                      ...template,
-                      preview: smallerThumbnail,
-                      template_url: smallerThumbnail,
-                      thumbnail_url: smallerThumbnail,
-                      isCompressed: true,
-                      compressionLevel: 'aggressive'
-                    };
-                  } catch (error) {
-                    console.error('Error in aggressive compression:', error);
-                    return template;
-                  }
-                }
-                return template;
-              })
-            );
-            
-            localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(aggressivelyCompressed));
-            
-            toast({
-              title: "Storage optimized",
-              description: "Templates compressed to fit storage limits. Preview quality reduced but functionality preserved.",
-            });
-          } else {
-            localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templatesForStorage));
-          }
-          
-          console.log('Templates saved to localStorage successfully');
-          
-        } catch (error) {
-          console.error('Error saving templates to localStorage:', error);
-          
-          if (error instanceof Error && error.name === 'QuotaExceededError') {
-            toast({
-              title: "Storage full",
-              description: "Cannot save more templates. Consider deleting some old templates to free up space.",
-              variant: "destructive"
-            });
-          }
+          toast({
+            title: "Storage optimized",
+            description: "Templates compressed to fit storage limits. Preview quality reduced but functionality preserved.",
+          });
+        } else {
+          localStorage.setItem(storageKey, JSON.stringify(templatesForStorage));
         }
-      };
+        
+        console.log('Templates saved to localStorage successfully for user:', user.id);
+        
+      } catch (error) {
+        console.error('Error saving templates to localStorage:', error);
+        
+        if (error instanceof Error && error.name === 'QuotaExceededError') {
+          toast({
+            title: "Storage full",
+            description: "Cannot save more templates. Consider deleting some old templates to free up space.",
+            variant: "destructive"
+          });
+        }
+      }
+    };
 
-      saveTemplates();
-    }
-  }, [templates, isLoaded]);
+    saveTemplates();
+  }, [templates, isLoaded, user, authLoading]);
 
   return {
     templates,
     setTemplates,
-    isLoaded,
-    fileToDataUrl
+    isLoaded: isLoaded && !authLoading,
+    fileToDataUrl,
+    userId: user?.id || null
   };
 };
