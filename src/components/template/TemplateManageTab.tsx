@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,104 +33,203 @@ export const TemplateManageTab = ({
     
     let matchesFilter = true;
     if (filterType === 'pdf') {
-      matchesFilter = template.file?.type === 'application/pdf';
+      matchesFilter = template.file?.type === 'application/pdf' || 
+                      (template.preview && template.preview.includes('data:application/pdf')) ||
+                      template.name.toLowerCase().includes('pdf');
     } else if (filterType === 'image') {
-      matchesFilter = template.file?.type !== 'application/pdf' && template.file?.type?.startsWith('image/');
+      matchesFilter = template.file?.type !== 'application/pdf' && 
+                      (template.file?.type?.startsWith('image/') || 
+                       (template.preview && template.preview.startsWith('data:image/')) ||
+                       !template.name.toLowerCase().includes('pdf'));
     }
     
     return matchesSearch && matchesFilter;
   });
 
+  // Helper function to check if template has viewable content
+  const hasViewableContent = (template: Template): boolean => {
+    return !!(template.preview || template.template_url || template.thumbnail_url || template.file);
+  };
+
+  // Helper function to get template display type
+  const getTemplateType = (template: Template): 'pdf' | 'image' => {
+    if (template.file?.type === 'application/pdf') return 'pdf';
+    if (template.preview && template.preview.includes('data:application/pdf')) return 'pdf';
+    if (template.name.toLowerCase().includes('pdf')) return 'pdf';
+    return 'image';
+  };
+
   const handlePreview = (template: Template) => {
     console.log('Preview template:', template);
+    console.log('Template preview data available:', {
+      hasPreview: !!template.preview,
+      hasTemplateUrl: !!template.template_url,
+      hasThumbnailUrl: !!template.thumbnail_url,
+      hasFile: !!template.file,
+      previewLength: template.preview?.length || 0
+    });
     
-    if (template.file?.type === 'application/pdf') {
-      // For PDF files, use a different approach to avoid Chrome blocking
+    if (!hasViewableContent(template)) {
+      toast.error('Preview not available for this template');
+      return;
+    }
+
+    const templateType = getTemplateType(template);
+    
+    if (templateType === 'pdf') {
+      // For PDF files, handle both file objects and data URLs
+      let pdfData = null;
+      
       if (template.file) {
+        // Handle File objects
         try {
-          // Create a new window with PDF data
           const reader = new FileReader();
           reader.onload = function(e) {
-            const pdfData = e.target?.result;
-            if (pdfData) {
-              const previewWindow = window.open('', '_blank', 'width=900,height=700');
-              if (previewWindow) {
-                previewWindow.document.write(`
-                  <html>
-                    <head>
-                      <title>PDF Preview - ${template.name}</title>
-                      <style>
-                        body { margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif; }
-                        .header { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                        .pdf-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                        embed { width: 100%; height: 600px; border: none; }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="header">
-                        <h2>PDF Template Preview: ${template.name}</h2>
-                        <p>Template Type: PDF Document</p>
-                      </div>
-                      <div class="pdf-container">
-                        <embed src="${pdfData}" type="application/pdf" />
-                      </div>
-                    </body>
-                  </html>
-                `);
-                previewWindow.document.close();
-                toast.success(`Opened PDF preview for ${template.name}`);
-              } else {
-                toast.error('Could not open preview window. Please check your browser settings.');
-              }
+            const pdfDataUrl = e.target?.result;
+            if (pdfDataUrl) {
+              openPdfPreview(template.name, pdfDataUrl as string);
             }
           };
           reader.readAsDataURL(template.file);
+          return;
         } catch (error) {
-          console.error('Error opening PDF preview:', error);
-          toast.error('Failed to open PDF preview');
+          console.error('Error reading PDF file:', error);
+          toast.error('Failed to read PDF file');
+          return;
         }
-      } else {
-        toast.error('PDF file not available for preview');
+      } else if (template.preview && template.preview.startsWith('data:application/pdf')) {
+        // Handle PDF data URLs
+        pdfData = template.preview;
+      } else if (template.template_url && template.template_url.startsWith('data:application/pdf')) {
+        pdfData = template.template_url;
       }
-    } else if (template.preview) {
-      // For image templates, show preview image
-      const previewWindow = window.open('', '_blank', 'width=800,height=600');
+      
+      if (pdfData) {
+        openPdfPreview(template.name, pdfData);
+      } else {
+        toast.error('PDF data not available for preview');
+      }
+    } else {
+      // For image templates, use available image data
+      let imageData = template.preview || template.template_url || template.thumbnail_url;
+      
+      if (!imageData && template.file && template.file.type.startsWith('image/')) {
+        // Convert image file to data URL for preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const imageDataUrl = e.target?.result as string;
+          if (imageDataUrl) {
+            openImagePreview(template.name, imageDataUrl);
+          }
+        };
+        reader.readAsDataURL(template.file);
+        return;
+      }
+      
+      if (imageData) {
+        openImagePreview(template.name, imageData);
+      } else {
+        toast.error('Image data not available for preview');
+      }
+    }
+  };
+
+  const openPdfPreview = (templateName: string, pdfData: string) => {
+    try {
+      const previewWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
       if (previewWindow) {
         previewWindow.document.write(`
           <html>
-            <head><title>Template Preview - ${template.name}</title></head>
-            <body style="margin:0; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-              <img src="${template.preview}" alt="${template.name}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+            <head>
+              <title>PDF Preview - ${templateName}</title>
+              <style>
+                body { margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif; }
+                .header { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .pdf-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                embed { width: 100%; height: 600px; border: none; }
+                iframe { width: 100%; height: 600px; border: none; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h2>PDF Template Preview: ${templateName}</h2>
+                <p>Template Type: PDF Document</p>
+              </div>
+              <div class="pdf-container">
+                <embed src="${pdfData}" type="application/pdf" />
+                <noembed>
+                  <iframe src="${pdfData}"></iframe>
+                </noembed>
+              </div>
             </body>
           </html>
         `);
         previewWindow.document.close();
-        toast.success(`Opened preview for ${template.name}`);
+        toast.success(`Opened PDF preview for ${templateName}`);
+      } else {
+        toast.error('Could not open preview window. Please check your browser settings.');
       }
-    } else {
-      toast.error('Preview not available for this template');
+    } catch (error) {
+      console.error('Error opening PDF preview:', error);
+      toast.error('Failed to open PDF preview');
+    }
+  };
+
+  const openImagePreview = (templateName: string, imageData: string) => {
+    try {
+      const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <html>
+            <head>
+              <title>Template Preview - ${templateName}</title>
+              <style>
+                body { margin: 0; background: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+                .container { text-align: center; padding: 20px; }
+                img { max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+                .title { margin-bottom: 20px; color: #333; font-family: Arial, sans-serif; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2 class="title">Template Preview: ${templateName}</h2>
+                <img src="${imageData}" alt="${templateName}" />
+              </div>
+            </body>
+          </html>
+        `);
+        previewWindow.document.close();
+        toast.success(`Opened preview for ${templateName}`);
+      } else {
+        toast.error('Could not open preview window. Please check your browser settings.');
+      }
+    } catch (error) {
+      console.error('Error opening image preview:', error);
+      toast.error('Failed to open image preview');
     }
   };
 
   const handleEdit = (template: Template) => {
     console.log('Editing template:', template);
-    console.log('Template file type:', template.file?.type);
-    console.log('Template has file:', !!template.file);
+    console.log('Template edit data check:', {
+      hasFile: !!template.file,
+      hasPreview: !!template.preview,
+      hasTemplateUrl: !!template.template_url,
+      hasThumbnailUrl: !!template.thumbnail_url,
+      fileType: template.file?.type,
+      previewLength: template.preview?.length || 0
+    });
     
-    // Check if template has proper data for editing
-    if (!template.file && !template.preview) {
+    // Check if template has any usable data for editing
+    if (!hasViewableContent(template)) {
       toast.error('Cannot edit template - no file or preview data available');
       return;
     }
     
-    // For PDF templates, ensure we're passing the template with the file
-    if (template.file?.type === 'application/pdf') {
-      console.log('Editing PDF template with file');
-      toast.success(`Opening PDF editor for ${template.name}`);
-    } else {
-      console.log('Editing image template');
-      toast.success(`Opening editor for ${template.name}`);
-    }
+    const templateType = getTemplateType(template);
+    
+    console.log(`Opening ${templateType} editor for template: ${template.name}`);
+    toast.success(`Opening ${templateType.toUpperCase()} editor for ${template.name}`);
     
     onTemplateEdit(template);
   };
@@ -145,13 +245,15 @@ export const TemplateManageTab = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success(`Downloaded ${template.name}`);
-    } else {
+    } else if (template.preview) {
       // For templates without files, create a download link for the preview
       const link = document.createElement('a');
       link.href = template.preview;
       link.download = `${template.name}.png`;
       link.click();
       toast.success(`Downloaded ${template.name}`);
+    } else {
+      toast.error('No downloadable content available for this template');
     }
   };
 
@@ -267,104 +369,50 @@ export const TemplateManageTab = ({
       {/* Templates Display */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-md transition-shadow duration-200">
-              <div className="relative">
-                {template.file?.type === 'application/pdf' ? (
-                  <div className="w-full h-48 bg-red-100 flex items-center justify-center cursor-pointer" onClick={() => handlePreview(template)}>
-                    <FileText className="w-12 h-12 text-red-600" />
-                    <span className="ml-2 text-red-600 font-medium">PDF Template</span>
-                  </div>
-                ) : (
-                  <img 
-                    src={template.preview} 
-                    alt={template.name}
-                    className="w-full h-48 object-cover cursor-pointer"
-                    onClick={() => handlePreview(template)}
-                  />
-                )}
-                
-                {template.qrPosition && (
-                  <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    QR Ready
-                  </div>
-                )}
-              </div>
-              
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-2 truncate">{template.name}</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Updated {template.updatedAt.toLocaleDateString()}
-                </p>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handlePreview(template)}
-                    className="flex-1"
-                  >
-                    <Eye className="w-3 h-3 mr-1" />
-                    Preview
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEdit(template)}
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDuplicate(template.id)}
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div 
-                      className={`p-3 rounded-lg cursor-pointer ${
-                        template.file?.type === 'application/pdf' ? 'bg-red-100' : 'bg-purple-100'
-                      }`}
+          {filteredTemplates.map((template) => {
+            const templateType = getTemplateType(template);
+            return (
+              <Card key={template.id} className="hover:shadow-md transition-shadow duration-200">
+                <div className="relative">
+                  {templateType === 'pdf' ? (
+                    <div className="w-full h-48 bg-red-100 flex items-center justify-center cursor-pointer" onClick={() => handlePreview(template)}>
+                      <FileText className="w-12 h-12 text-red-600" />
+                      <span className="ml-2 text-red-600 font-medium">PDF Template</span>
+                    </div>
+                  ) : (
+                    <img 
+                      src={template.preview || template.template_url || template.thumbnail_url} 
+                      alt={template.name}
+                      className="w-full h-48 object-cover cursor-pointer"
                       onClick={() => handlePreview(template)}
-                    >
-                      <FileText className={`h-6 w-6 ${
-                        template.file?.type === 'application/pdf' ? 'text-red-600' : 'text-purple-600'
-                      }`} />
+                      onError={(e) => {
+                        // Fallback to a placeholder if image fails to load
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA4VjE2TTggMTJIMTYiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
+                      }}
+                    />
+                  )}
+                  
+                  {template.qrPosition && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      QR Ready
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>{template.file?.type === 'application/pdf' ? 'PDF Template' : 'IMAGE Template'}</span>
-                        <span>•</span>
-                        <span>Updated {template.updatedAt.toLocaleDateString()}</span>
-                        {template.qrPosition && (
-                          <>
-                            <span>•</span>
-                            <span className="text-green-600 font-medium">QR Positioned</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
+                  )}
+                </div>
+                
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2 truncate">{template.name}</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Updated {template.updatedAt.toLocaleDateString()}
+                  </p>
+                  
+                  <div className="flex gap-2">
                     <Button 
                       variant="outline" 
-                      size="sm"
+                      size="sm" 
                       onClick={() => handlePreview(template)}
+                      className="flex-1"
                     >
-                      <Eye className="h-4 w-4 mr-1" />
+                      <Eye className="w-3 h-3 mr-1" />
                       Preview
                     </Button>
                     <Button 
@@ -372,38 +420,102 @@ export const TemplateManageTab = ({
                       size="sm"
                       onClick={() => handleEdit(template)}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDownload(template)}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
+                      <Edit className="w-3 h-3" />
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleDuplicate(template.id)}
                     >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Duplicate
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDelete(template.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
+                      <Copy className="w-3 h-3" />
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredTemplates.map((template) => {
+            const templateType = getTemplateType(template);
+            return (
+              <Card key={template.id} className="hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div 
+                        className={`p-3 rounded-lg cursor-pointer ${
+                          templateType === 'pdf' ? 'bg-red-100' : 'bg-purple-100'
+                        }`}
+                        onClick={() => handlePreview(template)}
+                      >
+                        <FileText className={`h-6 w-6 ${
+                          templateType === 'pdf' ? 'text-red-600' : 'text-purple-600'
+                        }`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <span>{templateType === 'pdf' ? 'PDF Template' : 'IMAGE Template'}</span>
+                          <span>•</span>
+                          <span>Updated {template.updatedAt.toLocaleDateString()}</span>
+                          {template.qrPosition && (
+                            <>
+                              <span>•</span>
+                              <span className="text-green-600 font-medium">QR Positioned</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePreview(template)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(template)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDownload(template)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDuplicate(template.id)}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Duplicate
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDelete(template.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
