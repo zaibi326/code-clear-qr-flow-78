@@ -25,6 +25,9 @@ export const loadBackgroundImage = async (canvas: Canvas, imageUrl: string): Pro
       canvas.remove(existingBackground);
     }
     
+    // Clear canvas background
+    canvas.backgroundColor = '#ffffff';
+    
     let processedImageUrl = imageUrl;
     
     // Handle PDF files - render actual PDF content
@@ -35,26 +38,8 @@ export const loadBackgroundImage = async (canvas: Canvas, imageUrl: string): Pro
         console.log('PDF rendered to image successfully');
       } catch (pdfError) {
         console.warn('PDF rendering failed:', pdfError);
-        // Create a better fallback for PDFs that shows it's editable
+        // Create a simple background for failed PDFs
         canvas.backgroundColor = '#f8f9fa';
-        
-        // Add a text indicator that this is a PDF ready for editing
-        const { IText } = await import('fabric');
-        const pdfText = new IText('PDF Document Ready for Editing\n\nAdd your QR codes, text, and other elements\nusing the tools on the left', {
-          left: canvas.getWidth() / 2,
-          top: canvas.getHeight() / 2,
-          originX: 'center',
-          originY: 'center',
-          fontSize: 18,
-          fill: '#666666',
-          fontFamily: 'Arial, sans-serif',
-          textAlign: 'center',
-          selectable: false,
-          evented: false
-        });
-        
-        (pdfText as any).isBackgroundTemplate = true;
-        canvas.add(pdfText);
         canvas.renderAll();
         return true;
       }
@@ -63,8 +48,8 @@ export const loadBackgroundImage = async (canvas: Canvas, imageUrl: string): Pro
     // Create Fabric image with improved error handling
     const img = await new Promise<FabricImage>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Image loading timeout after 60 seconds'));
-      }, 60000);
+        reject(new Error('Image loading timeout after 30 seconds'));
+      }, 30000);
 
       try {
         console.log('Creating Fabric image from URL...');
@@ -109,12 +94,13 @@ export const loadBackgroundImage = async (canvas: Canvas, imageUrl: string): Pro
         imageSize: `${imgWidth}x${imgHeight}`
       });
       
-      // Calculate scale to fit the image to fill the entire canvas (cover mode)
+      // Calculate scale to fit the entire image within the canvas (contain mode)
+      // This ensures the full document is visible
       const scaleX = canvasWidth / imgWidth;
       const scaleY = canvasHeight / imgHeight;
       
-      // Use the larger scale to ensure the image covers the entire canvas without white space
-      const scale = Math.max(scaleX, scaleY);
+      // Use the smaller scale to ensure the entire image fits within the canvas
+      const scale = Math.min(scaleX, scaleY);
       
       // Calculate position to center the scaled image
       const scaledWidth = imgWidth * scale;

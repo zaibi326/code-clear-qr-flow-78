@@ -39,11 +39,11 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
                 <div className="relative mb-4">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
                 </div>
-                <div className="text-base font-semibold text-gray-800 mb-2">Loading Template Editor</div>
-                <div className="text-sm text-gray-600 mb-3">Preparing your template for editing...</div>
+                <div className="text-base font-semibold text-gray-800 mb-2">Loading Template</div>
+                <div className="text-sm text-gray-600 mb-3">Preparing your document for editing...</div>
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
                   <FileImage className="w-4 h-4" />
-                  <span>Processing JPG, PNG & PDF files</span>
+                  <span>Processing PDF, JPG & PNG files</span>
                 </div>
               </div>
             </div>
@@ -53,7 +53,7 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
           {backgroundLoaded && !backgroundError && (
             <div className="absolute top-3 right-3 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-md text-sm flex items-center gap-2 shadow-sm animate-in fade-in duration-500">
               <CheckCircle className="w-4 h-4" />
-              <span className="font-medium">Ready to Edit</span>
+              <span className="font-medium">Template Loaded</span>
             </div>
           )}
           
@@ -62,7 +62,7 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
             <div className="absolute inset-0 bg-red-50 border-2 border-red-200 text-red-700 flex items-center justify-center rounded backdrop-blur-sm">
               <div className="text-center p-6 max-w-md">
                 <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
-                <div className="text-base font-semibold mb-3">Editor Setup Failed</div>
+                <div className="text-base font-semibold mb-3">Template Loading Failed</div>
                 <div className="text-sm mb-4 text-gray-700 bg-white p-3 rounded border">
                   {backgroundError}
                 </div>
@@ -74,10 +74,10 @@ export const CanvasArea = ({ canvasRef, zoom, backgroundLoaded, backgroundError 
                     className="flex items-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Retry Setup
+                    Retry Loading
                   </Button>
                   <div className="text-xs text-gray-500 mt-2">
-                    If this persists, try re-uploading your template
+                    If this continues, try re-uploading your template
                   </div>
                 </div>
               </div>

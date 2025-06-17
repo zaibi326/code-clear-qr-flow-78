@@ -29,43 +29,34 @@ export const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
         throw new Error('Could not get canvas context');
       }
       
-      // Calculate scale to fit 800x600 canvas
+      // Get original viewport
       const viewport = page.getViewport({ scale: 1 });
-      const scaleX = 800 / viewport.width;
-      const scaleY = 600 / viewport.height;
-      const scale = Math.min(scaleX, scaleY);
       
+      // Set canvas size to match the original PDF page dimensions
+      // Scale up for better quality
+      const scale = 2;
       const scaledViewport = page.getViewport({ scale });
       
-      canvas.width = 800;
-      canvas.height = 600;
+      canvas.width = scaledViewport.width;
+      canvas.height = scaledViewport.height;
       
       // Fill with white background
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Center the PDF content
-      const offsetX = (canvas.width - scaledViewport.width) / 2;
-      const offsetY = (canvas.height - scaledViewport.height) / 2;
-      
-      context.save();
-      context.translate(offsetX, offsetY);
-      
-      // Render PDF page
+      // Render PDF page at full size
       await page.render({
         canvasContext: context,
         viewport: scaledViewport
       }).promise;
       
-      context.restore();
-      
-      // Convert to data URL
+      // Convert to data URL with high quality
       const imageDataUrl = canvas.toDataURL('image/png', 1.0);
       resolve(imageDataUrl);
       
     } catch (error) {
       console.error('PDF rendering error:', error);
-      // Fallback to a better placeholder
+      // Create a better fallback that maintains aspect ratio
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
@@ -74,6 +65,7 @@ export const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
         return;
       }
 
+      // Set standard size for fallback
       canvas.width = 800;
       canvas.height = 600;
       
@@ -87,7 +79,7 @@ export const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
       ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
       
       // Add document icon representation
-      ctx.fillStyle = '#f0f0f0';
+      ctx.fillStyle = '#f8f9fa';
       ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
       
       ctx.strokeStyle = '#d0d0d0';
