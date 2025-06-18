@@ -1,194 +1,174 @@
-
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React from "react";
 import {
-  Calendar,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  ChevronUp,
-  User2,
   BarChart3,
   QrCode,
+  Zap,
   Database,
-  FileText,
-  Megaphone,
-  HelpCircle,
-  TestTube,
-  Activity,
-  Plug,
-  Menu,
-  X
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useSupabaseAuth';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Tag,
+  Settings,
+  TrendingUp,
+  Users
+} from "lucide-react";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useSupabaseAuth";
+import { supabase } from "@/integrations/supabase/client";
 
-interface AppSidebarProps {
-  isCollapsed?: boolean;
-  setIsCollapsed?: (collapsed: boolean) => void;
+interface MenuItem {
+  title: string;
+  icon: any;
+  href: string;
+  isActive: boolean;
 }
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ 
-  isCollapsed: propIsCollapsed, 
-  setIsCollapsed: propSetIsCollapsed 
-}) => {
-  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default function AppSidebar() {
+  const { collapsed, setCollapsed } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-
-  // Use props if provided, otherwise use internal state
-  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : internalIsCollapsed;
-  const setIsCollapsed = propSetIsCollapsed || setInternalIsCollapsed;
-
-  const sidebarItems = [
-    {
-      path: '/dashboard',
-      icon: Home,
-      label: 'Overview',
-    },
-    {
-      path: '/analytics',
-      icon: BarChart3,
-      label: 'Analytics',
-    },
-    {
-      path: '/quick-generate',
-      icon: QrCode,
-      label: 'QR Codes',
-    },
-    {
-      path: '/template-manager',
-      icon: FileText,
-      label: 'Templates',
-    },
-    {
-      path: '/data-manager',
-      icon: Database,
-      label: 'Projects',
-    },
-    {
-      path: '/campaign-creator',
-      icon: Megaphone,
-      label: 'Campaigns',
-    },
-    {
-      path: '/dashboard/integrations',
-      icon: Plug,
-      label: 'Integrations',
-    },
-    {
-      path: '/monitoring',
-      icon: Activity,
-      label: 'Activity',
-    },
-    {
-      path: '/support',
-      icon: HelpCircle,
-      label: 'Help',
-    },
-  ];
+  const { signOut, user } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate("/auth");
   };
 
-  const handleLogoClick = () => {
-    window.location.href = '/';
-  };
-
-  const handleSettingsClick = () => {
-    navigate('/settings');
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
+  const menuItems = [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      href: "/dashboard",
+      isActive: location.pathname === "/dashboard"
+    },
+    {
+      title: "Create QR Code",
+      icon: QrCode,
+      href: "/create",
+      isActive: location.pathname === "/create"
+    },
+    {
+      title: "Quick Generate",
+      icon: Zap,
+      href: "/quick-generate",
+      isActive: location.pathname === "/quick-generate"
+    },
+    {
+      title: "QR Database",
+      icon: Database,
+      href: "/qr-database",
+      isActive: location.pathname === "/qr-database"
+    },
+    {
+      title: "Tags Management",
+      icon: Tag,
+      href: "/tags",
+      isActive: location.pathname === "/tags"
+    },
+    {
+      title: "Leads Management",
+      icon: Users,
+      href: "/leads",
+      isActive: location.pathname === "/leads"
+    },
+    {
+      title: "Analytics",
+      icon: TrendingUp,
+      href: "/analytics",
+      isActive: location.pathname === "/analytics"
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      href: "/settings",
+      isActive: location.pathname === "/settings"
+    }
+  ];
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden p-3 rounded-xl bg-white/90 backdrop-blur-sm shadow-lg border border-indigo-100 hover:bg-white transition-all duration-200"
-      >
-        {isMobileMenuOpen ? <X className="h-5 w-5 text-indigo-600" /> : <Menu className="h-5 w-5 text-indigo-600" />}
-      </button>
-
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-          onClick={closeMobileMenu}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`fixed left-0 top-0 z-30 h-screen bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 w-[240px]`}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <button 
-            onClick={handleLogoClick}
-            className="font-bold text-xl text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+    <aside
+      className={`group/sidebar flex flex-col h-screen fixed z-50 bg-white border-r shadow-sm transition-all duration-300 ${
+        collapsed ? "w-[70px]" : "w-[240px]"
+      }`}
+    >
+      <div className="flex items-center justify-between py-3 px-3">
+        <a href="/" className="flex items-center gap-2">
+          <img
+            src="/clearqr-logo.svg"
+            alt="ClearQR Logo"
+            className={`transition-all duration-300 ${
+              collapsed ? "w-8 h-8" : "w-10 h-10"
+            }`}
+          />
+          <span
+            className={`transition-all duration-300 ${
+              collapsed ? "hidden" : "block"
+            }`}
           >
-            ClearQR.io
-          </button>
-        </div>
-
-        <ScrollArea className="flex-1 h-[calc(100vh-140px)]">
-          <nav className="p-4">
-            <ul className="space-y-2">
-              {sidebarItems.map((item) => (
-                <li key={item.path}>
-                  <button
-                    onClick={() => {
-                      navigate(item.path);
-                      closeMobileMenu();
-                    }}
-                    className={`flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-left group ${
-                      location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
-                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' 
-                        : 'text-gray-700 hover:text-gray-900'
-                    }`}
-                  >
-                    <item.icon className={`h-5 w-5 flex-shrink-0 transition-colors duration-200 ${
-                      location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
-                        ? 'text-blue-600' 
-                        : 'text-gray-500 group-hover:text-gray-700'
-                    }`} />
-                    <span className="ml-3 font-medium">{item.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </ScrollArea>
-
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={handleSettingsClick}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:text-gray-900 mb-2 group"
-          >
-            <Settings className="h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-gray-700 transition-colors duration-200" />
-            <span className="ml-3 font-medium">Settings</span>
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center w-full p-3 rounded-lg hover:bg-red-50 transition-colors text-gray-700 hover:text-red-600 group"
-          >
-            <User2 className="h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-red-500 transition-colors duration-200" />
-            <span className="ml-3 font-medium">Sign Out</span>
-          </button>
-        </div>
+            ClearQR
+          </span>
+        </a>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url as string} />
+                <AvatarFallback>
+                  {user?.email?.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 mr-2">
+            <DropdownMenuItem>
+              {user?.user_metadata?.full_name || user?.email}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem>Support</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut}>Logout</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </>
-  );
-};
 
-export default AppSidebar;
+      <div className="flex-1 overflow-y-auto py-2 px-3">
+        <ul className="space-y-1">
+          {menuItems.map((item) => (
+            <li key={item.title}>
+              <a
+                href={item.href}
+                className={`group flex items-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors duration-300 ${
+                  item.isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
+                } py-2 px-3`}
+              >
+                <item.icon
+                  className={`mr-2 h-4 w-4 transition-all duration-300 ${
+                    collapsed ? "mr-0" : ""
+                  }`}
+                />
+                <span
+                  className={`transition-all duration-300 ${
+                    collapsed ? "hidden" : "block"
+                  }`}
+                >
+                  {item.title}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+}
