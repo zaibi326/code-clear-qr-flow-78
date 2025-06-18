@@ -1,3 +1,4 @@
+
 import { Home } from "@/pages/Home";
 import { Pricing } from "@/pages/Pricing";
 import { Auth } from "@/pages/Auth";
@@ -14,7 +15,7 @@ import { AdminTemplates } from "@/pages/admin/AdminTemplates";
 import { AdminSettings } from "@/pages/admin/AdminSettings";
 import { Support } from "@/pages/Support";
 import { Legal } from "@/pages/Legal";
-import { ProtectedRoute } from "./ProtectedRoute";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import QRCodeDatabase from '@/pages/QRCodeDatabase';
 
 export const routes = [
@@ -126,12 +127,12 @@ export const routes = [
     path: "/legal",
     element: <Legal />,
   },
+  {
+    path: "/qr-database",
+    element: (
+      <ProtectedRoute>
+        <QRCodeDatabase />
+      </ProtectedRoute>
+    ),
+  },
 ];
-
-// Add this route to the existing routes array:
-const additionalRoute = {
-  path: "/qr-database",
-  element: <ProtectedRoute><QRCodeDatabase /></ProtectedRoute>,
-};
-
-export const allRoutes = [...routes, additionalRoute];

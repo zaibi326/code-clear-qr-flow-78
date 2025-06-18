@@ -9,9 +9,7 @@ export const storeGeneratedQR = async (qrData: {
   campaignId?: string;
   projectId?: string;
   qrImageUrl?: string;
-  gener
-
-*source?: string;
+  generationSource?: string;
   generationMetadata?: any;
   qrSettings?: any;
   customData?: any;
