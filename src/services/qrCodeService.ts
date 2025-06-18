@@ -42,7 +42,7 @@ export const qrCodeService = {
     }
     
     if (filters.contentType) {
-      query = query.eq('content_type', filters.contentType);
+      query = query.eq('content_type', filters.contentType as any);
     }
     
     if (filters.visibilityStatus) {
@@ -137,7 +137,7 @@ export const qrCodeService = {
         user_id: qrData.user_id,
         name: qrData.name,
         content: qrData.content,
-        content_type: qrData.content_type,
+        content_type: qrData.content_type as any,
         campaign_id: qrData.campaign_id,
         project_id: qrData.project_id,
         qr_image_url: qrData.qr_image_url,
