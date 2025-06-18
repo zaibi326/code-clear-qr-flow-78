@@ -511,14 +511,18 @@ export type Database = {
           created_at: string | null
           custom_data: Json | null
           expires_at: string | null
+          generation_metadata: Json | null
+          generation_source: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
           name: string | null
           password_hash: string | null
           password_protected: boolean | null
+          performance_metrics: Json | null
           project_id: string | null
           qr_image_url: string | null
+          qr_settings: Json | null
           scan_location_data: Json | null
           short_url: string | null
           stats: Json | null
@@ -526,6 +530,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           variable_fields: Json | null
+          visibility_status: string | null
         }
         Insert: {
           border_style?: Json | null
@@ -535,14 +540,18 @@ export type Database = {
           created_at?: string | null
           custom_data?: Json | null
           expires_at?: string | null
+          generation_metadata?: Json | null
+          generation_source?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string | null
           password_hash?: string | null
           password_protected?: boolean | null
+          performance_metrics?: Json | null
           project_id?: string | null
           qr_image_url?: string | null
+          qr_settings?: Json | null
           scan_location_data?: Json | null
           short_url?: string | null
           stats?: Json | null
@@ -550,6 +559,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           variable_fields?: Json | null
+          visibility_status?: string | null
         }
         Update: {
           border_style?: Json | null
@@ -559,14 +569,18 @@ export type Database = {
           created_at?: string | null
           custom_data?: Json | null
           expires_at?: string | null
+          generation_metadata?: Json | null
+          generation_source?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string | null
           password_hash?: string | null
           password_protected?: boolean | null
+          performance_metrics?: Json | null
           project_id?: string | null
           qr_image_url?: string | null
+          qr_settings?: Json | null
           scan_location_data?: Json | null
           short_url?: string | null
           stats?: Json | null
@@ -574,6 +588,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           variable_fields?: Json | null
+          visibility_status?: string | null
         }
         Relationships: [
           {
@@ -995,6 +1010,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_qr_analytics: {
+        Args: {
+          p_user_id: string
+          p_time_range?: string
+          p_campaign_id?: string
+          p_project_id?: string
+        }
+        Returns: {
+          total_qr_codes: number
+          total_scans: number
+          unique_scans: number
+          avg_scans_per_qr: number
+          top_performing_qr: Json
+          recent_activity: Json
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
