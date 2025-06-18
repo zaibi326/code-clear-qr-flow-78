@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DatabaseQRCode } from '@/types/database';
 
 export interface QRCodeFilter {
   timeRange?: '7d' | '30d' | '90d' | '1y' | 'all';
@@ -102,13 +101,18 @@ export const qrCodeService = {
 
     if (error) throw error;
 
-    return data[0] || {
+    const result = data?.[0] || {
       total_qr_codes: 0,
       total_scans: 0,
       unique_scans: 0,
       avg_scans_per_qr: 0,
       top_performing_qr: {},
       recent_activity: []
+    };
+
+    return {
+      ...result,
+      recent_activity: Array.isArray(result.recent_activity) ? result.recent_activity : []
     };
   },
 
@@ -130,7 +134,13 @@ export const qrCodeService = {
     const { data, error } = await supabase
       .from('qr_codes')
       .insert({
-        ...qrData,
+        user_id: qrData.user_id,
+        name: qrData.name,
+        content: qrData.content,
+        content_type: qrData.content_type as any,
+        campaign_id: qrData.campaign_id,
+        project_id: qrData.project_id,
+        qr_image_url: qrData.qr_image_url,
         generation_source: qrData.generation_source || 'manual',
         generation_metadata: qrData.generation_metadata || {},
         qr_settings: qrData.qr_settings || {},
@@ -140,7 +150,8 @@ export const qrCodeService = {
           first_scan_at: null,
           last_scan_at: null,
           created_at: new Date().toISOString()
-        }
+        },
+        tags: qrData.tags || []
       })
       .select()
       .single();
@@ -150,7 +161,7 @@ export const qrCodeService = {
   },
 
   // Update QR code
-  async updateQRCode(id: string, updates: Partial<DatabaseQRCode>) {
+  async updateQRCode(id: string, updates: any) {
     const { data, error } = await supabase
       .from('qr_codes')
       .update({
