@@ -20,6 +20,15 @@ export interface TagFilter {
   sortOrder?: 'asc' | 'desc';
 }
 
+// Type for database function returns that only include partial Tag data
+interface PartialTagData {
+  id: string;
+  name: string;
+  color: string;
+  category: string;
+  usage_count: number;
+}
+
 export const tagService = {
   // Get all tags for a user with filtering
   async getTags(userId: string, filters: TagFilter = {}): Promise<Tag[]> {
@@ -46,7 +55,7 @@ export const tagService = {
   },
 
   // Get popular tags using the database function
-  async getPopularTags(userId: string, limit = 10): Promise<Tag[]> {
+  async getPopularTags(userId: string, limit = 10): Promise<PartialTagData[]> {
     const { data, error } = await supabase.rpc('get_popular_tags', {
       p_user_id: userId,
       p_limit: limit
@@ -114,16 +123,20 @@ export const tagService = {
         tag_id,
         tags (
           id,
+          user_id,
           name,
           color,
           category,
-          usage_count
+          description,
+          usage_count,
+          created_at,
+          updated_at
         )
       `)
       .eq('qr_code_id', qrCodeId);
 
     if (error) throw error;
-    return data?.map(item => item.tags).filter(Boolean) || [];
+    return data?.map(item => item.tags as Tag).filter(Boolean) || [];
   },
 
   // Assign tags to a QR code
@@ -157,16 +170,20 @@ export const tagService = {
         tag_id,
         tags (
           id,
+          user_id,
           name,
           color,
           category,
-          usage_count
+          description,
+          usage_count,
+          created_at,
+          updated_at
         )
       `)
       .eq('lead_record_id', leadRecordId);
 
     if (error) throw error;
-    return data?.map(item => item.tags).filter(Boolean) || [];
+    return data?.map(item => item.tags as Tag).filter(Boolean) || [];
   },
 
   // Assign tags to a lead record
