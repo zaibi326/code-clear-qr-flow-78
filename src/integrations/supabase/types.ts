@@ -319,6 +319,42 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_record_tags: {
+        Row: {
+          created_at: string
+          id: string
+          lead_record_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_record_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_record_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_record_tags_lead_record_id_fkey"
+            columns: ["lead_record_id"]
+            isOneToOne: false
+            referencedRelation: "lead_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_record_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_records: {
         Row: {
           created_at: string | null
@@ -498,6 +534,42 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_code_tags: {
+        Row: {
+          created_at: string
+          id: string
+          qr_code_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qr_code_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qr_code_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_code_tags_qr_code_id_fkey"
+            columns: ["qr_code_id"]
+            isOneToOne: false
+            referencedRelation: "qr_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_code_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
             referencedColumns: ["id"]
           },
         ]
@@ -904,6 +976,42 @@ export type Database = {
           },
         ]
       }
+      tags: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       templates: {
         Row: {
           category: string | null
@@ -1010,6 +1118,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_popular_tags: {
+        Args: { p_user_id: string; p_limit?: number }
+        Returns: {
+          id: string
+          name: string
+          color: string
+          category: string
+          usage_count: number
+        }[]
+      }
       get_qr_analytics: {
         Args: {
           p_user_id: string

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ import {
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { qrCodeService, QRCodeFilter, QRCodeAnalytics } from '@/services/qrCodeService';
 import { toast } from '@/hooks/use-toast';
+import { TagFilter } from '@/components/tags/TagFilter';
 
 interface QRCodeWithRelations {
   id: string;
@@ -49,6 +49,7 @@ export const QRCodeDashboard = () => {
     timeRange: '30d',
     visibilityStatus: 'active'
   });
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -62,7 +63,10 @@ export const QRCodeDashboard = () => {
     try {
       const result = await qrCodeService.getQRCodes(
         user.id, 
-        filters, 
+        {
+          ...filters,
+          tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined
+        }, 
         pagination.currentPage, 
         20
       );
@@ -97,7 +101,7 @@ export const QRCodeDashboard = () => {
 
   useEffect(() => {
     loadQRCodes();
-  }, [user, filters, pagination.currentPage]);
+  }, [user, filters, selectedTagIds, pagination.currentPage]);
 
   const handleFilterChange = (key: keyof QRCodeFilter, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -250,54 +254,79 @@ export const QRCodeDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search QR codes..."
-                value={filters.searchTerm || ''}
-                onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4 mb-6">
+            {/* First row: Search and basic filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search QR codes..."
+                  value={filters.searchTerm || ''}
+                  onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={filters.timeRange} onValueChange={(value) => handleFilterChange('timeRange', value)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {qrCodeService.getTimeRangeOptions().map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.contentType || ''} onValueChange={(value) => handleFilterChange('contentType', value || undefined)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Content Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  {qrCodeService.getContentTypeOptions().map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.visibilityStatus} onValueChange={(value) => handleFilterChange('visibilityStatus', value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                  <SelectItem value="deleted">Deleted</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={filters.timeRange} onValueChange={(value) => handleFilterChange('timeRange', value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {qrCodeService.getTimeRangeOptions().map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
-            <Select value={filters.contentType || ''} onValueChange={(value) => handleFilterChange('contentType', value || undefined)}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Content Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
-                {qrCodeService.getContentTypeOptions().map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.visibilityStatus} onValueChange={(value) => handleFilterChange('visibilityStatus', value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-                <SelectItem value="deleted">Deleted</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Second row: Tag filtering */}
+            <div className="flex items-center justify-between">
+              <TagFilter
+                selectedTags={selectedTagIds}
+                onTagsChange={setSelectedTagIds}
+                className="flex-1"
+              />
+              {(selectedTagIds.length > 0 || filters.searchTerm) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTagIds([]);
+                    setFilters({ timeRange: '30d', visibilityStatus: 'active' });
+                  }}
+                  className="ml-4"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* QR Codes Table */}
@@ -307,6 +336,7 @@ export const QRCodeDashboard = () => {
                 <TableRow>
                   <TableHead>QR Code</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead>Campaign/Project</TableHead>
                   <TableHead>Scans</TableHead>
                   <TableHead>Status</TableHead>
@@ -334,6 +364,25 @@ export const QRCodeDashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>{getContentTypeBadge(qr.content_type)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {qr.tags?.slice(0, 3).map((tag: any) => (
+                          <Badge
+                            key={tag.id}
+                            variant="secondary"
+                            className="text-xs"
+                            style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        ))}
+                        {qr.tags?.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{qr.tags.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         {qr.campaigns && (

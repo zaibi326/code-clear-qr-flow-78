@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface QRCodeFilter {
@@ -8,6 +7,7 @@ export interface QRCodeFilter {
   contentType?: string;
   visibilityStatus?: 'active' | 'archived' | 'deleted';
   searchTerm?: string;
+  tagIds?: string[]; // New: filter by specific tag IDs
 }
 
 export interface QRCodeAnalytics {
@@ -20,14 +20,17 @@ export interface QRCodeAnalytics {
 }
 
 export const qrCodeService = {
-  // Get paginated QR codes with filters
+  // Get paginated QR codes with filters (updated to include tag filtering)
   async getQRCodes(userId: string, filters: QRCodeFilter = {}, page = 1, limit = 20) {
     let query = supabase
       .from('qr_codes')
       .select(`
         *,
         campaigns:campaign_id(name, status),
-        projects:project_id(name, color)
+        projects:project_id(name, color),
+        qr_code_tags!inner(
+          tags(id, name, color, category)
+        )
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -68,6 +71,11 @@ export const qrCodeService = {
       query = query.or(`name.ilike.%${filters.searchTerm}%,content.ilike.%${filters.searchTerm}%`);
     }
 
+    // Tag filtering - if specific tags are requested
+    if (filters.tagIds && filters.tagIds.length > 0) {
+      query = query.in('qr_code_tags.tag_id', filters.tagIds);
+    }
+
     // Apply pagination
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -77,8 +85,14 @@ export const qrCodeService = {
     
     if (error) throw error;
 
+    // Process the data to flatten tag relationships
+    const processedData = data?.map(qr => ({
+      ...qr,
+      tags: qr.qr_code_tags?.map((qt: any) => qt.tags).filter(Boolean) || []
+    })) || [];
+
     return {
-      data: data || [],
+      data: processedData,
       totalCount: count || 0,
       totalPages: Math.ceil((count || 0) / limit),
       currentPage: page
@@ -116,7 +130,7 @@ export const qrCodeService = {
     };
   },
 
-  // Create QR code with enhanced metadata
+  // Create QR code with enhanced metadata and tag support
   async createQRCode(qrData: {
     user_id: string;
     name?: string;
@@ -130,6 +144,7 @@ export const qrCodeService = {
     qr_settings?: any;
     custom_data?: any;
     tags?: string[];
+    tagIds?: string[]; // New: support for proper tag IDs
   }) {
     const { data, error } = await supabase
       .from('qr_codes')
@@ -151,12 +166,19 @@ export const qrCodeService = {
           last_scan_at: null,
           created_at: new Date().toISOString()
         },
-        tags: qrData.tags || []
+        tags: qrData.tags || [] // Keep for backward compatibility
       })
       .select()
       .single();
 
     if (error) throw error;
+
+    // If tagIds are provided, create the tag relationships
+    if (qrData.tagIds && qrData.tagIds.length > 0) {
+      const { tagService } = await import('./tagService');
+      await tagService.assignTagsToQRCode(data.id, qrData.tagIds);
+    }
+
     return data;
   },
 
@@ -219,5 +241,28 @@ export const qrCodeService = {
       { label: 'Last year', value: '1y' },
       { label: 'All time', value: 'all' }
     ];
+  },
+
+  // Add new method to get QR codes with their tags
+  async getQRCodeWithTags(qrCodeId: string) {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select(`
+        *,
+        campaigns:campaign_id(name, status),
+        projects:project_id(name, color),
+        qr_code_tags(
+          tags(id, name, color, category)
+        )
+      `)
+      .eq('id', qrCodeId)
+      .single();
+
+    if (error) throw error;
+
+    return {
+      ...data,
+      tags: data.qr_code_tags?.map((qt: any) => qt.tags).filter(Boolean) || []
+    };
   }
 };

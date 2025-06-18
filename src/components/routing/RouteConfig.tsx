@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import Home from "@/pages/Index";
 import Pricing from "@/pages/Pricing";
@@ -9,6 +8,7 @@ import QuickGenerate from "@/pages/QuickGenerate";
 import Settings from "@/pages/Settings";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import QRCodeDatabase from '@/pages/QRCodeDatabase';
+import TagsManagement from '@/pages/TagsManagement';
 
 export const RouteConfig = () => {
   return (
@@ -54,6 +54,14 @@ export const RouteConfig = () => {
         element={
           <ProtectedRoute>
             <QRCodeDatabase />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tags" 
+        element={
+          <ProtectedRoute>
+            <TagsManagement />
           </ProtectedRoute>
         } 
       />
@@ -115,6 +123,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <QRCodeDatabase />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/tags",
+    element: (
+      <ProtectedRoute>
+        <TagsManagement />
       </ProtectedRoute>
     ),
   },
