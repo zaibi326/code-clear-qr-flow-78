@@ -153,8 +153,8 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map(cat => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      <SelectItem key={cat} value={cat || 'uncategorized'}>
+                        {cat ? (cat.charAt(0).toUpperCase() + cat.slice(1)) : 'Uncategorized'}
                       </SelectItem>
                     ))}
                   </SelectContent>

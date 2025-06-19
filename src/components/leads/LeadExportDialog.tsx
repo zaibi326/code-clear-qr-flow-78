@@ -46,7 +46,7 @@ export const LeadExportDialog: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
   const [isExporting, setIsExporting] = useState(false);
   const [filters, setFilters] = useState<ExportFilters>({
-    dateRange: {},
+    dateRange: { from: undefined, to: undefined },
     selectedTags: [],
     selectedLists: [],
     includeFields: {
