@@ -75,7 +75,8 @@ export const LeadExportDialog: React.FC = () => {
     setFilters(prev => ({
       ...prev,
       dateRange: {
-        ...(prev.dateRange || {}),
+        from: prev.dateRange.from,
+        to: prev.dateRange.to,
         [key]: date
       }
     }));
