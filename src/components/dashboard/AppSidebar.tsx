@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   BarChart3,
@@ -12,6 +13,7 @@ import {
 import { useSidebar } from "@/components/ui/sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,10 +32,12 @@ interface MenuItem {
 }
 
 export default function AppSidebar() {
-  const { collapsed, setCollapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+
+  const collapsed = state === "collapsed";
 
   const handleSignOut = async () => {
     await signOut();

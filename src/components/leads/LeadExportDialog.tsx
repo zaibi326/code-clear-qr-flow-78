@@ -17,23 +17,27 @@ import { leadListService } from '@/utils/leadListService';
 import { TagFilter } from '@/components/tags/TagFilter';
 import { cn } from '@/lib/utils';
 
+interface DateRange {
+  from?: Date;
+  to?: Date;
+}
+
+interface IncludeFields {
+  name: boolean;
+  phone: boolean;
+  email: boolean;
+  qr_id: boolean;
+  notes: boolean;
+  company: boolean;
+  tags: boolean;
+  created_at: boolean;
+}
+
 interface ExportFilters {
-  dateRange: {
-    from?: Date;
-    to?: Date;
-  };
+  dateRange: DateRange;
   selectedTags: string[];
   selectedLists: string[];
-  includeFields: {
-    name: boolean;
-    phone: boolean;
-    email: boolean;
-    qr_id: boolean;
-    notes: boolean;
-    company: boolean;
-    tags: boolean;
-    created_at: boolean;
-  };
+  includeFields: IncludeFields;
 }
 
 export const LeadExportDialog: React.FC = () => {
@@ -57,7 +61,7 @@ export const LeadExportDialog: React.FC = () => {
     }
   });
 
-  const handleFieldToggle = (field: keyof ExportFilters['includeFields']) => {
+  const handleFieldToggle = (field: keyof IncludeFields) => {
     setFilters(prev => ({
       ...prev,
       includeFields: {
@@ -91,7 +95,7 @@ export const LeadExportDialog: React.FC = () => {
       const filteredRecords = allRecords.map(record => {
         const filteredRecord: any = {};
         Object.keys(filters.includeFields).forEach(field => {
-          if (filters.includeFields[field as keyof typeof filters.includeFields]) {
+          if (filters.includeFields[field as keyof IncludeFields]) {
             filteredRecord[field] = record[field] || '';
           }
         });
@@ -274,7 +278,7 @@ export const LeadExportDialog: React.FC = () => {
                     <Checkbox
                       id={field}
                       checked={checked}
-                      onCheckedChange={() => handleFieldToggle(field as keyof ExportFilters['includeFields'])}
+                      onCheckedChange={() => handleFieldToggle(field as keyof IncludeFields)}
                     />
                     <Label htmlFor={field} className="capitalize">
                       {field.replace('_', ' ')}

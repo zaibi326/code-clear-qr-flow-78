@@ -6,20 +6,15 @@ import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { DashboardIntegrations } from '@/components/dashboard/DashboardIntegrations';
 
 const DashboardIntegrationsPage = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50" style={{ boxSizing: 'border-box' }}>
-        <AppSidebar 
-          isCollapsed={isSidebarCollapsed} 
-          setIsCollapsed={setIsSidebarCollapsed} 
-        />
+        <AppSidebar />
         <main 
           className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-0 md:ml-[240px] max-w-full"
           style={{ boxSizing: 'border-box' }}
         >
-          <DashboardTopbar toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+          <DashboardTopbar />
           
           {/* Header Section */}
           <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-6">
