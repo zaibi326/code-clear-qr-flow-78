@@ -36,14 +36,20 @@ export const leadExportService = {
         const records = await leadListService.getLeadRecords(list.id);
         // Ensure records is an array before processing
         if (Array.isArray(records)) {
-          const mappedRecords = records.map(record => ({
-            // Ensure record.data is an object before spreading
-            ...(typeof record.data === 'object' && record.data !== null ? record.data : {}),
-            list_name: list.name,
-            created_at: record.created_at,
-            tags: record.tags
-          }));
-          allRecords = allRecords.concat(mappedRecords);
+          const mappedRecords = records.map(record => {
+            // Safely extract data from record
+            const recordData = (typeof record.data === 'object' && record.data !== null) ? record.data : {};
+            
+            return {
+              ...recordData,
+              list_name: list.name,
+              created_at: record.created_at,
+              tags: record.tags
+            };
+          });
+          
+          // Use push with spread to concatenate arrays safely
+          allRecords.push(...mappedRecords);
         }
       }
 
