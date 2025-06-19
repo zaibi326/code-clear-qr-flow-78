@@ -21,6 +21,16 @@ export function PersonalInfoSection({
   onFirstNameChange, 
   onLastNameChange 
 }: PersonalInfoSectionProps) {
+  // Ensure all list type options have non-empty values
+  const listTypeOptions = [
+    { value: 'type1', label: 'Type 1' },
+    { value: 'type2', label: 'Type 2' },
+    { value: 'type3', label: 'Type 3' }
+  ].filter(option => option.value.trim() !== '');
+
+  console.log('PersonalInfoSection rendering with listType:', listType);
+  console.log('List type options:', listTypeOptions);
+
   return (
     <div className="grid grid-cols-3 gap-4">
       <div className="space-y-2">
@@ -32,9 +42,11 @@ export function PersonalInfoSection({
             <SelectValue placeholder="Select List Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="type1">Type 1</SelectItem>
-            <SelectItem value="type2">Type 2</SelectItem>
-            <SelectItem value="type3">Type 3</SelectItem>
+            {listTypeOptions.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

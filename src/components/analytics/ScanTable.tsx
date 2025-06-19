@@ -36,6 +36,16 @@ export function ScanTable() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   
+  // Ensure filter options have non-empty values
+  const filterOptions = [
+    { value: 'all', label: 'All Scans' },
+    { value: 'converted', label: 'Converted' },
+    { value: 'not-converted', label: 'Not Converted' }
+  ].filter(option => option.value.trim() !== '');
+
+  console.log('ScanTable rendering with filter:', filter);
+  console.log('Filter options:', filterOptions);
+  
   const filteredData = mockScanData.filter(scan => {
     const matchesSearch = search === '' || 
       scan.qrId.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,9 +88,11 @@ export function ScanTable() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Scans</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="not-converted">Not Converted</SelectItem>
+                {filterOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon">
