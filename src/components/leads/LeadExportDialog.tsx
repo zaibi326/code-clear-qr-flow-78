@@ -71,6 +71,16 @@ export const LeadExportDialog: React.FC = () => {
     }));
   };
 
+  const handleDateRangeChange = (key: 'from' | 'to', date?: Date) => {
+    setFilters(prev => ({
+      ...prev,
+      dateRange: {
+        ...prev.dateRange,
+        [key]: date
+      }
+    }));
+  };
+
   const handleExport = async () => {
     if (!user) return;
 
@@ -212,10 +222,7 @@ export const LeadExportDialog: React.FC = () => {
                       <Calendar
                         mode="single"
                         selected={filters.dateRange.from}
-                        onSelect={(date) => setFilters(prev => ({ 
-                          ...prev, 
-                          dateRange: { ...prev.dateRange, from: date } 
-                        }))}
+                        onSelect={(date) => handleDateRangeChange('from', date)}
                         initialFocus
                       />
                     </PopoverContent>
@@ -240,10 +247,7 @@ export const LeadExportDialog: React.FC = () => {
                       <Calendar
                         mode="single"
                         selected={filters.dateRange.to}
-                        onSelect={(date) => setFilters(prev => ({ 
-                          ...prev, 
-                          dateRange: { ...prev.dateRange, to: date } 
-                        }))}
+                        onSelect={(date) => handleDateRangeChange('to', date)}
                         initialFocus
                       />
                     </PopoverContent>

@@ -57,7 +57,9 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     
     try {
       const cats = await tagService.getTagCategories(user.id);
-      setCategories(cats);
+      // Filter out empty strings and null values
+      const validCategories = cats.filter(cat => cat && cat.trim() !== '');
+      setCategories(validCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
@@ -153,8 +155,8 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map(cat => (
-                      <SelectItem key={cat} value={cat || 'uncategorized'}>
-                        {cat ? (cat.charAt(0).toUpperCase() + cat.slice(1)) : 'Uncategorized'}
+                      <SelectItem key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>
