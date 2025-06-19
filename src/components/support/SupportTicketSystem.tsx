@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,12 +56,24 @@ export function SupportTicketSystem() {
     }
   ]);
 
+  // Ensure all category options have non-empty values
   const categories = [
     { value: 'technical', label: 'Technical Issue' },
     { value: 'billing', label: 'Billing & Account' },
     { value: 'feature', label: 'Feature Request' },
     { value: 'general', label: 'General Inquiry' }
-  ];
+  ].filter(cat => cat.value.trim() !== '');
+
+  // Ensure all priority options have non-empty values
+  const priorities = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'urgent', label: 'Urgent' }
+  ].filter(priority => priority.value.trim() !== '');
+
+  console.log('SupportTicketSystem categories:', categories);
+  console.log('SupportTicketSystem priorities:', priorities);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -186,10 +197,11 @@ export function SupportTicketSystem() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
+                      {priorities.map(priority => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          {priority.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
