@@ -41,9 +41,9 @@ export function AddressSection({
   onMailingCityChange,
   onMailingZipChange
 }: AddressSectionProps) {
-  const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut'];
-  const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia'];
-  const zipCodes = ['10001', '90210', '60601', '77001', '85001', '19101'];
+  const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut'].filter(state => state.trim() !== '');
+  const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia'].filter(city => city.trim() !== '');
+  const zipCodes = ['10001', '90210', '60601', '77001', '85001', '19101'].filter(zip => zip.trim() !== '');
 
   return (
     <>
@@ -88,7 +88,7 @@ export function AddressSection({
             </SelectTrigger>
             <SelectContent>
               {cities.map(city => (
-                <SelectItem key={city} value={city.toLowerCase()}>{city}</SelectItem>
+                <SelectItem key={city} value={city.toLowerCase().replace(/\s+/g, '-')}>{city}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -151,7 +151,7 @@ export function AddressSection({
             </SelectTrigger>
             <SelectContent>
               {cities.map(city => (
-                <SelectItem key={city} value={city.toLowerCase()}>{city}</SelectItem>
+                <SelectItem key={city} value={city.toLowerCase().replace(/\s+/g, '-')}>{city}</SelectItem>
               ))}
             </SelectContent>
           </Select>
