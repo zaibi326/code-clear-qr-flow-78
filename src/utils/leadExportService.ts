@@ -34,12 +34,16 @@ export const leadExportService = {
       let allRecords: any[] = [];
       for (const list of leadLists) {
         const records = await leadListService.getLeadRecords(list.id);
-        allRecords = [...allRecords, ...records.map(record => ({
-          ...record.data,
-          list_name: list.name,
-          created_at: record.created_at,
-          tags: record.tags
-        }))];
+        // Ensure records is an array before spreading
+        if (Array.isArray(records)) {
+          const mappedRecords = records.map(record => ({
+            ...record.data,
+            list_name: list.name,
+            created_at: record.created_at,
+            tags: record.tags
+          }));
+          allRecords = allRecords.concat(mappedRecords);
+        }
       }
 
       // Filter records based on selected fields
