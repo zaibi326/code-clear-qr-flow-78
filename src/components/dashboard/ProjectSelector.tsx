@@ -41,6 +41,23 @@ export function ProjectSelector() {
     }
   ];
 
+  // Ensure all project options have non-empty values
+  const projectOptions = [
+    { value: 'all', label: 'All Projects' },
+    ...projects.map(project => ({ value: project.id, label: project.name }))
+  ].filter(option => option.value.trim() !== '');
+
+  // Ensure all date range options have non-empty values
+  const dateRangeOptions = [
+    { value: '7days', label: 'Last 7 days' },
+    { value: '30days', label: 'Last 30 days' },
+    { value: '90days', label: 'Last 90 days' },
+    { value: 'custom', label: 'Custom range' }
+  ].filter(option => option.value.trim() !== '');
+
+  console.log('ProjectSelector projectOptions:', projectOptions);
+  console.log('ProjectSelector dateRangeOptions:', dateRangeOptions);
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -63,10 +80,9 @@ export function ProjectSelector() {
                 <SelectValue placeholder="Choose a project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                {projectOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -82,10 +98,11 @@ export function ProjectSelector() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7days">Last 7 days</SelectItem>
-                <SelectItem value="30days">Last 30 days</SelectItem>
-                <SelectItem value="90days">Last 90 days</SelectItem>
-                <SelectItem value="custom">Custom range</SelectItem>
+                {dateRangeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
