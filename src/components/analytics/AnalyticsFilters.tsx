@@ -15,6 +15,34 @@ import {
 export function AnalyticsFilters() {
   const [activeFilters, setActiveFilters] = useState<string[]>(['Last 30 days']);
   
+  // Ensure all date range options have non-empty values
+  const dateRangeOptions = [
+    { value: '7days', label: 'Last 7 days' },
+    { value: '30days', label: 'Last 30 days' },
+    { value: '90days', label: 'Last 90 days' },
+    { value: '1year', label: 'Last year' }
+  ].filter(option => option.value.trim() !== '');
+
+  // Ensure all campaign options have non-empty values
+  const campaignOptions = [
+    { value: 'all', label: 'All Campaigns' },
+    { value: 'summer-promo', label: 'Summer Promo' },
+    { value: 'product-launch', label: 'Product Launch' },
+    { value: 'holiday-sale', label: 'Holiday Sale' }
+  ].filter(option => option.value.trim() !== '');
+
+  // Ensure all location options have non-empty values
+  const locationOptions = [
+    { value: 'all', label: 'All Locations' },
+    { value: 'us', label: 'United States' },
+    { value: 'uk', label: 'United Kingdom' },
+    { value: 'ca', label: 'Canada' }
+  ].filter(option => option.value.trim() !== '');
+
+  console.log('AnalyticsFilters dateRangeOptions:', dateRangeOptions);
+  console.log('AnalyticsFilters campaignOptions:', campaignOptions);
+  console.log('AnalyticsFilters locationOptions:', locationOptions);
+  
   const removeFilter = (filter: string) => {
     setActiveFilters(prev => prev.filter(f => f !== filter));
   };
@@ -35,10 +63,11 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7days">Last 7 days</SelectItem>
-                <SelectItem value="30days">Last 30 days</SelectItem>
-                <SelectItem value="90days">Last 90 days</SelectItem>
-                <SelectItem value="1year">Last year</SelectItem>
+                {dateRangeOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -47,10 +76,11 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Campaign" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Campaigns</SelectItem>
-                <SelectItem value="summer-promo">Summer Promo</SelectItem>
-                <SelectItem value="product-launch">Product Launch</SelectItem>
-                <SelectItem value="holiday-sale">Holiday Sale</SelectItem>
+                {campaignOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -59,10 +89,11 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                <SelectItem value="us">United States</SelectItem>
-                <SelectItem value="uk">United Kingdom</SelectItem>
-                <SelectItem value="ca">Canada</SelectItem>
+                {locationOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
