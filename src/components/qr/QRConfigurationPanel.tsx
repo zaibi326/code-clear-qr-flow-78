@@ -14,23 +14,28 @@ interface QRConfigurationPanelProps {
   onContentChange: (value: string) => void;
 }
 
-const qrTypes = [
-  { value: 'url', label: 'Website URL', icon: '🌐' },
-  { value: 'text', label: 'Plain Text', icon: '📝' },
-  { value: 'email', label: 'Email Address', icon: '📧' },
-  { value: 'phone', label: 'Phone Number', icon: '📞' },
-  { value: 'wifi', label: 'WiFi Network', icon: '📶' },
-  { value: 'vcard', label: 'Contact Card', icon: '👤' }
-];
-
-const errorLevels = [
-  { value: 'L', label: 'Low (~7%)', description: 'Suitable for clean environments' },
-  { value: 'M', label: 'Medium (~15%)', description: 'Recommended for most use cases' },
-  { value: 'Q', label: 'Quartile (~25%)', description: 'Good for outdoor use' },
-  { value: 'H', label: 'High (~30%)', description: 'Maximum durability' }
-];
-
 export function QRConfigurationPanel({ config, onConfigChange, onContentChange }: QRConfigurationPanelProps) {
+  // Ensure all QR type options have non-empty values
+  const qrTypes = [
+    { value: 'url', label: 'Website URL', icon: '🌐' },
+    { value: 'text', label: 'Plain Text', icon: '📝' },
+    { value: 'email', label: 'Email Address', icon: '📧' },
+    { value: 'phone', label: 'Phone Number', icon: '📞' },
+    { value: 'wifi', label: 'WiFi Network', icon: '📶' },
+    { value: 'vcard', label: 'Contact Card', icon: '👤' }
+  ].filter(type => type.value.trim() !== '');
+
+  // Ensure all error level options have non-empty values
+  const errorLevels = [
+    { value: 'L', label: 'Low (~7%)', description: 'Suitable for clean environments' },
+    { value: 'M', label: 'Medium (~15%)', description: 'Recommended for most use cases' },
+    { value: 'Q', label: 'Quartile (~25%)', description: 'Good for outdoor use' },
+    { value: 'H', label: 'High (~30%)', description: 'Maximum durability' }
+  ].filter(level => level.value.trim() !== '');
+
+  console.log('QRConfigurationPanel qrTypes:', qrTypes);
+  console.log('QRConfigurationPanel errorLevels:', errorLevels);
+
   const setConfig = (updater: (prev: QRCodeConfig) => QRCodeConfig) => {
     onConfigChange(updater(config));
   };
