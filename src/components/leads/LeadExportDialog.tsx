@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -75,8 +74,8 @@ export const LeadExportDialog: React.FC = () => {
     setFilters(prev => ({
       ...prev,
       dateRange: {
-        from: key === 'from' ? date : prev.dateRange.from,
-        to: key === 'to' ? date : prev.dateRange.to
+        from: key === 'from' ? date : (prev.dateRange?.from || undefined),
+        to: key === 'to' ? date : (prev.dateRange?.to || undefined)
       }
     }));
   };
