@@ -36,6 +36,7 @@ export const useTagFilter = ({ selectedTags, onTagsChange, category }: UseTagFil
       setAvailableTags(tags);
     } catch (error) {
       console.error('Error loading tags:', error);
+      setAvailableTags([]); // Set empty array on error
     }
   };
 
@@ -44,11 +45,12 @@ export const useTagFilter = ({ selectedTags, onTagsChange, category }: UseTagFil
     
     try {
       const cats = await tagService.getTagCategories(user.id);
-      // Filter out empty strings and null values
-      const validCategories = cats.filter(cat => cat && cat.trim() !== '');
+      // Filter out empty strings, null values, and whitespace-only strings
+      const validCategories = cats.filter(cat => cat && typeof cat === 'string' && cat.trim() !== '');
       setCategories(validCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
+      setCategories([]); // Set empty array on error
     }
   };
 

@@ -30,6 +30,9 @@ export const TagFilterPopoverContent: React.FC<TagFilterPopoverContentProps> = (
   onTagToggle,
   onClearAll
 }) => {
+  // Filter out empty categories to prevent Select component errors
+  const validCategories = categories.filter(cat => cat && cat.trim() !== '');
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -47,7 +50,7 @@ export const TagFilterPopoverContent: React.FC<TagFilterPopoverContentProps> = (
       </div>
 
       {/* Category Filter */}
-      {categories.length > 0 && (
+      {validCategories.length > 0 && (
         <div>
           <label className="text-sm font-medium">Category</label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -56,7 +59,7 @@ export const TagFilterPopoverContent: React.FC<TagFilterPopoverContentProps> = (
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => (
+              {validCategories.map(cat => (
                 <SelectItem key={cat} value={cat}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </SelectItem>

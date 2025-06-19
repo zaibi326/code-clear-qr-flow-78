@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Search, 
   Filter, 
@@ -17,7 +19,9 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  BarChart3
+  BarChart3,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { qrCodeService, QRCodeFilter, QRCodeAnalytics } from '@/services/qrCodeService';
@@ -45,6 +49,7 @@ export const QRCodeDashboard = () => {
   const [qrCodes, setQrCodes] = useState<QRCodeWithRelations[]>([]);
   const [analytics, setAnalytics] = useState<QRCodeAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<QRCodeFilter>({
     timeRange: '30d',
     visibilityStatus: 'active'
@@ -57,9 +62,15 @@ export const QRCodeDashboard = () => {
   });
 
   const loadQRCodes = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setError('Please log in to view your QR codes');
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
+    setError(null);
+    
     try {
       const result = await qrCodeService.getQRCodes(
         user.id, 
@@ -79,16 +90,30 @@ export const QRCodeDashboard = () => {
       });
 
       // Load analytics
-      const analyticsData = await qrCodeService.getQRAnalytics(
-        user.id,
-        filters.timeRange,
-        filters.campaignId,
-        filters.projectId
-      );
-      setAnalytics(analyticsData);
+      try {
+        const analyticsData = await qrCodeService.getQRAnalytics(
+          user.id,
+          filters.timeRange,
+          filters.campaignId,
+          filters.projectId
+        );
+        setAnalytics(analyticsData);
+      } catch (analyticsError) {
+        console.error('Error loading analytics:', analyticsError);
+        // Continue without analytics if it fails
+        setAnalytics({
+          total_qr_codes: result.totalCount,
+          total_scans: 0,
+          unique_scans: 0,
+          avg_scans_per_qr: 0,
+          top_performing_qr: {},
+          recent_activity: []
+        });
+      }
 
     } catch (error) {
       console.error('Error loading QR codes:', error);
+      setError('Failed to load QR codes. Please try again.');
       toast({
         title: "Error",
         description: "Failed to load QR codes",
@@ -169,6 +194,30 @@ export const QRCodeDashboard = () => {
     );
   };
 
+  // Error state
+  if (error && !loading) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            {error}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadQRCodes()}
+              className="ml-4"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Loading state
   if (loading && qrCodes.length === 0) {
     return (
       <div className="space-y-6">
@@ -181,6 +230,11 @@ export const QRCodeDashboard = () => {
             </Card>
           ))}
         </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="h-96 bg-gray-200 rounded animate-pulse" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -329,128 +383,147 @@ export const QRCodeDashboard = () => {
             </div>
           </div>
 
+          {/* No QR codes state */}
+          {qrCodes.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <QrCode className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No QR codes found</h3>
+              <p className="text-gray-500 mb-4">
+                {filters.searchTerm || selectedTagIds.length > 0 
+                  ? "Try adjusting your filters or search terms"
+                  : "Create your first QR code to get started"
+                }
+              </p>
+              <Button onClick={() => window.location.href = '/create'}>
+                Create QR Code
+              </Button>
+            </div>
+          )}
+
           {/* QR Codes Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>QR Code</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Campaign/Project</TableHead>
-                  <TableHead>Scans</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {qrCodes.map((qr) => (
-                  <TableRow key={qr.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                          <QrCode className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{qr.name || 'Unnamed QR'}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-48">
-                            {qr.content}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            Source: {qr.generation_source}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getContentTypeBadge(qr.content_type)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {qr.tags?.slice(0, 3).map((tag: any) => (
-                          <Badge
-                            key={tag.id}
-                            variant="secondary"
-                            className="text-xs"
-                            style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color }}
-                          >
-                            {tag.name}
-                          </Badge>
-                        ))}
-                        {qr.tags?.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{qr.tags.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        {qr.campaigns && (
-                          <div className="text-sm font-medium">{qr.campaigns.name}</div>
-                        )}
-                        {qr.projects && (
-                          <div className="text-xs text-gray-500">{qr.projects.name}</div>
-                        )}
-                        {!qr.campaigns && !qr.projects && (
-                          <span className="text-gray-400">No assignment</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{qr.stats?.total_scans || 0}</div>
-                        <div className="text-xs text-gray-500">
-                          {qr.stats?.unique_scans || 0} unique
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${getStatusBadge(qr.visibility_status)} border`}>
-                        {qr.visibility_status.charAt(0).toUpperCase() + qr.visibility_status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {new Date(qr.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" title="View Details">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {qr.visibility_status === 'active' ? (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleArchive(qr.id)}
-                            title="Archive"
-                          >
-                            <Archive className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleRestore(qr.id)}
-                            title="Restore"
-                          >
-                            <ArchiveRestore className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-red-600"
-                          title="Delete Permanently"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {qrCodes.length > 0 && (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>QR Code</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Campaign/Project</TableHead>
+                    <TableHead>Scans</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {qrCodes.map((qr) => (
+                    <TableRow key={qr.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                            <QrCode className="h-4 w-4 text-gray-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{qr.name || 'Unnamed QR'}</div>
+                            <div className="text-sm text-gray-500 truncate max-w-48">
+                              {qr.content}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Source: {qr.generation_source}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getContentTypeBadge(qr.content_type)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {qr.tags?.slice(0, 3).map((tag: any) => (
+                            <Badge
+                              key={tag.id}
+                              variant="secondary"
+                              className="text-xs"
+                              style={{ backgroundColor: `${tag.color}20`, borderColor: tag.color }}
+                            >
+                              {tag.name}
+                            </Badge>
+                          ))}
+                          {qr.tags?.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{qr.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          {qr.campaigns && (
+                            <div className="text-sm font-medium">{qr.campaigns.name}</div>
+                          )}
+                          {qr.projects && (
+                            <div className="text-xs text-gray-500">{qr.projects.name}</div>
+                          )}
+                          {!qr.campaigns && !qr.projects && (
+                            <span className="text-gray-400">No assignment</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{qr.stats?.total_scans || 0}</div>
+                          <div className="text-xs text-gray-500">
+                            {qr.stats?.unique_scans || 0} unique
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusBadge(qr.visibility_status)} border`}>
+                          {qr.visibility_status.charAt(0).toUpperCase() + qr.visibility_status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {new Date(qr.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" title="View Details">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {qr.visibility_status === 'active' ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleArchive(qr.id)}
+                              title="Archive"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleRestore(qr.id)}
+                              title="Restore"
+                            >
+                              <ArchiveRestore className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600"
+                            title="Delete Permanently"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
