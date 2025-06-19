@@ -46,7 +46,8 @@ export const leadExportService = {
       const filteredRecords = allRecords.map(record => {
         const filteredRecord: any = {};
         Object.keys(filters.includeFields).forEach(field => {
-          if (filters.includeFields[field as keyof IncludeFields]) {
+          const typedField = field as keyof IncludeFields;
+          if (filters.includeFields[typedField]) {
             filteredRecord[field] = record[field] || '';
           }
         });
