@@ -6,7 +6,7 @@ import { QuickActions } from './QuickActions';
 import { DashboardCharts } from './DashboardCharts';
 
 export function DashboardOverview() {
-  const [timeFilter, setTimeFilter] = useState('7d');
+  const [timeFilter, setTimeFilter] = useState('7-days');
 
   return (
     <div className="space-y-8 animate-fade-in">

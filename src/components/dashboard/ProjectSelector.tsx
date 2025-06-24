@@ -41,38 +41,50 @@ export function ProjectSelector() {
     }
   ];
 
-  // Ensure all project options have valid non-empty values
+  // Ensure all project options have valid non-empty values with explicit validation
   const projectOptions = [
     { value: 'all-projects', label: 'All Projects' },
-    ...projects.map(project => ({ value: project.id, label: project.name }))
-  ].filter(option => option.value && option.value.trim() !== '');
+    ...projects.map(project => ({ 
+      value: project.id || `project-${Math.random().toString(36).substr(2, 9)}`, 
+      label: project.name || 'Unnamed Project' 
+    }))
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('ProjectSelector: Invalid option detected:', option);
+    }
+    return isValid;
+  });
 
-  // Ensure all date range options have valid non-empty values  
+  // Ensure all date range options have valid non-empty values with explicit validation
   const dateRangeOptions = [
     { value: '7-days', label: 'Last 7 days' },
     { value: '30-days', label: 'Last 30 days' },
     { value: '90-days', label: 'Last 90 days' },
     { value: 'custom-range', label: 'Custom range' }
-  ].filter(option => option.value && option.value.trim() !== '');
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('ProjectSelector: Invalid date range option detected:', option);
+    }
+    return isValid;
+  });
 
-  console.log('ProjectSelector rendering with:');
+  console.log('ProjectSelector rendering with valid options:');
   console.log('projectOptions:', projectOptions);
   console.log('dateRangeOptions:', dateRangeOptions);
   console.log('selectedProject:', selectedProject);
   console.log('dateRange:', dateRange);
-
-  // Validate that no empty values exist
-  projectOptions.forEach((option, index) => {
-    if (!option.value || option.value.trim() === '') {
-      console.error(`ProjectSelector: Empty value detected at projectOptions[${index}]:`, option);
-    }
-  });
-
-  dateRangeOptions.forEach((option, index) => {
-    if (!option.value || option.value.trim() === '') {
-      console.error(`ProjectSelector: Empty value detected at dateRangeOptions[${index}]:`, option);
-    }
-  });
 
   return (
     <Card className="mb-6">
@@ -97,7 +109,7 @@ export function ProjectSelector() {
               </SelectTrigger>
               <SelectContent>
                 {projectOptions.map((option) => {
-                  console.log('Rendering project SelectItem:', option);
+                  console.log('Rendering project SelectItem with value:', option.value, 'label:', option.label);
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -118,7 +130,7 @@ export function ProjectSelector() {
               </SelectTrigger>
               <SelectContent>
                 {dateRangeOptions.map((option) => {
-                  console.log('Rendering dateRange SelectItem:', option);
+                  console.log('Rendering dateRange SelectItem with value:', option.value, 'label:', option.label);
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}

@@ -14,45 +14,74 @@ import {
 
 export function AnalyticsFilters() {
   const [activeFilters, setActiveFilters] = useState<string[]>(['Last 30 days']);
+  const [selectedDateRange, setSelectedDateRange] = useState<string>('30-days');
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('all-campaigns');
+  const [selectedLocation, setSelectedLocation] = useState<string>('all-locations');
   
-  // Ensure all date range options have valid non-empty values
+  // Ensure all date range options have valid non-empty values with explicit validation
   const dateRangeOptions = [
-    { value: '7days', label: 'Last 7 days' },
-    { value: '30days', label: 'Last 30 days' },
-    { value: '90days', label: 'Last 90 days' },
-    { value: '1year', label: 'Last year' }
-  ].filter(option => option.value && option.value.trim() !== '');
+    { value: '7-days', label: 'Last 7 days' },
+    { value: '30-days', label: 'Last 30 days' },
+    { value: '90-days', label: 'Last 90 days' },
+    { value: '1-year', label: 'Last year' }
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('AnalyticsFilters: Invalid date range option detected:', option);
+    }
+    return isValid;
+  });
 
-  // Ensure all campaign options have valid non-empty values
+  // Ensure all campaign options have valid non-empty values with explicit validation
   const campaignOptions = [
-    { value: 'all', label: 'All Campaigns' },
+    { value: 'all-campaigns', label: 'All Campaigns' },
     { value: 'summer-promo', label: 'Summer Promo' },
     { value: 'product-launch', label: 'Product Launch' },
     { value: 'holiday-sale', label: 'Holiday Sale' }
-  ].filter(option => option.value && option.value.trim() !== '');
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('AnalyticsFilters: Invalid campaign option detected:', option);
+    }
+    return isValid;
+  });
 
-  // Ensure all location options have valid non-empty values
+  // Ensure all location options have valid non-empty values with explicit validation
   const locationOptions = [
-    { value: 'all', label: 'All Locations' },
+    { value: 'all-locations', label: 'All Locations' },
     { value: 'us', label: 'United States' },
     { value: 'uk', label: 'United Kingdom' },
     { value: 'ca', label: 'Canada' }
-  ].filter(option => option.value && option.value.trim() !== '');
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('AnalyticsFilters: Invalid location option detected:', option);
+    }
+    return isValid;
+  });
 
-  console.log('AnalyticsFilters rendering with:');
+  console.log('AnalyticsFilters rendering with valid options:');
   console.log('dateRangeOptions:', dateRangeOptions);
   console.log('campaignOptions:', campaignOptions);
   console.log('locationOptions:', locationOptions);
-
-  // Validate that no empty values exist
-  [dateRangeOptions, campaignOptions, locationOptions].forEach((options, listIndex) => {
-    const listNames = ['dateRangeOptions', 'campaignOptions', 'locationOptions'];
-    options.forEach((option, index) => {
-      if (!option.value || option.value.trim() === '') {
-        console.error(`AnalyticsFilters: Empty value detected at ${listNames[listIndex]}[${index}]:`, option);
-      }
-    });
-  });
+  console.log('selectedDateRange:', selectedDateRange);
+  console.log('selectedCampaign:', selectedCampaign);
+  console.log('selectedLocation:', selectedLocation);
   
   const removeFilter = (filter: string) => {
     setActiveFilters(prev => prev.filter(f => f !== filter));
@@ -68,14 +97,14 @@ export function AnalyticsFilters() {
               <span className="text-sm font-medium text-gray-700">Filters:</span>
             </div>
             
-            <Select>
+            <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
               <SelectTrigger className="w-[140px]">
                 <Calendar className="h-4 w-4" />
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
                 {dateRangeOptions.map(option => {
-                  console.log('Rendering dateRange SelectItem:', option);
+                  console.log('Rendering dateRange SelectItem with value:', option.value, 'label:', option.label);
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -85,13 +114,13 @@ export function AnalyticsFilters() {
               </SelectContent>
             </Select>
 
-            <Select>
+            <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Campaign" />
               </SelectTrigger>
               <SelectContent>
                 {campaignOptions.map(option => {
-                  console.log('Rendering campaign SelectItem:', option);
+                  console.log('Rendering campaign SelectItem with value:', option.value, 'label:', option.label);
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -101,13 +130,13 @@ export function AnalyticsFilters() {
               </SelectContent>
             </Select>
 
-            <Select>
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
               <SelectTrigger className="w-[100px]">
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
                 {locationOptions.map(option => {
-                  console.log('Rendering location SelectItem:', option);
+                  console.log('Rendering location SelectItem with value:', option.value, 'label:', option.label);
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}

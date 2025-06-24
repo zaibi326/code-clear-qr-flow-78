@@ -25,11 +25,11 @@ export function QRCodeFilters({
   const [searchQuery, setSearchQuery] = useState('');
 
   const tabs = [
-    { id: 'all', label: 'All QR Codes', count: 234 },
-    { id: 'dynamic', label: 'Dynamic', count: 186 },
-    { id: 'static', label: 'Static', count: 48 },
-    { id: 'active', label: 'Active', count: 221 },
-    { id: 'inactive', label: 'Inactive', count: 13 }
+    { id: 'all-qr-codes', label: 'All QR Codes', count: 234 },
+    { id: 'dynamic-qr', label: 'Dynamic', count: 186 },
+    { id: 'static-qr', label: 'Static', count: 48 },
+    { id: 'active-qr', label: 'Active', count: 221 },
+    { id: 'inactive-qr', label: 'Inactive', count: 13 }
   ];
 
   const handleTabClick = (tabId: string) => {
