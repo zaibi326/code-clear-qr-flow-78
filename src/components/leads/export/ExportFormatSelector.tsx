@@ -12,6 +12,26 @@ export const ExportFormatSelector: React.FC<ExportFormatSelectorProps> = ({
   exportFormat,
   onFormatChange
 }) => {
+  // Ensure all format options have valid non-empty values
+  const formatOptions = [
+    { value: 'csv', label: 'CSV (.csv)' },
+    { value: 'xlsx', label: 'Excel (.xlsx)' }
+  ].filter(option => {
+    const isValid = option.value && 
+                   typeof option.value === 'string' && 
+                   option.value.trim() !== '' && 
+                   option.label && 
+                   typeof option.label === 'string' && 
+                   option.label.trim() !== '';
+    if (!isValid) {
+      console.error('ExportFormatSelector: Invalid format option detected:', option);
+    }
+    return isValid;
+  });
+
+  console.log('ExportFormatSelector rendering with options:', formatOptions);
+  console.log('Current exportFormat:', exportFormat);
+
   return (
     <Card>
       <CardHeader>
@@ -23,8 +43,14 @@ export const ExportFormatSelector: React.FC<ExportFormatSelectorProps> = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="csv">CSV (.csv)</SelectItem>
-            <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
+            {formatOptions.map(option => {
+              console.log('Rendering format SelectItem with value:', option.value, 'label:', option.label);
+              return (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </CardContent>

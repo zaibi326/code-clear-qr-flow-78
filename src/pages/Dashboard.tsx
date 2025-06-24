@@ -9,6 +9,8 @@ import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaign
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
+  console.log('Dashboard component rendering');
+  
   // Mock data - in real app this would come from your database
   const dashboardData = {
     totalQRCodes: 1247,
