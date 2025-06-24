@@ -1,48 +1,86 @@
-
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppProviders } from "@/components/providers/AppProviders";
-import { RouteConfig } from "@/components/routing/RouteConfig";
-import Footer from "@/components/Footer";
-import { useLocation } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import QRGenerator from "./pages/QRGenerator";
+import Dashboard from "./pages/Dashboard";
+import EnhancedDashboard from "./pages/EnhancedDashboard";
 
-const AppContent = () => {
-  const location = useLocation();
-  // Don't show footer on dashboard and related pages
-  const isDashboardRoute = location.pathname.startsWith('/dashboard') || 
-                          location.pathname.startsWith('/analytics') ||
-                          location.pathname.startsWith('/create') ||
-                          location.pathname.startsWith('/qr-codes') ||
-                          location.pathname.startsWith('/templates') ||
-                          location.pathname.startsWith('/template-manager') ||
-                          location.pathname.startsWith('/data') ||
-                          location.pathname.startsWith('/projects') ||
-                          location.pathname.startsWith('/campaigns') ||
-                          location.pathname.startsWith('/campaign-creator') ||
-                          location.pathname.startsWith('/monitoring') ||
-                          location.pathname.startsWith('/settings') ||
-                          location.pathname.startsWith('/admin') ||
-                          location.pathname === '/support' ||
-                          location.pathname === '/quick-generate' ||
-                          location.pathname === '/data-manager';
-  
-  return (
-    <>
-      <RouteConfig />
-      {!isDashboardRoute && <Footer />}
-    </>
-  );
-};
+const Auth = lazy(() => import("./pages/Auth"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Blog = lazy(() => import("./pages/Blog"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient();
 
 const App = () => (
-  <TooltipProvider>
-    <Toaster />
-    <Sonner />
-    <AppProviders>
-      <AppContent />
-    </AppProviders>
-  </TooltipProvider>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/create" element={<QRGenerator />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
+          <Route
+            path="/auth"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <Auth />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/pricing"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <Pricing />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <Contact />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/blog"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <Blog />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <AdminDashboard />
+              </Suspense>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <NotFound />
+              </Suspense>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;
