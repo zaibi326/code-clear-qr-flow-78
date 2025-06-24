@@ -10,9 +10,9 @@ import CreateQRCode from "./pages/CreateQRCode";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 
-const Auth = lazy(() => import("./pages/Auth"));
+const Auth = lazy(() => import("./pages/Login"));
 const Pricing = lazy(() => import("./pages/Pricing"));
-const Contact = lazy(() => import("./pages/Contact"));
+const Contact = lazy(() => import("./pages/company/Contact"));
 const Blog = lazy(() => import("./pages/Blog"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
