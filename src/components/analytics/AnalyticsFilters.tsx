@@ -21,7 +21,7 @@ export function AnalyticsFilters() {
     { value: '30days', label: 'Last 30 days' },
     { value: '90days', label: 'Last 90 days' },
     { value: '1year', label: 'Last year' }
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
   // Ensure all campaign options have valid non-empty values
   const campaignOptions = [
@@ -29,7 +29,7 @@ export function AnalyticsFilters() {
     { value: 'summer-promo', label: 'Summer Promo' },
     { value: 'product-launch', label: 'Product Launch' },
     { value: 'holiday-sale', label: 'Holiday Sale' }
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
   // Ensure all location options have valid non-empty values
   const locationOptions = [
@@ -37,11 +37,22 @@ export function AnalyticsFilters() {
     { value: 'us', label: 'United States' },
     { value: 'uk', label: 'United Kingdom' },
     { value: 'ca', label: 'Canada' }
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
-  console.log('AnalyticsFilters dateRangeOptions:', dateRangeOptions);
-  console.log('AnalyticsFilters campaignOptions:', campaignOptions);
-  console.log('AnalyticsFilters locationOptions:', locationOptions);
+  console.log('AnalyticsFilters rendering with:');
+  console.log('dateRangeOptions:', dateRangeOptions);
+  console.log('campaignOptions:', campaignOptions);
+  console.log('locationOptions:', locationOptions);
+
+  // Validate that no empty values exist
+  [dateRangeOptions, campaignOptions, locationOptions].forEach((options, listIndex) => {
+    const listNames = ['dateRangeOptions', 'campaignOptions', 'locationOptions'];
+    options.forEach((option, index) => {
+      if (!option.value || option.value.trim() === '') {
+        console.error(`AnalyticsFilters: Empty value detected at ${listNames[listIndex]}[${index}]:`, option);
+      }
+    });
+  });
   
   const removeFilter = (filter: string) => {
     setActiveFilters(prev => prev.filter(f => f !== filter));
@@ -63,11 +74,14 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
-                {dateRangeOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {dateRangeOptions.map(option => {
+                  console.log('Rendering dateRange SelectItem:', option);
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -76,11 +90,14 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Campaign" />
               </SelectTrigger>
               <SelectContent>
-                {campaignOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {campaignOptions.map(option => {
+                  console.log('Rendering campaign SelectItem:', option);
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -89,11 +106,14 @@ export function AnalyticsFilters() {
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
-                {locationOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {locationOptions.map(option => {
+                  console.log('Rendering location SelectItem:', option);
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

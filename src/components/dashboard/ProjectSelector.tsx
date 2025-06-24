@@ -45,7 +45,7 @@ export function ProjectSelector() {
   const projectOptions = [
     { value: 'all-projects', label: 'All Projects' },
     ...projects.map(project => ({ value: project.id, label: project.name }))
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
   // Ensure all date range options have valid non-empty values  
   const dateRangeOptions = [
@@ -53,10 +53,26 @@ export function ProjectSelector() {
     { value: '30-days', label: 'Last 30 days' },
     { value: '90-days', label: 'Last 90 days' },
     { value: 'custom-range', label: 'Custom range' }
-  ];
+  ].filter(option => option.value && option.value.trim() !== '');
 
-  console.log('ProjectSelector projectOptions:', projectOptions);
-  console.log('ProjectSelector dateRangeOptions:', dateRangeOptions);
+  console.log('ProjectSelector rendering with:');
+  console.log('projectOptions:', projectOptions);
+  console.log('dateRangeOptions:', dateRangeOptions);
+  console.log('selectedProject:', selectedProject);
+  console.log('dateRange:', dateRange);
+
+  // Validate that no empty values exist
+  projectOptions.forEach((option, index) => {
+    if (!option.value || option.value.trim() === '') {
+      console.error(`ProjectSelector: Empty value detected at projectOptions[${index}]:`, option);
+    }
+  });
+
+  dateRangeOptions.forEach((option, index) => {
+    if (!option.value || option.value.trim() === '') {
+      console.error(`ProjectSelector: Empty value detected at dateRangeOptions[${index}]:`, option);
+    }
+  });
 
   return (
     <Card className="mb-6">
@@ -80,11 +96,14 @@ export function ProjectSelector() {
                 <SelectValue placeholder="Choose a project" />
               </SelectTrigger>
               <SelectContent>
-                {projectOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {projectOptions.map((option) => {
+                  console.log('Rendering project SelectItem:', option);
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -98,11 +117,14 @@ export function ProjectSelector() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {dateRangeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {dateRangeOptions.map((option) => {
+                  console.log('Rendering dateRange SelectItem:', option);
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
