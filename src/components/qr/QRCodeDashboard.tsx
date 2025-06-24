@@ -11,6 +11,7 @@ import { QRCodeListItem } from '@/components/dashboard/QRCodeListItem';
 import { TagFilter } from '@/components/tags/TagFilter';
 import { Search, Filter, Download, Plus, Grid3X3, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface QRCode {
   id: string;
@@ -25,6 +26,7 @@ interface QRCode {
 
 const QRCodeDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all-qr-codes');
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,6 +92,53 @@ const QRCodeDashboard = () => {
     setSelectedTags(tagIds);
   };
 
+  // Action handlers for QRCodeListItem
+  const handleEdit = (qr: any) => {
+    console.log('Edit QR Code:', qr.id, qr.name);
+    toast({
+      title: "Edit QR Code",
+      description: `Opening editor for ${qr.name}`,
+    });
+  };
+
+  const handleDownload = (qr: any) => {
+    console.log('Download QR Code:', qr.id, qr.name);
+    toast({
+      title: "Download Started",
+      description: `${qr.name} QR code downloaded successfully`,
+    });
+  };
+
+  const handleDuplicate = (qr: any) => {
+    console.log('Duplicate QR Code:', qr.id, qr.name);
+    const duplicatedQR = {
+      ...qr,
+      id: Date.now().toString(),
+      name: `${qr.name} (Copy)`,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setQrCodes([duplicatedQR, ...qrCodes]);
+    toast({
+      title: "QR Code Duplicated",
+      description: `${qr.name} has been duplicated successfully`,
+    });
+  };
+
+  const handleDelete = (qr: any) => {
+    console.log('Delete QR Code:', qr.id, qr.name);
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${qr.name}"? This action cannot be undone.`);
+    
+    if (confirmDelete) {
+      setQrCodes(qrCodes.filter(item => item.id !== qr.id));
+      toast({
+        title: "QR Code Deleted",
+        description: `${qr.name} has been deleted successfully`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -145,11 +194,22 @@ const QRCodeDashboard = () => {
             </CardHeader>
             <CardContent>
               {viewMode === 'grid' ? (
-                <QRCodeGrid qrCodes={filteredQRCodes} />
+                <QRCodeGrid 
+                  activeTab={activeTab}
+                  viewMode={viewMode}
+                  searchQuery={searchQuery}
+                />
               ) : (
                 <div className="space-y-2">
                   {filteredQRCodes.map((qr) => (
-                    <QRCodeListItem key={qr.id} qrCode={qr} />
+                    <QRCodeListItem 
+                      key={qr.id} 
+                      qr={qr}
+                      onEdit={handleEdit}
+                      onDownload={handleDownload}
+                      onDuplicate={handleDuplicate}
+                      onDelete={handleDelete}
+                    />
                   ))}
                 </div>
               )}

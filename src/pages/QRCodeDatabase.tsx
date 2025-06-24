@@ -3,7 +3,7 @@ import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
-import { QRCodeDashboard } from '@/components/qr/QRCodeDashboard';
+import QRCodeDashboard from '@/components/qr/QRCodeDashboard';
 
 const QRCodeDatabase = () => {
   return (
