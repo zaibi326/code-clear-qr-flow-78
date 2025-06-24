@@ -217,8 +217,17 @@ export const qrCodeService = {
       if (error) throw error;
 
       const totalCodes = data?.length || 0;
-      const totalScans = data?.reduce((sum, qr) => sum + (qr.stats?.total_scans || 0), 0) || 0;
-      const uniqueScans = data?.reduce((sum, qr) => sum + (qr.stats?.unique_scans || 0), 0) || 0;
+      // Type guard for stats object
+      const totalScans = data?.reduce((sum, qr) => {
+        const stats = qr.stats as any;
+        return sum + (stats?.total_scans || 0);
+      }, 0) || 0;
+      
+      const uniqueScans = data?.reduce((sum, qr) => {
+        const stats = qr.stats as any;
+        return sum + (stats?.unique_scans || 0);
+      }, 0) || 0;
+      
       const avgScans = totalCodes > 0 ? Math.round(totalScans / totalCodes) : 0;
 
       return {

@@ -23,7 +23,7 @@ export function QRConfigurationPanel({ config, onConfigChange, onContentChange }
     { value: 'phone', label: 'Phone Number', icon: '📞' },
     { value: 'wifi', label: 'WiFi Network', icon: '📶' },
     { value: 'vcard', label: 'Contact Card', icon: '👤' }
-  ].filter(type => type.value.trim() !== '');
+  ].filter(type => type.value && type.value.trim() !== '');
 
   // Ensure all error level options have non-empty values
   const errorLevels = [
@@ -31,7 +31,7 @@ export function QRConfigurationPanel({ config, onConfigChange, onContentChange }
     { value: 'M', label: 'Medium (~15%)', description: 'Recommended for most use cases' },
     { value: 'Q', label: 'Quartile (~25%)', description: 'Good for outdoor use' },
     { value: 'H', label: 'High (~30%)', description: 'Maximum durability' }
-  ].filter(level => level.value.trim() !== '');
+  ].filter(level => level.value && level.value.trim() !== '');
 
   console.log('QRConfigurationPanel qrTypes:', qrTypes);
   console.log('QRConfigurationPanel errorLevels:', errorLevels);

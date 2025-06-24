@@ -14,26 +14,26 @@ interface Project {
 }
 
 export function ProjectSelector() {
-  const [selectedProject, setSelectedProject] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<string>('30days');
+  const [selectedProject, setSelectedProject] = useState<string>('all-projects');
+  const [dateRange, setDateRange] = useState<string>('30-days');
 
   const projects: Project[] = [
     {
-      id: 'summer-2024',
+      id: 'summer-campaign-2024',
       name: 'Summer Campaign 2024',
       campaigns: 12,
       scans: 8450,
       lastActive: '2 hours ago'
     },
     {
-      id: 'product-launch',
+      id: 'product-launch-q4',
       name: 'Product Launch Q4',
       campaigns: 8,
       scans: 5230,
       lastActive: '1 day ago'
     },
     {
-      id: 'holiday-promo',
+      id: 'holiday-promotions',
       name: 'Holiday Promotions',
       campaigns: 15,
       scans: 12100,
@@ -43,17 +43,17 @@ export function ProjectSelector() {
 
   // Ensure all project options have non-empty values
   const projectOptions = [
-    { value: 'all', label: 'All Projects' },
+    { value: 'all-projects', label: 'All Projects' },
     ...projects.map(project => ({ value: project.id, label: project.name }))
-  ].filter(option => option.value.trim() !== '');
+  ].filter(option => option.value && option.value.trim() !== '');
 
   // Ensure all date range options have non-empty values
   const dateRangeOptions = [
-    { value: '7days', label: 'Last 7 days' },
-    { value: '30days', label: 'Last 30 days' },
-    { value: '90days', label: 'Last 90 days' },
-    { value: 'custom', label: 'Custom range' }
-  ].filter(option => option.value.trim() !== '');
+    { value: '7-days', label: 'Last 7 days' },
+    { value: '30-days', label: 'Last 30 days' },
+    { value: '90-days', label: 'Last 90 days' },
+    { value: 'custom-range', label: 'Custom range' }
+  ].filter(option => option.value && option.value.trim() !== '');
 
   console.log('ProjectSelector projectOptions:', projectOptions);
   console.log('ProjectSelector dateRangeOptions:', dateRangeOptions);
@@ -115,7 +115,7 @@ export function ProjectSelector() {
           </div>
         </div>
 
-        {selectedProject !== 'all' && (
+        {selectedProject !== 'all-projects' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {projects
               .filter(project => project.id === selectedProject)
