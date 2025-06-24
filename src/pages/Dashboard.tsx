@@ -40,6 +40,9 @@ const Dashboard = () => {
     ]
   };
 
+  console.log('About to render QRCodeDatabase component');
+  console.log('About to render ProjectCampaignHierarchy component');
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50" style={{ boxSizing: 'border-box' }}>
@@ -79,12 +82,10 @@ const Dashboard = () => {
                   
                   <div className="p-6">
                     <TabsContent value="qr-codes" className="space-y-6 m-0">
-                      {console.log('About to render QRCodeDatabase component')}
                       <QRCodeDatabase />
                     </TabsContent>
                     
                     <TabsContent value="projects" className="m-0">
-                      {console.log('About to render ProjectCampaignHierarchy component')}
                       <ProjectCampaignHierarchy />
                     </TabsContent>
                   </div>

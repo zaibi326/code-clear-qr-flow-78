@@ -42,6 +42,8 @@ export const LeadExportDialog: React.FC = () => {
     setExportFormat(format);
   };
 
+  console.log('About to render ExportFormatSelector');
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -59,7 +61,6 @@ export const LeadExportDialog: React.FC = () => {
         </DialogHeader>
 
         <div className="space-y-6">
-          {console.log('About to render ExportFormatSelector')}
           <ExportFormatSelector
             exportFormat={exportFormat}
             onFormatChange={handleFormatChange}
