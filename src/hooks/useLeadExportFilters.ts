@@ -1,47 +1,46 @@
 
 import { useState } from 'react';
 
-interface DateRange {
-  from?: Date;
-  to?: Date;
-}
-
-interface IncludeFields {
-  name: boolean;
-  phone: boolean;
-  email: boolean;
-  qr_id: boolean;
-  notes: boolean;
-  company: boolean;
-  tags: boolean;
-  created_at: boolean;
-}
-
-interface ExportFilters {
-  dateRange: DateRange;
+export interface LeadExportFilters {
+  dateRange: {
+    from: Date | null;
+    to: Date | null;
+  };
   selectedTags: string[];
-  selectedLists: string[];
-  includeFields: IncludeFields;
+  includeFields: {
+    name: boolean;
+    email: boolean;
+    phone: boolean;
+    company: boolean;
+    url: boolean;
+    notes: boolean;
+    tags: boolean;
+    createdAt: boolean;
+    updatedAt: boolean;
+  };
 }
 
 export const useLeadExportFilters = () => {
-  const [filters, setFilters] = useState<ExportFilters>({
-    dateRange: { from: undefined, to: undefined },
+  const [filters, setFilters] = useState<LeadExportFilters>({
+    dateRange: {
+      from: null,
+      to: null
+    },
     selectedTags: [],
-    selectedLists: [],
     includeFields: {
       name: true,
-      phone: true,
       email: true,
-      qr_id: true,
-      notes: true,
+      phone: true,
       company: true,
+      url: false,
+      notes: false,
       tags: true,
-      created_at: true
+      createdAt: true,
+      updatedAt: false
     }
   });
 
-  const handleFieldToggle = (field: keyof IncludeFields) => {
+  const handleFieldToggle = (field: keyof LeadExportFilters['includeFields']) => {
     setFilters(prev => ({
       ...prev,
       includeFields: {
@@ -51,18 +50,18 @@ export const useLeadExportFilters = () => {
     }));
   };
 
-  const handleDateRangeChange = (key: 'from' | 'to', date?: Date) => {
+  const handleDateRangeChange = (range: { from: Date | null; to: Date | null }) => {
     setFilters(prev => ({
       ...prev,
-      dateRange: {
-        from: key === 'from' ? date : prev.dateRange.from,
-        to: key === 'to' ? date : prev.dateRange.to
-      }
+      dateRange: range
     }));
   };
 
   const handleTagsChange = (tagIds: string[]) => {
-    setFilters(prev => ({ ...prev, selectedTags: tagIds }));
+    setFilters(prev => ({
+      ...prev,
+      selectedTags: tagIds
+    }));
   };
 
   return {

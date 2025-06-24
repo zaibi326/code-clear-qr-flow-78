@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { FileSpreadsheet, FileText } from 'lucide-react';
 
 interface ExportFormatSelectorProps {
   exportFormat: 'csv' | 'xlsx';
@@ -12,25 +14,7 @@ export const ExportFormatSelector: React.FC<ExportFormatSelectorProps> = ({
   exportFormat,
   onFormatChange
 }) => {
-  // Ensure all format options have valid non-empty values
-  const formatOptions = [
-    { value: 'csv', label: 'CSV (.csv)' },
-    { value: 'xlsx', label: 'Excel (.xlsx)' }
-  ].filter(option => {
-    const isValid = option.value && 
-                   typeof option.value === 'string' && 
-                   option.value.trim() !== '' && 
-                   option.label && 
-                   typeof option.label === 'string' && 
-                   option.label.trim() !== '';
-    if (!isValid) {
-      console.error('ExportFormatSelector: Invalid format option detected:', option);
-    }
-    return isValid;
-  });
-
-  console.log('ExportFormatSelector rendering with options:', formatOptions);
-  console.log('Current exportFormat:', exportFormat);
+  console.log('ExportFormatSelector rendering with exportFormat:', exportFormat);
 
   return (
     <Card>
@@ -38,21 +22,22 @@ export const ExportFormatSelector: React.FC<ExportFormatSelectorProps> = ({
         <CardTitle>Export Format</CardTitle>
       </CardHeader>
       <CardContent>
-        <Select value={exportFormat} onValueChange={onFormatChange}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {formatOptions.map(option => {
-              console.log('Rendering format SelectItem with value:', option.value, 'label:', option.label);
-              return (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <RadioGroup value={exportFormat} onValueChange={onFormatChange}>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="csv" id="csv" />
+            <Label htmlFor="csv" className="flex items-center gap-2 cursor-pointer">
+              <FileText className="w-4 h-4" />
+              CSV (Comma Separated Values)
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="xlsx" id="xlsx" />
+            <Label htmlFor="xlsx" className="flex items-center gap-2 cursor-pointer">
+              <FileSpreadsheet className="w-4 h-4" />
+              XLSX (Excel Spreadsheet)
+            </Label>
+          </div>
+        </RadioGroup>
       </CardContent>
     </Card>
   );

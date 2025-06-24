@@ -57,6 +57,15 @@ const SYSTEM_FIELDS = [
   { value: 'skip', label: '-- Skip Field --', required: false, description: 'Do not import this field' }
 ];
 
+// Predefined auto-tagging rules
+const AUTO_TAG_RULES = [
+  { name: 'Uploaded', condition: 'always', description: 'Applied to all uploaded records' },
+  { name: 'Batch-2025', condition: 'date_based', description: 'Applied to records uploaded in 2025' },
+  { name: 'Has-Email', condition: 'has_email', description: 'Applied when email field is present' },
+  { name: 'Has-Phone', condition: 'has_phone', description: 'Applied when phone field is present' },
+  { name: 'Company-Record', condition: 'has_company', description: 'Applied when company field is present' }
+];
+
 export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, onCancel }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [csvData, setCsvData] = useState<ParsedCSVData | null>(null);
@@ -64,6 +73,8 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
   const [appliedTags, setAppliedTags] = useState<TagType[]>([]);
   const [mappingProfileName, setMappingProfileName] = useState('');
   const [shouldSaveProfile, setShouldSaveProfile] = useState(false);
+  const [enableAutoTagging, setEnableAutoTagging] = useState(true);
+  const [selectedAutoTagRules, setSelectedAutoTagRules] = useState<string[]>(['Uploaded', 'Batch-2025']);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -194,6 +205,55 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const applyAutoTagging = (data: Record<string, any>[]): TagType[] => {
+    if (!enableAutoTagging) return [];
+
+    const autoTags: TagType[] = [];
+    const currentYear = new Date().getFullYear();
+
+    selectedAutoTagRules.forEach(ruleName => {
+      const rule = AUTO_TAG_RULES.find(r => r.name === ruleName);
+      if (!rule) return;
+
+      let shouldApply = false;
+
+      switch (rule.condition) {
+        case 'always':
+          shouldApply = true;
+          break;
+        case 'date_based':
+          shouldApply = currentYear === 2025;
+          break;
+        case 'has_email':
+          shouldApply = data.some(row => row.email && row.email.trim());
+          break;
+        case 'has_phone':
+          shouldApply = data.some(row => row.phone && row.phone.trim());
+          break;
+        case 'has_company':
+          shouldApply = data.some(row => row.company && row.company.trim());
+          break;
+      }
+
+      if (shouldApply) {
+        // Create a mock tag object - in real implementation, these would be actual Tag objects
+        autoTags.push({
+          id: `auto-${ruleName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          user_id: '', // Would be filled from current user
+          name: ruleName,
+          color: '#10B981', // Green for auto-generated tags
+          category: 'auto',
+          description: rule.description,
+          usage_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as TagType);
+      }
+    });
+
+    return autoTags;
+  };
+
   const handleComplete = async () => {
     if (!csvData) return;
 
@@ -211,6 +271,10 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
         return mappedRow;
       });
 
+      // Apply auto-tagging
+      const autoTags = applyAutoTagging(mappedData);
+      const allTags = [...appliedTags, ...autoTags];
+
       // Create mapping profile if requested
       let mappingProfile: MappingProfile | undefined;
       if (shouldSaveProfile && mappingProfileName.trim()) {
@@ -225,7 +289,7 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
         fileName: csvData.fileName,
         mappedData,
         fieldMappings,
-        appliedTags,
+        appliedTags: allTags,
         mappingProfile
       };
 
@@ -390,15 +454,15 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold mb-2">Apply Tags & Save Profile</h3>
-              <p className="text-gray-600">Add tags and optionally save your mapping profile</p>
+              <h3 className="text-xl font-semibold mb-2">Apply Tags & Configure Auto-Tagging</h3>
+              <p className="text-gray-600">Add tags and configure automatic tagging rules</p>
             </div>
 
             <div className="space-y-6">
               <div>
                 <Label className="text-base font-medium mb-3 block">
                   <Tag className="w-4 h-4 inline mr-2" />
-                  Tags (Optional)
+                  Manual Tags (Optional)
                 </Label>
                 <TagInput
                   selectedTags={appliedTags}
@@ -406,8 +470,54 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
                   placeholder="Add tags to organize your imported data"
                 />
                 <p className="text-sm text-gray-500 mt-2">
-                  Tags will be applied to all imported records
+                  These tags will be applied to all imported records
                 </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="enableAutoTagging"
+                    checked={enableAutoTagging}
+                    onChange={(e) => setEnableAutoTagging(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="enableAutoTagging" className="text-base font-medium">
+                    Enable Auto-Tagging
+                  </Label>
+                </div>
+
+                {enableAutoTagging && (
+                  <div className="space-y-3 pl-6">
+                    <Label className="text-sm font-medium">Auto-Tagging Rules</Label>
+                    {AUTO_TAG_RULES.map((rule) => (
+                      <div key={rule.name} className="flex items-start space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`rule-${rule.name}`}
+                          checked={selectedAutoTagRules.includes(rule.name)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedAutoTagRules([...selectedAutoTagRules, rule.name]);
+                            } else {
+                              setSelectedAutoTagRules(selectedAutoTagRules.filter(r => r !== rule.name));
+                            }
+                          }}
+                          className="rounded border-gray-300 mt-1"
+                        />
+                        <div>
+                          <Label htmlFor={`rule-${rule.name}`} className="text-sm font-medium cursor-pointer">
+                            {rule.name}
+                          </Label>
+                          <p className="text-xs text-gray-500">{rule.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -472,18 +582,24 @@ export const FileUploadWizard: React.FC<FileUploadWizardProps> = ({ onComplete, 
                     <div>
                       Mapped Fields: {fieldMappings.filter(m => m.systemField !== 'skip').length}
                     </div>
-                    <div>Tags: {appliedTags.length}</div>
+                    <div>Manual Tags: {appliedTags.length}</div>
+                    <div>Auto-Tagging: {enableAutoTagging ? 'Enabled' : 'Disabled'}</div>
                     <div>Save Profile: {shouldSaveProfile ? 'Yes' : 'No'}</div>
                   </div>
                 </div>
 
-                {appliedTags.length > 0 && (
+                {(appliedTags.length > 0 || enableAutoTagging) && (
                   <div>
-                    <div className="font-medium text-gray-700 mb-2">Applied Tags:</div>
+                    <div className="font-medium text-gray-700 mb-2">Tags to be Applied:</div>
                     <div className="flex flex-wrap gap-2">
                       {appliedTags.map((tag) => (
                         <Badge key={tag.id} variant="secondary">
                           {tag.name}
+                        </Badge>
+                      ))}
+                      {enableAutoTagging && selectedAutoTagRules.map((ruleName) => (
+                        <Badge key={ruleName} variant="outline" className="border-green-500 text-green-700">
+                          {ruleName} (auto)
                         </Badge>
                       ))}
                     </div>
