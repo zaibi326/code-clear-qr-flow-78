@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import CreateQRCode from "./pages/CreateQRCode";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
+import QuickGenerate from "./pages/QuickGenerate";
 
 const Auth = lazy(() => import("./pages/Login"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/create" element={<CreateQRCode />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
+            <Route path="/quick-generate" element={<QuickGenerate />} />
             <Route
               path="/auth"
               element={
