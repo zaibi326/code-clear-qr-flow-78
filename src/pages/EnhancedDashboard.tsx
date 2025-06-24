@@ -4,7 +4,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
 import { RealTimeDashboard } from '@/components/dashboard/RealTimeDashboard';
-import { Q RCodePreviewGrid } from '@/components/dashboard/QRCodePreviewGrid';
+import { QRCodePreviewGrid } from '@/components/dashboard/QRCodePreviewGrid';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, Grid3X3, Activity } from 'lucide-react';
 
