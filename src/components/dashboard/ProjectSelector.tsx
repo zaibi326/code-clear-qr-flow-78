@@ -41,19 +41,19 @@ export function ProjectSelector() {
     }
   ];
 
-  // Ensure all project options have non-empty values
+  // Ensure all project options have valid non-empty values
   const projectOptions = [
     { value: 'all-projects', label: 'All Projects' },
     ...projects.map(project => ({ value: project.id, label: project.name }))
-  ].filter(option => option.value && option.value.trim() !== '');
+  ];
 
-  // Ensure all date range options have non-empty values
+  // Ensure all date range options have valid non-empty values  
   const dateRangeOptions = [
     { value: '7-days', label: 'Last 7 days' },
     { value: '30-days', label: 'Last 30 days' },
     { value: '90-days', label: 'Last 90 days' },
     { value: 'custom-range', label: 'Custom range' }
-  ].filter(option => option.value && option.value.trim() !== '');
+  ];
 
   console.log('ProjectSelector projectOptions:', projectOptions);
   console.log('ProjectSelector dateRangeOptions:', dateRangeOptions);

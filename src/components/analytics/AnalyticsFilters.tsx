@@ -15,29 +15,29 @@ import {
 export function AnalyticsFilters() {
   const [activeFilters, setActiveFilters] = useState<string[]>(['Last 30 days']);
   
-  // Ensure all date range options have non-empty values
+  // Ensure all date range options have valid non-empty values
   const dateRangeOptions = [
     { value: '7days', label: 'Last 7 days' },
     { value: '30days', label: 'Last 30 days' },
     { value: '90days', label: 'Last 90 days' },
     { value: '1year', label: 'Last year' }
-  ].filter(option => option.value.trim() !== '');
+  ];
 
-  // Ensure all campaign options have non-empty values
+  // Ensure all campaign options have valid non-empty values
   const campaignOptions = [
     { value: 'all', label: 'All Campaigns' },
     { value: 'summer-promo', label: 'Summer Promo' },
     { value: 'product-launch', label: 'Product Launch' },
     { value: 'holiday-sale', label: 'Holiday Sale' }
-  ].filter(option => option.value.trim() !== '');
+  ];
 
-  // Ensure all location options have non-empty values
+  // Ensure all location options have valid non-empty values
   const locationOptions = [
     { value: 'all', label: 'All Locations' },
     { value: 'us', label: 'United States' },
     { value: 'uk', label: 'United Kingdom' },
     { value: 'ca', label: 'Canada' }
-  ].filter(option => option.value.trim() !== '');
+  ];
 
   console.log('AnalyticsFilters dateRangeOptions:', dateRangeOptions);
   console.log('AnalyticsFilters campaignOptions:', campaignOptions);
