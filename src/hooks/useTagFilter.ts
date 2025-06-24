@@ -28,14 +28,33 @@ export const useTagFilter = ({ selectedTags, onTagsChange, category }: UseTagFil
     if (!user?.id) return;
     
     try {
+      console.log('useTagFilter: Loading tags for category:', selectedCategory);
       const tags = await tagService.getTags(user.id, {
         category: selectedCategory === 'all' ? undefined : selectedCategory,
         sortBy: 'usage_count',
         sortOrder: 'desc'
       });
-      setAvailableTags(tags);
+      
+      // Enhanced validation for tags
+      const validTags = tags.filter(tag => {
+        const isValid = tag && 
+                       typeof tag === 'object' && 
+                       tag.id && 
+                       typeof tag.id === 'string' && 
+                       tag.id.trim() !== '' &&
+                       tag.name && 
+                       typeof tag.name === 'string' && 
+                       tag.name.trim() !== '';
+        if (!isValid) {
+          console.error('useTagFilter: Invalid tag detected:', tag);
+        }
+        return isValid;
+      });
+      
+      console.log('useTagFilter: Valid tags loaded:', validTags.length);
+      setAvailableTags(validTags);
     } catch (error) {
-      console.error('Error loading tags:', error);
+      console.error('useTagFilter: Error loading tags:', error);
       setAvailableTags([]); // Set empty array on error
     }
   };
@@ -44,17 +63,34 @@ export const useTagFilter = ({ selectedTags, onTagsChange, category }: UseTagFil
     if (!user?.id) return;
     
     try {
+      console.log('useTagFilter: Loading categories');
       const cats = await tagService.getTagCategories(user.id);
-      // Filter out empty strings, null values, and whitespace-only strings
-      const validCategories = cats.filter(cat => cat && typeof cat === 'string' && cat.trim() !== '');
+      
+      // Enhanced validation for categories
+      const validCategories = cats.filter(cat => {
+        const isValid = cat && 
+                       typeof cat === 'string' && 
+                       cat.trim() !== '';
+        if (!isValid) {
+          console.error('useTagFilter: Invalid category detected:', cat);
+        }
+        return isValid;
+      });
+      
+      console.log('useTagFilter: Valid categories loaded:', validCategories);
       setCategories(validCategories);
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('useTagFilter: Error loading categories:', error);
       setCategories([]); // Set empty array on error
     }
   };
 
   const handleTagToggle = (tagId: string) => {
+    if (!tagId || typeof tagId !== 'string' || tagId.trim() === '') {
+      console.error('useTagFilter: Invalid tagId for toggle:', tagId);
+      return;
+    }
+    
     if (selectedTags.includes(tagId)) {
       onTagsChange(selectedTags.filter(id => id !== tagId));
     } else {

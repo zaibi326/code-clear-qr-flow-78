@@ -12,6 +12,8 @@ export const TagFilterCard: React.FC<TagFilterCardProps> = ({
   selectedTags,
   onTagsChange
 }) => {
+  console.log('TagFilterCard rendering with selectedTags:', selectedTags);
+  
   return (
     <Card>
       <CardHeader>
@@ -21,6 +23,7 @@ export const TagFilterCard: React.FC<TagFilterCardProps> = ({
         <TagFilter
           selectedTags={selectedTags}
           onTagsChange={onTagsChange}
+          category="lead"
         />
       </CardContent>
     </Card>
