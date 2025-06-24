@@ -24,6 +24,8 @@ export const LeadExportDialog: React.FC = () => {
     handleTagsChange
   } = useLeadExportFilters();
 
+  console.log('LeadExportDialog rendering with exportFormat:', exportFormat);
+
   const handleExport = async () => {
     if (!user) return;
 
@@ -33,6 +35,11 @@ export const LeadExportDialog: React.FC = () => {
       setIsOpen(false);
     }
     setIsExporting(false);
+  };
+
+  const handleFormatChange = (format: 'csv' | 'xlsx') => {
+    console.log('LeadExportDialog format change:', format);
+    setExportFormat(format);
   };
 
   return (
@@ -52,9 +59,10 @@ export const LeadExportDialog: React.FC = () => {
         </DialogHeader>
 
         <div className="space-y-6">
+          {console.log('About to render ExportFormatSelector')}
           <ExportFormatSelector
             exportFormat={exportFormat}
-            onFormatChange={setExportFormat}
+            onFormatChange={handleFormatChange}
           />
 
           <DateRangeFilter

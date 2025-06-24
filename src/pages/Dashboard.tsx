@@ -9,7 +9,7 @@ import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaign
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
-  console.log('Dashboard component rendering');
+  console.log('Dashboard component rendering - checking for Select issues');
   
   // Mock data - in real app this would come from your database
   const dashboardData = {
@@ -79,10 +79,12 @@ const Dashboard = () => {
                   
                   <div className="p-6">
                     <TabsContent value="qr-codes" className="space-y-6 m-0">
+                      {console.log('About to render QRCodeDatabase component')}
                       <QRCodeDatabase />
                     </TabsContent>
                     
                     <TabsContent value="projects" className="m-0">
+                      {console.log('About to render ProjectCampaignHierarchy component')}
                       <ProjectCampaignHierarchy />
                     </TabsContent>
                   </div>
