@@ -11,6 +11,11 @@ import CreateQRCode from "./pages/CreateQRCode";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 import QuickGenerate from "./pages/QuickGenerate";
+import QRCodeDatabase from "./pages/QRCodeDatabase";
+import TagsManagement from "./pages/TagsManagement";
+import LeadsManagement from "./pages/LeadsManagement";
+import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 
 const Auth = lazy(() => import("./pages/Login"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -34,6 +39,11 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
             <Route path="/quick-generate" element={<QuickGenerate />} />
+            <Route path="/qr-database" element={<QRCodeDatabase />} />
+            <Route path="/tags" element={<TagsManagement />} />
+            <Route path="/leads" element={<LeadsManagement />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
             <Route
               path="/auth"
               element={
