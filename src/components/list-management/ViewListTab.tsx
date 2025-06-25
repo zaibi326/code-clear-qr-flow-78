@@ -79,7 +79,7 @@ export const ViewListTab = () => {
     }
 
     // Tag filter
-    if (selectedTags.length > 0) {
+    if (selectedTags.length > 0 && !selectedTags.includes('all')) {
       filtered = filtered.filter(record =>
         selectedTags.some(tag => record.tags.includes(tag))
       );
@@ -156,12 +156,12 @@ export const ViewListTab = () => {
             {/* Tag Filter */}
             <div>
               <label className="text-sm font-medium mb-2 block">Filter by Tags</label>
-              <Select value={selectedTags[0] || ''} onValueChange={(value) => setSelectedTags(value ? [value] : [])}>
+              <Select value={selectedTags[0] || 'all'} onValueChange={(value) => setSelectedTags(value === 'all' ? [] : [value])}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select tag" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Tags</SelectItem>
+                  <SelectItem value="all">All Tags</SelectItem>
                   {allTags.map((tag) => (
                     <SelectItem key={tag} value={tag}>
                       {tag}
@@ -207,7 +207,7 @@ export const ViewListTab = () => {
                 <button onClick={() => setSearchQuery('')} className="ml-1">×</button>
               </Badge>
             )}
-            {selectedTags.map(tag => (
+            {selectedTags.filter(tag => tag !== 'all').map(tag => (
               <Badge key={tag} variant="secondary" className="gap-1">
                 <Tag className="w-3 h-3" />
                 {tag}
