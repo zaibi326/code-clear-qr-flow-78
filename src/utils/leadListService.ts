@@ -83,14 +83,24 @@ export const leadListService = {
     return data;
   },
 
-  async getLeadRecords(listId: string) {
-    const { data, error } =  await supabase
+  async getLeadRecords(listId: string): Promise<LeadRecord[]> {
+    const { data, error } = await supabase
       .from('lead_records')
       .select('*')
       .eq('list_id', listId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    
+    // Convert the Json type to Record<string, any> and ensure proper typing
+    return data.map(record => ({
+      id: record.id,
+      list_id: record.list_id,
+      user_id: record.user_id,
+      data: typeof record.data === 'object' && record.data !== null ? record.data as Record<string, any> : {},
+      tags: record.tags || [],
+      created_at: record.created_at,
+      updated_at: record.updated_at
+    })) as LeadRecord[];
   }
 };
