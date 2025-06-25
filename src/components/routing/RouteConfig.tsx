@@ -1,11 +1,18 @@
+
 import { Routes, Route } from 'react-router-dom';
 import Home from "@/pages/Index";
 import Pricing from "@/pages/Pricing";
 import Auth from "@/pages/Login";
+import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Create from "@/pages/CreateQRCode";
 import QuickGenerate from "@/pages/QuickGenerate";
 import Settings from "@/pages/Settings";
+import TemplateManager from "@/pages/TemplateManager";
+import Support from "@/pages/Support";
+import DashboardIntegrationsPage from "@/pages/DashboardIntegrationsPage";
+import HelpCenter from "@/pages/HelpCenter";
+import Integrations from "@/pages/Integrations";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import QRCodeDatabase from '@/pages/QRCodeDatabase';
 import TagsManagement from '@/pages/TagsManagement';
@@ -17,7 +24,12 @@ export const RouteConfig = () => {
       <Route path="/" element={<Home />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/login" element={<Auth />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/template-manager" element={<TemplateManager />} />
+      <Route path="/support" element={<Support />} />
+      <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
+      <Route path="/help-center" element={<HelpCenter />} />
+      <Route path="/integrations" element={<Integrations />} />
       <Route 
         path="/dashboard" 
         element={
@@ -93,7 +105,27 @@ export const routes = [
   },
   {
     path: "/login",
-    element: <Auth />,
+    element: <Login />,
+  },
+  {
+    path: "/template-manager",
+    element: <TemplateManager />,
+  },
+  {
+    path: "/support",
+    element: <Support />,
+  },
+  {
+    path: "/dashboard/integrations",
+    element: <DashboardIntegrationsPage />,
+  },
+  {
+    path: "/help-center",
+    element: <HelpCenter />,
+  },
+  {
+    path: "/integrations",
+    element: <Integrations />,
   },
   {
     path: "/dashboard",

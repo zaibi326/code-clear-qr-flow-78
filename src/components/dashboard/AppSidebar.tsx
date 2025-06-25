@@ -8,7 +8,10 @@ import {
   Tag,
   Settings,
   TrendingUp,
-  Users
+  Users,
+  FileTemplate,
+  HelpCircle,
+  Puzzle
 } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -22,7 +25,6 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useSupabaseAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItem {
   title: string;
@@ -82,10 +84,28 @@ export default function AppSidebar() {
       isActive: location.pathname === "/leads"
     },
     {
+      title: "Template Manager",
+      icon: FileTemplate,
+      href: "/template-manager",
+      isActive: location.pathname === "/template-manager"
+    },
+    {
+      title: "Integrations",
+      icon: Puzzle,
+      href: "/dashboard/integrations",
+      isActive: location.pathname === "/dashboard/integrations"
+    },
+    {
       title: "Analytics",
       icon: TrendingUp,
       href: "/analytics",
       isActive: location.pathname === "/analytics"
+    },
+    {
+      title: "Support",
+      icon: HelpCircle,
+      href: "/support",
+      isActive: location.pathname === "/support"
     },
     {
       title: "Settings",
@@ -137,7 +157,9 @@ export default function AppSidebar() {
             <DropdownMenuItem onClick={() => navigate("/settings")}>
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/support")}>
+              Support
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>Logout</DropdownMenuItem>
           </DropdownMenuContent>

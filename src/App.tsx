@@ -16,12 +16,19 @@ import TagsManagement from "./pages/TagsManagement";
 import LeadsManagement from "./pages/LeadsManagement";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import TemplateManager from "./pages/TemplateManager";
+import Support from "./pages/Support";
+import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
+import HelpCenter from "./pages/HelpCenter";
+import Integrations from "./pages/Integrations";
 
 const Auth = lazy(() => import("./pages/Login"));
+const Login = lazy(() => import("./pages/Login"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Contact = lazy(() => import("./pages/company/Contact"));
 const Blog = lazy(() => import("./pages/Blog"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -44,11 +51,24 @@ const App = () => (
             <Route path="/leads" element={<LeadsManagement />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/template-manager" element={<TemplateManager />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
+            <Route path="/help-center" element={<HelpCenter />} />
+            <Route path="/integrations" element={<Integrations />} />
             <Route
               path="/auth"
               element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <Auth />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <Login />
                 </Suspense>
               }
             />
@@ -81,6 +101,14 @@ const App = () => (
               element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <AdminDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/admin/login"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AdminLogin />
                 </Suspense>
               }
             />
