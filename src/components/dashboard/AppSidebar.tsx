@@ -9,7 +9,7 @@ import {
   Settings,
   TrendingUp,
   Users,
-  FileTemplate,
+  FileText,
   HelpCircle,
   Puzzle
 } from "lucide-react";
@@ -85,7 +85,7 @@ export default function AppSidebar() {
     },
     {
       title: "Template Manager",
-      icon: FileTemplate,
+      icon: FileText,
       href: "/template-manager",
       isActive: location.pathname === "/template-manager"
     },
