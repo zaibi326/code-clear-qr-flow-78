@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Search, Filter, Calendar as CalendarIcon, Tag, Download, Eye, RefreshCw } from 'lucide-react';
+import { Search, Filter, Calendar as CalendarIcon, Tag, Download, Eye, RefreshCw, QrCode, ExternalLink } from 'lucide-react';
 import { leadListService, LeadList, LeadRecord } from '@/utils/leadListService';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { format } from 'date-fns';
@@ -106,6 +105,12 @@ export const ViewListTab = () => {
       Object.keys(record.data).forEach(key => allKeys.add(key));
     });
     return Array.from(allKeys);
+  };
+
+  const handleViewEntry = (record: LeadRecord) => {
+    if (record.entry_url) {
+      window.open(record.entry_url, '_blank');
+    }
   };
 
   const columns = getRecordColumns();
@@ -269,6 +274,8 @@ export const ViewListTab = () => {
                       </TableHead>
                     ))}
                     <TableHead>Tags</TableHead>
+                    <TableHead>QR Code</TableHead>
+                    <TableHead>Actions</TableHead>
                     <TableHead>Created</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -288,6 +295,32 @@ export const ViewListTab = () => {
                               {tag}
                             </Badge>
                           ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {record.qr_code_url ? (
+                          <img 
+                            src={record.qr_code_url} 
+                            alt="QR Code" 
+                            className="w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => window.open(record.qr_code_url, '_blank')}
+                          />
+                        ) : (
+                          <QrCode className="w-8 h-8 text-gray-400" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {record.entry_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewEntry(record)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

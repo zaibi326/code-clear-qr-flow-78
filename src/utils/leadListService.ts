@@ -22,8 +22,19 @@ export interface LeadRecord {
   user_id: string;
   data: Record<string, any>;
   tags: string[];
+  qr_code_url?: string;
+  entry_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface QRScanHistory {
+  id: string;
+  record_id: string;
+  scanned_at: string;
+  ip_address?: string;
+  user_agent?: string;
+  location?: Record<string, any>;
 }
 
 export const leadListService = {
@@ -54,7 +65,9 @@ export const leadListService = {
       list_id: listId,
       user_id: userId,
       data: row,
-      tags: []
+      tags: [],
+      entry_url: `/entry/${listId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      qr_code_url: null // Will be generated after insert
     }));
 
     const { data, error } = await supabase
@@ -63,6 +76,11 @@ export const leadListService = {
       .select();
 
     if (error) throw error;
+
+    // Generate QR codes for each record
+    if (data) {
+      await this.generateQRCodesForRecords(data);
+    }
 
     // Update record count
     await supabase
@@ -73,10 +91,107 @@ export const leadListService = {
     return data;
   },
 
+  async generateQRCodesForRecords(records: any[]) {
+    for (const record of records) {
+      try {
+        // Generate QR code URL pointing to the entry detail page
+        const entryUrl = `${window.location.origin}${record.entry_url}`;
+        
+        // You can integrate with a QR code generation service here
+        // For now, we'll use a placeholder QR service
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(entryUrl)}`;
+        
+        await supabase
+          .from('lead_records')
+          .update({ qr_code_url: qrCodeUrl })
+          .eq('id', record.id);
+          
+      } catch (error) {
+        console.error(`Failed to generate QR code for record ${record.id}:`, error);
+      }
+    }
+  },
+
+  async getLeadRecord(recordId: string): Promise<LeadRecord | null> {
+    const { data, error } = await supabase
+      .from('lead_records')
+      .select('*')
+      .eq('id', recordId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching lead record:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      list_id: data.list_id,
+      user_id: data.user_id,
+      data: typeof data.data === 'object' && data.data !== null ? data.data as Record<string, any> : {},
+      tags: data.tags || [],
+      qr_code_url: data.qr_code_url,
+      entry_url: data.entry_url,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  },
+
+  async getLeadRecordByEntryUrl(entryUrl: string): Promise<LeadRecord | null> {
+    const { data, error } = await supabase
+      .from('lead_records')
+      .select('*')
+      .eq('entry_url', entryUrl)
+      .single();
+
+    if (error) {
+      console.error('Error fetching lead record by entry URL:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      list_id: data.list_id,
+      user_id: data.user_id,
+      data: typeof data.data === 'object' && data.data !== null ? data.data as Record<string, any> : {},
+      tags: data.tags || [],
+      qr_code_url: data.qr_code_url,
+      entry_url: data.entry_url,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  },
+
+  async recordQRScan(recordId: string, scanData: Partial<QRScanHistory>) {
+    const { data, error } = await supabase
+      .from('qr_scan_history')
+      .insert({
+        record_id: recordId,
+        scanned_at: new Date().toISOString(),
+        ...scanData
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getQRScanHistory(recordId: string): Promise<QRScanHistory[]> {
+    const { data, error } = await supabase
+      .from('qr_scan_history')
+      .select('*')
+      .eq('record_id', recordId)
+      .order('scanned_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
   async exportLeadData(listId: string) {
     const { data, error } = await supabase
       .from('lead_records')
-      .select('data, tags, created_at')
+      .select('data, tags, created_at, qr_code_url, entry_url')
       .eq('list_id', listId);
 
     if (error) throw error;
@@ -92,13 +207,14 @@ export const leadListService = {
 
     if (error) throw error;
     
-    // Convert the Json type to Record<string, any> and ensure proper typing
     return data.map(record => ({
       id: record.id,
       list_id: record.list_id,
       user_id: record.user_id,
       data: typeof record.data === 'object' && record.data !== null ? record.data as Record<string, any> : {},
       tags: record.tags || [],
+      qr_code_url: record.qr_code_url,
+      entry_url: record.entry_url,
       created_at: record.created_at,
       updated_at: record.updated_at
     })) as LeadRecord[];
