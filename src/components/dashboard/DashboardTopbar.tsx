@@ -1,26 +1,15 @@
 
 import React, { useState } from 'react';
-import { Search, Bell, Menu, User } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useSupabaseAuth';
 
 interface DashboardTopbarProps {
   toggleSidebar?: () => void;
@@ -28,39 +17,6 @@ interface DashboardTopbarProps {
 
 export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const navigate = useNavigate();
-  const { signOut, user, profile } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const handleProfileClick = () => {
-    navigate('/settings');
-  };
-
-  // Get user display name and initials
-  const getUserDisplayName = () => {
-    if (profile?.name) return profile.name;
-    if (user?.user_metadata?.name) return user.user_metadata.name;
-    if (user?.email) return user.email;
-    return 'User';
-  };
-
-  const getUserEmail = () => {
-    if (profile?.email) return profile.email;
-    if (user?.email) return user.email;
-    return 'user@example.com';
-  };
-
-  const getUserInitials = () => {
-    const name = getUserDisplayName();
-    if (name === 'User' || name.includes('@')) {
-      return 'U';
-    }
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
 
   return (
     <header className="bg-white/95 backdrop-blur-lg border-b border-indigo-100/50 px-4 sm:px-6 lg:px-8 py-4 shadow-lg shadow-indigo-500/5">
@@ -106,42 +62,6 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({ toggleSidebar 
               <NotificationCenter />
             </PopoverContent>
           </Popover>
-
-          {/* Profile Avatar with Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="relative h-10 w-10 rounded-xl border border-indigo-100/50 bg-white/80 backdrop-blur-sm hover:bg-indigo-50 transition-all duration-300 p-0"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile?.avatar_url || ""} alt={getUserDisplayName()} />
-                  <AvatarFallback className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold text-sm">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {getUserEmail()}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 focus:text-red-600">
-                <span>Sign Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
     </header>

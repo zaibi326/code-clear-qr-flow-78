@@ -15,15 +15,6 @@ import {
 } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useSupabaseAuth";
 
 interface MenuItem {
@@ -37,7 +28,7 @@ export default function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
 
   const collapsed = state === "collapsed";
 
@@ -121,67 +112,37 @@ export default function AppSidebar() {
         collapsed ? "w-[70px]" : "w-[240px]"
       }`}
     >
-      <div className="flex items-center justify-between py-3 px-3">
-        <a href="/" className="flex items-center gap-2">
-          <img
-            src="/clearqr-logo.svg"
-            alt="ClearQR Logo"
-            className={`transition-all duration-300 ${
-              collapsed ? "w-8 h-8" : "w-10 h-10"
-            }`}
-          />
+      <div className="flex items-center justify-center py-4 px-3 border-b">
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
+            <QrCode className="h-6 w-6 text-white" />
+          </div>
           <span
-            className={`transition-all duration-300 ${
+            className={`font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300 ${
               collapsed ? "hidden" : "block"
             }`}
           >
             ClearQR
           </span>
-        </a>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.user_metadata?.avatar_url as string} />
-                <AvatarFallback>
-                  {user?.email?.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 mr-2">
-            <DropdownMenuItem>
-              {user?.user_metadata?.full_name || user?.email}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/support")}>
-              Support
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>Logout</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2 px-3">
-        <ul className="space-y-1">
+      <div className="flex-1 overflow-y-auto py-4 px-3">
+        <ul className="space-y-2">
           {menuItems.map((item) => (
             <li key={item.title}>
               <a
                 href={item.href}
-                className={`group flex items-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors duration-300 ${
+                className={`group flex items-center rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 ${
                   item.isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                } py-2 px-3`}
+                    ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 border-l-4 border-blue-500"
+                    : "text-gray-600 hover:border-l-4 hover:border-blue-300"
+                } py-3 px-4`}
               >
                 <item.icon
-                  className={`mr-2 h-4 w-4 transition-all duration-300 ${
-                    collapsed ? "mr-0" : ""
-                  }`}
+                  className={`h-5 w-5 transition-all duration-200 ${
+                    collapsed ? "mr-0" : "mr-3"
+                  } ${item.isActive ? "text-blue-600" : ""}`}
                 />
                 <span
                   className={`transition-all duration-300 ${
@@ -194,6 +155,15 @@ export default function AppSidebar() {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="border-t p-3">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center text-sm text-gray-600 hover:text-red-600 py-2 px-3 rounded-lg hover:bg-red-50 transition-colors"
+        >
+          {collapsed ? "↗" : "Sign Out"}
+        </button>
       </div>
     </aside>
   );

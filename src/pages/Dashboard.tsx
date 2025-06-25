@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/dashboard/AppSidebar';
 import { DashboardTopbar } from '@/components/dashboard/DashboardTopbar';
@@ -8,11 +8,11 @@ import { QRCodeDatabase } from '@/components/dashboard/QRCodeDatabase';
 import { ProjectCampaignHierarchy } from '@/components/dashboard/ProjectCampaignHierarchy';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const Dashboard = () => {
-  console.log('Dashboard component rendering - checking for Select issues');
+const Dashboard = React.memo(() => {
+  console.log('Dashboard component rendering - optimized version');
   
-  // Mock data - in real app this would come from your database
-  const dashboardData = {
+  // Memoize dashboard data to prevent unnecessary recalculations
+  const dashboardData = useMemo(() => ({
     totalQRCodes: 1247,
     totalScans: 15420,
     uniqueScans: 12340,
@@ -38,10 +38,7 @@ const Dashboard = () => {
         time: '8 min ago'
       }
     ]
-  };
-
-  console.log('About to render QRCodeDatabase component');
-  console.log('About to render ProjectCampaignHierarchy component');
+  }), []);
 
   return (
     <SidebarProvider>
@@ -60,8 +57,17 @@ const Dashboard = () => {
                 <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-white/5 rounded-full blur-lg"></div>
                 
                 <div className="relative z-10">
-                  <h1 className="text-4xl font-bold mb-2">Enhanced QR Dashboard</h1>
-                  <p className="text-blue-100 text-lg">Complete visibility into your QR code performance and database</p>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-2xl">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-lg">C</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">ClearQR Dashboard</h1>
+                      <p className="text-blue-100 text-lg">Complete visibility into your QR code performance and database</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -74,9 +80,9 @@ const Dashboard = () => {
               <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-gray-200 shadow-2xl">
                 <Tabs defaultValue="qr-codes" className="w-full">
                   <div className="px-6 pt-6 pb-0">
-                    <TabsList className="grid grid-cols-2 w-full max-w-lg">
-                      <TabsTrigger value="qr-codes" className="text-sm">QR Codes</TabsTrigger>
-                      <TabsTrigger value="projects" className="text-sm">Projects</TabsTrigger>
+                    <TabsList className="grid grid-cols-2 w-full max-w-lg bg-gray-100/60 backdrop-blur-sm">
+                      <TabsTrigger value="qr-codes" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-md">QR Codes</TabsTrigger>
+                      <TabsTrigger value="projects" className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-md">Projects</TabsTrigger>
                     </TabsList>
                   </div>
                   
@@ -97,6 +103,8 @@ const Dashboard = () => {
       </div>
     </SidebarProvider>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';
 
 export default Dashboard;
