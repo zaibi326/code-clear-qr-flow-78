@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,6 +20,7 @@ import Support from "./pages/Support";
 import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
 import HelpCenter from "./pages/HelpCenter";
 import Integrations from "./pages/Integrations";
+import ListManagement from "./pages/ListManagement";
 
 const Auth = lazy(() => import("./pages/Login"));
 const Login = lazy(() => import("./pages/Login"));
@@ -49,6 +49,7 @@ const App = () => (
             <Route path="/qr-database" element={<QRCodeDatabase />} />
             <Route path="/tags" element={<TagsManagement />} />
             <Route path="/leads" element={<LeadsManagement />} />
+            <Route path="/list-management" element={<ListManagement />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/template-manager" element={<TemplateManager />} />

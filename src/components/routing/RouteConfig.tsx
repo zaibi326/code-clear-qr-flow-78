@@ -17,6 +17,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import QRCodeDatabase from '@/pages/QRCodeDatabase';
 import TagsManagement from '@/pages/TagsManagement';
 import LeadsManagement from '@/pages/LeadsManagement';
+import ListManagement from '@/pages/ListManagement';
 
 export const RouteConfig = () => {
   return (
@@ -83,6 +84,14 @@ export const RouteConfig = () => {
         element={
           <ProtectedRoute>
             <LeadsManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/list-management" 
+        element={
+          <ProtectedRoute>
+            <ListManagement />
           </ProtectedRoute>
         } 
       />
@@ -180,6 +189,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <LeadsManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/list-management",
+    element: (
+      <ProtectedRoute>
+        <ListManagement />
       </ProtectedRoute>
     ),
   },

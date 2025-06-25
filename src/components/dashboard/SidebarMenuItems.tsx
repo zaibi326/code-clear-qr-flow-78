@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -12,7 +11,8 @@ import {
   Users,
   FileText,
   HelpCircle,
-  Puzzle
+  Puzzle,
+  List
 } from 'lucide-react';
 
 interface MenuItem {
@@ -66,6 +66,12 @@ export const SidebarMenuItems = React.memo(({ collapsed }: SidebarMenuItemsProps
       icon: Users,
       href: "/leads",
       isActive: location.pathname === "/leads"
+    },
+    {
+      title: "List Management",
+      icon: List,
+      href: "/list-management",
+      isActive: location.pathname === "/list-management"
     },
     {
       title: "Template Manager",
