@@ -191,7 +191,7 @@ export const leadListService = {
       scanned_at: scan.scanned_at,
       ip_address: scan.ip_address,
       user_agent: scan.user_agent,
-      location: scan.location || {}
+      location: typeof scan.location === 'object' && scan.location !== null ? scan.location as Record<string, any> : {}
     }));
   },
 
