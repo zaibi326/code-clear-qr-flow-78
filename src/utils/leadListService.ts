@@ -185,7 +185,14 @@ export const leadListService = {
       .order('scanned_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(scan => ({
+      id: scan.id,
+      record_id: scan.record_id,
+      scanned_at: scan.scanned_at,
+      ip_address: scan.ip_address,
+      user_agent: scan.user_agent,
+      location: scan.location || {}
+    }));
   },
 
   async exportLeadData(listId: string) {

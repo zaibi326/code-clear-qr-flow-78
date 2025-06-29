@@ -359,8 +359,10 @@ export type Database = {
         Row: {
           created_at: string | null
           data: Json
+          entry_url: string | null
           id: string
           list_id: string | null
+          qr_code_url: string | null
           tags: string[] | null
           updated_at: string | null
           user_id: string | null
@@ -368,8 +370,10 @@ export type Database = {
         Insert: {
           created_at?: string | null
           data: Json
+          entry_url?: string | null
           id?: string
           list_id?: string | null
+          qr_code_url?: string | null
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string | null
@@ -377,8 +381,10 @@ export type Database = {
         Update: {
           created_at?: string | null
           data?: Json
+          entry_url?: string | null
           id?: string
           list_id?: string | null
+          qr_code_url?: string | null
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string | null
@@ -682,6 +688,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_scan_history: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          location: Json | null
+          record_id: string
+          scanned_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location?: Json | null
+          record_id: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          location?: Json | null
+          record_id?: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scan_history_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "lead_records"
             referencedColumns: ["id"]
           },
         ]
