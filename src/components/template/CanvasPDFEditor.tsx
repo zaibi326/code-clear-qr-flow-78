@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas, FabricObject, IText, Rect, Circle, FabricImage } from 'fabric';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -32,7 +31,10 @@ import {
   Upload,
   FileText,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit3,
+  MousePointer,
+  Highlighter
 } from 'lucide-react';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { toast } from '@/hooks/use-toast';
@@ -52,6 +54,17 @@ interface PDFPage {
   canvas: Canvas;
   thumbnail: string;
   originalImage: string;
+  textContent: any[];
+}
+
+interface TextItem {
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontName: string;
+  fontSize: number;
 }
 
 export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
@@ -68,10 +81,11 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState<'select' | 'text' | 'highlight'>('select');
 
   // Text editing properties
   const [textColor, setTextColor] = useState('#000000');
-  const [fontSize, setFontSize] = useState(20);
+  const [fontSize, setFontSize] = useState(16);
   const [fontFamily, setFontFamily] = useState('Arial');
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
   const [isBold, setIsBold] = useState(false);
@@ -94,13 +108,15 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
 
       // Event listeners
       canvas.on('selection:created', (e) => {
-        setSelectedObject(e.selected?.[0] || null);
-        updatePropertyPanel(e.selected?.[0] || null);
+        const obj = e.selected?.[0];
+        setSelectedObject(obj || null);
+        updatePropertyPanel(obj || null);
       });
 
       canvas.on('selection:updated', (e) => {
-        setSelectedObject(e.selected?.[0] || null);
-        updatePropertyPanel(e.selected?.[0] || null);
+        const obj = e.selected?.[0];
+        setSelectedObject(obj || null);
+        updatePropertyPanel(obj || null);
       });
 
       canvas.on('selection:cleared', () => {
@@ -111,13 +127,30 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         saveState();
       });
 
+      // Double-click to edit text
+      canvas.on('mouse:dblclick', (e) => {
+        if (editMode === 'text' && e.target && e.target.type === 'i-text') {
+          const textObj = e.target as IText;
+          textObj.enterEditing();
+          textObj.selectAll();
+        }
+      });
+
+      // Click to add text in text mode
+      canvas.on('mouse:down', (e) => {
+        if (editMode === 'text' && !e.target) {
+          const pointer = canvas.getPointer(e.e);
+          addTextAtPosition(pointer.x, pointer.y);
+        }
+      });
+
       setFabricCanvas(canvas);
 
       return () => {
         canvas.dispose();
       };
     }
-  }, []);
+  }, [editMode]);
 
   // Load PDF from template
   useEffect(() => {
@@ -133,7 +166,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     if (obj.type === 'i-text') {
       const textObj = obj as IText;
       setTextColor(textObj.fill as string || '#000000');
-      setFontSize(textObj.fontSize || 20);
+      setFontSize(textObj.fontSize || 16);
       setFontFamily(textObj.fontFamily || 'Arial');
       setTextAlign((textObj.textAlign as 'left' | 'center' | 'right') || 'left');
       setIsBold(textObj.fontWeight === 'bold');
@@ -156,6 +189,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale: 1.5 });
         
+        // Render page to canvas
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d')!;
         canvas.width = viewport.width;
@@ -166,6 +200,21 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
           viewport: viewport
         }).promise;
 
+        // Extract text content
+        const textContent = await page.getTextContent();
+        const textItems: TextItem[] = textContent.items.map((item: any) => {
+          const transform = item.transform;
+          return {
+            str: item.str,
+            x: transform[4],
+            y: viewport.height - transform[5], // Flip Y coordinate
+            width: item.width,
+            height: item.height,
+            fontName: item.fontName,
+            fontSize: transform[0] || 12
+          };
+        });
+
         const imageData = canvas.toDataURL('image/png');
         const thumbnailData = canvas.toDataURL('image/png', 0.3);
 
@@ -173,7 +222,8 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
           pageNumber: pageNum,
           canvas: new Canvas(canvas),
           thumbnail: thumbnailData,
-          originalImage: imageData
+          originalImage: imageData,
+          textContent: textItems
         });
       }
 
@@ -198,6 +248,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     const page = pdfPages[pageIndex];
     
     try {
+      // Load background image
       const img = await FabricImage.fromURL(page.originalImage);
       img.set({
         left: 0,
@@ -210,13 +261,59 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
       
       fabricCanvas.add(img);
       fabricCanvas.sendObjectToBack(img);
-      fabricCanvas.renderAll();
+
+      // Add editable text objects from PDF text content
+      const scaleX = 800 / img.width!;
+      const scaleY = 600 / img.height!;
+
+      page.textContent.forEach((textItem: TextItem) => {
+        const text = new IText(textItem.str, {
+          left: textItem.x * scaleX,
+          top: textItem.y * scaleY,
+          fontSize: textItem.fontSize * scaleX,
+          fill: '#000000',
+          fontFamily: 'Arial',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          padding: 4,
+          cornerSize: 6,
+          transparentCorners: false,
+          borderColor: '#2196F3',
+          cornerColor: '#2196F3'
+        });
+        
+        fabricCanvas.add(text);
+      });
       
+      fabricCanvas.renderAll();
       setCurrentPage(pageIndex);
       saveState();
     } catch (error) {
       console.error('Error loading page:', error);
     }
+  };
+
+  const addTextAtPosition = (x: number, y: number) => {
+    if (!fabricCanvas) return;
+    
+    const text = new IText('Click to edit text', {
+      left: x,
+      top: y,
+      fontSize: fontSize,
+      fill: textColor,
+      fontFamily: fontFamily,
+      textAlign: textAlign,
+      fontWeight: isBold ? 'bold' : 'normal',
+      fontStyle: isItalic ? 'italic' : 'normal',
+      underline: isUnderline,
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      padding: 4
+    });
+    
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    text.enterEditing();
+    text.selectAll();
+    saveState();
   };
 
   const saveState = () => {
@@ -254,10 +351,10 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   };
 
   // Tool functions
-  const addText = () => {
+  const addNewText = () => {
     if (!fabricCanvas) return;
     
-    const text = new IText('Edit me', {
+    const text = new IText('Click to edit text', {
       left: 100,
       top: 100,
       fontSize: fontSize,
@@ -266,11 +363,15 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
       textAlign: textAlign,
       fontWeight: isBold ? 'bold' : 'normal',
       fontStyle: isItalic ? 'italic' : 'normal',
-      underline: isUnderline
+      underline: isUnderline,
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      padding: 4
     });
     
     fabricCanvas.add(text);
     fabricCanvas.setActiveObject(text);
+    text.enterEditing();
+    text.selectAll();
     saveState();
   };
 
@@ -313,17 +414,30 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     if (!fabricCanvas) return;
     
     try {
-      // Use a sample QR code or generate one
-      const qrImg = await FabricImage.fromURL('/api/placeholder/150/150');
-      qrImg.set({
+      // Create a simple QR code placeholder
+      const qrRect = new Rect({
         left: 100,
         top: 100,
-        scaleX: 0.8,
-        scaleY: 0.8
+        width: 100,
+        height: 100,
+        fill: '#000000',
+        stroke: '#333333',
+        strokeWidth: 2
       });
       
-      fabricCanvas.add(qrImg);
-      fabricCanvas.setActiveObject(qrImg);
+      const qrText = new IText('QR', {
+        left: 120,
+        top: 120,
+        fontSize: 24,
+        fill: '#ffffff',
+        fontFamily: 'Arial',
+        fontWeight: 'bold',
+        selectable: false
+      });
+      
+      fabricCanvas.add(qrRect);
+      fabricCanvas.add(qrText);
+      fabricCanvas.setActiveObject(qrRect);
       saveState();
     } catch (error) {
       console.error('Error adding QR code:', error);
@@ -389,10 +503,9 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   };
 
   const exportAsPDF = () => {
-    // Implementation for PDF export
     toast({
       title: 'Export PDF',
-      description: 'PDF export functionality coming soon!'
+      description: 'PDF export functionality coming soon!',
     });
   };
 
@@ -433,6 +546,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold">PDF Editor</h2>
+          <p className="text-sm text-gray-600">Edit text directly in your PDF</p>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -455,12 +569,44 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
             </CardContent>
           </Card>
 
+          {/* Edit Mode */}
+          <Card>
+            <CardContent className="p-4">
+              <Label className="text-sm font-medium mb-2 block">Edit Mode</Label>
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant={editMode === 'select' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEditMode('select')}
+                  className="justify-start"
+                >
+                  <MousePointer className="w-4 h-4 mr-2" />
+                  Select
+                </Button>
+                <Button
+                  variant={editMode === 'text' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEditMode('text')}
+                  className="justify-start"
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  Edit Text
+                </Button>
+              </div>
+              {editMode === 'text' && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Click on existing text to edit, or click anywhere to add new text
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Tools */}
           <Card>
             <CardContent className="p-4">
-              <Label className="text-sm font-medium mb-2 block">Tools</Label>
+              <Label className="text-sm font-medium mb-2 block">Add Elements</Label>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" onClick={addText}>
+                <Button variant="outline" size="sm" onClick={addNewText}>
                   <Type className="w-4 h-4 mr-1" />
                   Text
                 </Button>
@@ -848,7 +994,10 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
           {!selectedObject && (
             <div className="text-center text-gray-500 py-8">
               <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Select an object to edit its properties</p>
+              <p className="text-sm">Select an element to edit its properties</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Use "Edit Text" mode to modify existing PDF text
+              </p>
             </div>
           )}
         </div>
