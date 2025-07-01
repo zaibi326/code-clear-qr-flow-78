@@ -7,6 +7,7 @@ import { useTemplateActions } from '@/hooks/template/useTemplateActions';
 import { TemplateManagerLayout } from '@/components/template/TemplateManagerLayout';
 import { TemplateManagerContent } from '@/components/template/TemplateManagerContent';
 import { TemplateEditorWrapper } from '@/components/template/TemplateEditorWrapper';
+import { PDFEditorWrapper } from '@/components/template/PDFEditorWrapper';
 import { LoadingScreen } from '@/components/template/LoadingScreen';
 
 const TemplateManager = () => {
@@ -15,6 +16,7 @@ const TemplateManager = () => {
   
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf'>('canvas');
 
   const { templates, setTemplates, isLoaded, fileToDataUrl } = useTemplateStorage();
   
@@ -35,11 +37,18 @@ const TemplateManager = () => {
       console.log('Found template for editing:', template?.name, {
         hasPreview: !!template?.preview,
         hasTemplateUrl: !!template?.template_url,
-        previewLength: template?.preview?.length || 0
+        previewLength: template?.preview?.length || 0,
+        fileType: template?.file?.type
       });
       
       if (template) {
         setEditingTemplate(template);
+        // Set editing mode based on file type
+        if (template.file?.type === 'application/pdf') {
+          setEditingMode('pdf');
+        } else {
+          setEditingMode('canvas');
+        }
       } else {
         console.warn('Template not found for ID:', editingId);
         // Clear invalid editing state
@@ -72,19 +81,27 @@ const TemplateManager = () => {
 
   const handleTemplateEdit = (template: Template) => {
     console.log('Editing template:', template.name, {
-      hasPreview: !!template.preview,
-      hasTemplateUrl: !!template.template_url,
-      hasThumbnailUrl: !!template.thumbnail_url,
-      previewType: template.preview?.substring(0, 30) + '...'
+      hasPreview: !!template?.preview,
+      hasTemplateUrl: !!template?.template_url,
+      hasThumbnailUrl: !!template?.thumbnail_url,
+      previewType: template?.preview?.substring(0, 30) + '...',
+      fileType: template?.file?.type
     });
     
     // Ensure template has valid image data for editing
-    if (!template.preview && !template.template_url && !template.thumbnail_url) {
+    if (!template.preview && !template.template_url && !template.thumbnail_url && !template.file) {
       console.error('Template has no valid image data for editing');
       return;
     }
     
     setEditingTemplate(template);
+    
+    // Set editing mode based on file type
+    if (template.file?.type === 'application/pdf') {
+      setEditingMode('pdf');
+    } else {
+      setEditingMode('canvas');
+    }
     
     // Update URL with proper history entry
     const newSearchParams = new URLSearchParams();
@@ -108,6 +125,7 @@ const TemplateManager = () => {
   const handleTemplateCustomizationCancel = () => {
     console.log('Canceling template customization');
     setEditingTemplate(null);
+    setEditingMode('canvas');
     
     // Navigate back to template manager without editing parameter
     navigate('/template-manager', { replace: false });
@@ -124,13 +142,23 @@ const TemplateManager = () => {
 
   // Show template editor if editing - Full screen editor
   if (editingTemplate) {
-    return (
-      <TemplateEditorWrapper
-        template={editingTemplate}
-        onSave={handleTemplateCustomizationSave}
-        onCancel={handleTemplateCustomizationCancel}
-      />
-    );
+    if (editingMode === 'pdf') {
+      return (
+        <PDFEditorWrapper
+          template={editingTemplate}
+          onSave={handleTemplateCustomizationSave}
+          onCancel={handleTemplateCustomizationCancel}
+        />
+      );
+    } else {
+      return (
+        <TemplateEditorWrapper
+          template={editingTemplate}
+          onSave={handleTemplateCustomizationSave}
+          onCancel={handleTemplateCustomizationCancel}
+        />
+      );
+    }
   }
 
   return (
