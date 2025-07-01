@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas, FabricObject, IText } from 'fabric';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -9,6 +8,8 @@ import { usePDFOperations } from '@/hooks/canvas/usePDFOperations';
 import { PDFSidebar } from './pdf/PDFSidebar';
 import { PDFPropertiesPanel } from './pdf/PDFPropertiesPanel';
 import { PDFToolbar } from './pdf/PDFToolbar';
+import FileText from '@/components/icons/FileText';
+import Button from '@/components/Button';
 
 // Set PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
@@ -41,9 +42,12 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     redoStack,
     editMode,
     setEditMode,
+    isTextEditingMode,
     saveState,
     loadPDF,
-    loadPageToCanvas
+    loadPageToCanvas,
+    enableTextEditing,
+    disableTextEditing
   } = usePDFEditor();
 
   // Text editing properties
@@ -112,16 +116,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         saveState();
       });
 
-      // Double-click to edit text
-      canvas.on('mouse:dblclick', (e) => {
-        if (editMode === 'text' && e.target && e.target.type === 'i-text') {
-          const textObj = e.target as IText;
-          textObj.enterEditing();
-          textObj.selectAll();
-        }
-      });
-
-      // Click to add text in text mode
+      // Enhanced click handling for text editing
       canvas.on('mouse:down', (e) => {
         if (editMode === 'text' && !e.target) {
           const pointer = canvas.getPointer(e.e);
@@ -228,9 +223,14 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     });
     
     const link = document.createElement('a');
-    link.download = `page-${currentPage + 1}.png`;
+    link.download = `edited-pdf-page-${currentPage + 1}.png`;
     link.href = dataURL;
     link.click();
+    
+    toast({
+      title: 'Image Exported',
+      description: `Page ${currentPage + 1} exported as PNG`,
+    });
   };
 
   const exportAsPDF = () => {
@@ -254,6 +254,11 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     };
     
     onSave(updatedTemplate);
+    
+    toast({
+      title: 'PDF Saved',
+      description: 'Your edited PDF has been saved successfully!',
+    });
   };
 
   return (
@@ -261,6 +266,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
       <PDFSidebar
         editMode={editMode}
         setEditMode={setEditMode}
+        isTextEditingMode={isTextEditingMode}
         pdfPages={pdfPages}
         currentPage={currentPage}
         selectedObject={selectedObject}
@@ -275,6 +281,8 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         onImageUpload={uploadImage}
         onDeleteSelected={deleteSelected}
         onPageChange={loadPageToCanvas}
+        onEnableTextEditing={enableTextEditing}
+        onDisableTextEditing={disableTextEditing}
       />
 
       <div className="flex-1 flex flex-col">
@@ -294,10 +302,30 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         />
 
         <div className="flex-1 flex items-center justify-center p-4 bg-gray-100">
-          <div className="bg-white rounded-lg shadow-lg p-4">
+          <div className="bg-white rounded-lg shadow-lg p-4 relative">
+            {pdfPages.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center p-8">
+                  <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">
+                    Upload a PDF to Get Started
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Edit PDF text directly like in Canva
+                  </p>
+                  <Button
+                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Choose PDF File
+                  </Button>
+                </div>
+              </div>
+            )}
             <canvas
               ref={mainCanvasRef}
               className="border border-gray-300 rounded"
+              style={{ display: pdfPages.length > 0 ? 'block' : 'none' }}
             />
           </div>
         </div>

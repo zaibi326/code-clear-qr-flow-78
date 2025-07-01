@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit3,
-  MousePointer
+  MousePointer,
+  FileText
 } from 'lucide-react';
 import { FabricObject } from 'fabric';
 
@@ -25,6 +26,7 @@ interface PDFPage {
 interface PDFSidebarProps {
   editMode: 'select' | 'text' | 'highlight';
   setEditMode: (mode: 'select' | 'text' | 'highlight') => void;
+  isTextEditingMode: boolean;
   pdfPages: PDFPage[];
   currentPage: number;
   selectedObject: FabricObject | null;
@@ -36,11 +38,14 @@ interface PDFSidebarProps {
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onDeleteSelected: () => void;
   onPageChange: (pageIndex: number) => void;
+  onEnableTextEditing: () => void;
+  onDisableTextEditing: () => void;
 }
 
 export const PDFSidebar: React.FC<PDFSidebarProps> = ({
   editMode,
   setEditMode,
+  isTextEditingMode,
   pdfPages,
   currentPage,
   selectedObject,
@@ -51,13 +56,15 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
   onAddQRCode,
   onImageUpload,
   onDeleteSelected,
-  onPageChange
+  onPageChange,
+  onEnableTextEditing,
+  onDisableTextEditing
 }) => {
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold">PDF Editor</h2>
-        <p className="text-sm text-gray-600">Edit text directly in your PDF</p>
+        <p className="text-sm text-gray-600">Edit text directly in your PDF like Canva</p>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -76,13 +83,55 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
               }}
               className="w-full text-sm"
             />
+            {pdfPages.length === 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                Upload a PDF to start editing text like in Canva
+              </p>
+            )}
           </CardContent>
         </Card>
+
+        {/* Text Editing Mode - Prominent */}
+        {pdfPages.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <Label className="text-sm font-medium mb-3 block flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                Direct Text Editing
+              </Label>
+              {!isTextEditingMode ? (
+                <Button
+                  onClick={onEnableTextEditing}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  Start Editing Text
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    onClick={onDisableTextEditing}
+                    variant="outline"
+                    className="w-full"
+                    size="sm"
+                  >
+                    <MousePointer className="w-4 h-4 mr-2" />
+                    Exit Text Editing
+                  </Button>
+                  <p className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                    💡 Click on any blue-highlighted text to edit it directly, just like in Canva!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Edit Mode */}
         <Card>
           <CardContent className="p-4">
-            <Label className="text-sm font-medium mb-2 block">Edit Mode</Label>
+            <Label className="text-sm font-medium mb-2 block">Mode</Label>
             <div className="grid grid-cols-1 gap-2">
               <Button
                 variant={editMode === 'select' ? 'default' : 'outline'}
@@ -91,7 +140,7 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
                 className="justify-start"
               >
                 <MousePointer className="w-4 h-4 mr-2" />
-                Select
+                Select & Move
               </Button>
               <Button
                 variant={editMode === 'text' ? 'default' : 'outline'}
@@ -100,12 +149,12 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
                 className="justify-start"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                Edit Text
+                Add New Text
               </Button>
             </div>
-            {editMode === 'text' && (
+            {editMode === 'text' && !isTextEditingMode && (
               <p className="text-xs text-gray-500 mt-2">
-                Click on existing text to edit, or click anywhere to add new text
+                Click anywhere to add new text
               </p>
             )}
           </CardContent>
@@ -155,7 +204,7 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
         {pdfPages.length > 0 && (
           <Card>
             <CardContent className="p-4">
-              <Label className="text-sm font-medium mb-2 block">Pages</Label>
+              <Label className="text-sm font-medium mb-2 block">Pages ({pdfPages.length})</Label>
               <div className="flex items-center justify-between mb-2">
                 <Button
                   variant="outline"
@@ -165,7 +214,7 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <span className="text-sm">
+                <span className="text-sm font-medium">
                   {currentPage + 1} / {pdfPages.length}
                 </span>
                 <Button
@@ -182,15 +231,20 @@ export const PDFSidebar: React.FC<PDFSidebarProps> = ({
                   <button
                     key={index}
                     onClick={() => onPageChange(index)}
-                    className={`border-2 rounded p-1 ${
-                      currentPage === index ? 'border-blue-500' : 'border-gray-200'
+                    className={`border-2 rounded p-1 transition-colors ${
+                      currentPage === index 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <img
                       src={page.thumbnail}
                       alt={`Page ${index + 1}`}
-                      className="w-full h-auto"
+                      className="w-full h-auto rounded-sm"
                     />
+                    <span className="text-xs text-gray-600 mt-1 block">
+                      {index + 1}
+                    </span>
                   </button>
                 ))}
               </div>
