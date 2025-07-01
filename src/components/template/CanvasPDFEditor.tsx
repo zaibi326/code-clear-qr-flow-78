@@ -8,8 +8,8 @@ import { usePDFOperations } from '@/hooks/canvas/usePDFOperations';
 import { PDFSidebar } from './pdf/PDFSidebar';
 import { PDFPropertiesPanel } from './pdf/PDFPropertiesPanel';
 import { PDFToolbar } from './pdf/PDFToolbar';
-import FileText from '@/components/icons/FileText';
-import Button from '@/components/Button';
+import { FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Set PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
@@ -314,7 +314,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
                     Edit PDF text directly like in Canva
                   </p>
                   <Button
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    onClick={() => (document.querySelector('input[type="file"]') as HTMLElement)?.click()}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     Choose PDF File

@@ -139,9 +139,11 @@ export const usePDFEditor = () => {
         scaleX: scale,
         scaleY: scale,
         selectable: false,
-        evented: false,
-        name: 'background'
+        evented: false
       });
+      
+      // Add custom property to identify background
+      (img as any)._pdfTextId = 'background';
       
       fabricCanvas.add(img);
       fabricCanvas.sendObjectToBack(img);
@@ -160,10 +162,12 @@ export const usePDFEditor = () => {
             cornerColor: 'transparent',
             transparentCorners: true,
             padding: 2,
-            name: `pdf-text-${index}`,
             hoverCursor: 'text',
             moveCursor: 'text'
           });
+
+          // Add custom property to identify PDF text
+          (text as any)._pdfTextId = `pdf-text-${index}`;
 
           // Add click handler for text editing
           text.on('mousedown', () => {
@@ -225,7 +229,8 @@ export const usePDFEditor = () => {
     if (fabricCanvas) {
       // Make all PDF text elements visible and highlight them
       fabricCanvas.getObjects().forEach(obj => {
-        if (obj.name && obj.name.startsWith('pdf-text-')) {
+        const pdfTextId = (obj as any)._pdfTextId;
+        if (pdfTextId && pdfTextId.startsWith('pdf-text-')) {
           obj.set({
             fill: 'rgba(0, 0, 0, 0.1)',
             backgroundColor: 'rgba(173, 216, 230, 0.3)',
@@ -250,7 +255,8 @@ export const usePDFEditor = () => {
     if (fabricCanvas) {
       // Hide text overlays that haven't been edited
       fabricCanvas.getObjects().forEach(obj => {
-        if (obj.name && obj.name.startsWith('pdf-text-')) {
+        const pdfTextId = (obj as any)._pdfTextId;
+        if (pdfTextId && pdfTextId.startsWith('pdf-text-')) {
           const textObj = obj as IText;
           if (!textObj.text || textObj.text.trim() === '') {
             textObj.set({
