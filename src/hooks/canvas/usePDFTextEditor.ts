@@ -92,11 +92,15 @@ export const usePDFTextEditor = () => {
       const existing = newMap.get(blockId) || findOriginalTextBlock(blockId);
       
       if (existing) {
+        // Mark as edited and preserve original text if this is the first edit
+        const originalText = existing.originalText || existing.text;
+        
         newMap.set(blockId, { 
           ...existing, 
           ...updates, 
           id: blockId,
-          isEdited: true 
+          isEdited: true,
+          originalText: originalText
         } as PDFTextBlock);
       }
       return newMap;
@@ -124,11 +128,30 @@ export const usePDFTextEditor = () => {
   }, [createTextBlock]);
 
   const deleteTextBlock = useCallback((blockId: string) => {
-    setEditedTextBlocks(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(blockId);
-      return newMap;
-    });
+    // Check if it's an original text block that should be hidden instead of deleted
+    const originalBlock = findOriginalTextBlock(blockId);
+    
+    if (originalBlock) {
+      // For original blocks, mark them as deleted by setting text to empty
+      // This will hide them from the unified view
+      setEditedTextBlocks(prev => {
+        const newMap = new Map(prev);
+        newMap.set(blockId, {
+          ...originalBlock,
+          text: '',
+          isEdited: true,
+          originalText: originalBlock.text
+        });
+        return newMap;
+      });
+    } else {
+      // For custom added blocks, actually remove them
+      setEditedTextBlocks(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(blockId);
+        return newMap;
+      });
+    }
   }, []);
 
   const duplicateTextBlock = useCallback((blockId: string) => {
@@ -164,7 +187,15 @@ export const usePDFTextEditor = () => {
     }
 
     try {
-      const modifiedPdfBytes = await exportPDFWithEdits(originalPdfBytes, editedTextBlocks);
+      // Only export blocks that have actual content (not deleted ones)
+      const blocksToExport = new Map();
+      editedTextBlocks.forEach((block, id) => {
+        if (block.text.trim() !== '') {
+          blocksToExport.set(id, block);
+        }
+      });
+
+      const modifiedPdfBytes = await exportPDFWithEdits(originalPdfBytes, blocksToExport);
       
       const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);

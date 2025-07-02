@@ -20,6 +20,23 @@ import { PDFPageNavigation } from './components/PDFPageNavigation';
 import { toast } from '@/hooks/use-toast';
 import { Template } from '@/types/template';
 
+interface PDFTextBlock {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  fontName: string;
+  color: { r: number; g: number; b: number };
+  pageNumber: number;
+  isEdited: boolean;
+  originalText?: string;
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
+}
+
 interface PDFTextEditorProps {
   onSave?: () => void;
   onCancel?: () => void;
@@ -54,7 +71,6 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   // Auto-enable text editing mode when PDF is loaded
   useEffect(() => {
     if (pdfPages.length > 0 && !isLoading) {
-      // PDF has been loaded successfully, enable select mode for editing
       setEditMode('select');
       
       toast({
@@ -78,7 +94,6 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     }
   };
 
-  // Function to trigger file input click
   const triggerFileUpload = () => {
     const fileInput = document.getElementById('pdf-file-input') as HTMLInputElement;
     if (fileInput) {
@@ -102,12 +117,45 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     });
   };
 
-  // Safety check for current page data
+  // Create unified text blocks that show either original OR edited version, never both
+  const getUnifiedTextBlocks = (): PDFTextBlock[] => {
+    const currentPageData = pdfPages[currentPage];
+    if (!currentPageData) return [];
+
+    const originalTextBlocks = currentPageData.textBlocks || [];
+    const editedBlocks = Array.from(editedTextBlocks.values()).filter(
+      block => block.pageNumber === currentPage + 1
+    );
+
+    // Create a map of edited blocks by their ID for quick lookup
+    const editedBlocksMap = new Map(editedBlocks.map(block => [block.id, block]));
+
+    // Start with original blocks, but replace with edited versions if they exist
+    const unifiedBlocks: PDFTextBlock[] = [];
+
+    // Add original blocks that haven't been edited
+    originalTextBlocks.forEach(originalBlock => {
+      const editedVersion = editedBlocksMap.get(originalBlock.id);
+      if (editedVersion) {
+        // Use the edited version instead of the original
+        unifiedBlocks.push(editedVersion);
+        editedBlocksMap.delete(originalBlock.id); // Remove from map to avoid duplicates
+      } else {
+        // Use the original block
+        unifiedBlocks.push(originalBlock);
+      }
+    });
+
+    // Add any new text blocks that were created (not replacements of originals)
+    editedBlocksMap.forEach(editedBlock => {
+      unifiedBlocks.push(editedBlock);
+    });
+
+    return unifiedBlocks;
+  };
+
   const currentPageData = pdfPages[currentPage];
-  const currentPageTextBlocks = currentPageData?.textBlocks || [];
-  const currentPageEdits = Array.from(editedTextBlocks.values()).filter(
-    block => block.pageNumber === currentPage + 1
-  );
+  const unifiedTextBlocks = getUnifiedTextBlocks();
   const totalEditedBlocks = editedTextBlocks.size;
 
   return (
@@ -237,16 +285,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   style={{ width: '100%', height: '100%' }}
                 />
                 
-                {currentPageTextBlocks.map((textBlock) => (
-                  <EditableTextBlock
-                    key={textBlock.id}
-                    textBlock={textBlock}
-                    scale={zoom}
-                    onUpdate={updateTextBlock}
-                  />
-                ))}
-                
-                {currentPageEdits.map((textBlock) => (
+                {/* Render unified text blocks - no more doubling! */}
+                {unifiedTextBlocks.map((textBlock) => (
                   <EditableTextBlock
                     key={textBlock.id}
                     textBlock={textBlock}
