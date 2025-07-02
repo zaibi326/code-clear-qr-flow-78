@@ -1,9 +1,21 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { FileText, Edit3, MousePointer, Type, Download } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Upload, 
+  Download, 
+  MousePointer, 
+  Type, 
+  Edit3,
+  FileText,
+  Target,
+  Move,
+  PlusCircle,
+  Palette
+} from 'lucide-react';
+import { PDFDocument } from 'pdf-lib';
 
 interface PDFSidebarContentProps {
   selectedFile: File | null;
@@ -13,7 +25,8 @@ interface PDFSidebarContentProps {
   pdfPagesLength: number;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onExportPDF: () => void;
-  pdfDocument: any;
+  pdfDocument: PDFDocument | null;
+  hideFileUpload?: boolean;
 }
 
 export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
@@ -24,108 +37,151 @@ export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
   pdfPagesLength,
   onFileUpload,
   onExportPDF,
-  pdfDocument
+  pdfDocument,
+  hideFileUpload = false
 }) => {
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {/* File Upload */}
-      <Card className="border-2 border-dashed border-blue-200 bg-blue-50/50">
-        <CardContent className="p-4">
-          <Label className="text-sm font-medium mb-2 block text-blue-900">Upload PDF Document</Label>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={onFileUpload}
-            className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-          />
-          {selectedFile && (
-            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {selectedFile.name} loaded successfully
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Edit Mode Selector */}
-      {pdfPagesLength > 0 && (
+      {/* Upload Section - Only show if not hidden */}
+      {!hideFileUpload && (
         <Card>
-          <CardContent className="p-4">
-            <Label className="text-sm font-medium mb-3 block">Edit Mode</Label>
-            <div className="grid grid-cols-2 gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Upload PDF Document</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={onFileUpload}
+                className="hidden"
+                id="pdf-upload"
+              />
               <Button
-                variant={editMode === 'select' ? 'default' : 'outline'}
+                onClick={() => document.getElementById('pdf-upload')?.click()}
+                variant="outline"
+                className="w-full"
                 size="sm"
-                onClick={() => setEditMode('select')}
-                className="flex items-center gap-2"
               >
-                <MousePointer className="w-4 h-4" />
-                Select & Edit
+                <Upload className="w-4 h-4 mr-2" />
+                Choose File
               </Button>
-              <Button
-                variant={editMode === 'add-text' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setEditMode('add-text')}
-                className="flex items-center gap-2"
-              >
-                <Type className="w-4 h-4" />
-                Add Text
-              </Button>
+              {selectedFile && (
+                <div className="text-xs text-gray-600 truncate">
+                  {selectedFile.name}
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-600 mt-2">
-              {editMode === 'select' 
-                ? 'Double-click any text to edit. Drag to move.' 
-                : 'Click anywhere on the PDF to add new text.'}
-            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Instructions */}
-      <Card className="border-emerald-200 bg-emerald-50">
-        <CardContent className="p-4">
-          <h3 className="font-medium text-emerald-900 mb-2 flex items-center gap-2">
+      {/* How to Edit Instructions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Edit3 className="w-4 h-4" />
             How to Edit:
-          </h3>
-          <ul className="text-xs text-emerald-800 space-y-1">
-            <li>• <strong>Edit existing text:</strong> Double-click any text</li>
-            <li>• <strong>Move text:</strong> Drag text blocks around</li>
-            <li>• <strong>Add new text:</strong> Switch to "Add Text" mode, then click</li>
-            <li>• <strong>Format text:</strong> Use the floating toolbar</li>
-            <li>• <strong>Real PDF editing:</strong> Changes modify the actual PDF</li>
-          </ul>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-3 text-xs text-gray-600">
+          <div className="flex items-start gap-2">
+            <Target className="w-3 h-3 mt-0.5 text-blue-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Edit existing text:</span> Double-click any text
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <Move className="w-3 h-3 mt-0.5 text-green-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Move text:</span> Drag text blocks around
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <PlusCircle className="w-3 h-3 mt-0.5 text-purple-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Add new text:</span> Switch to "Add Text" mode, then click
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <Palette className="w-3 h-3 mt-0.5 text-orange-500 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Format text:</span> Use the floating toolbar when editing
+            </div>
+          </div>
+          <div className="flex items-start gap-2">
+            <FileText className="w-3 h-3 mt-0.5 text-blue-600 flex-shrink-0" />
+            <div>
+              <span className="font-medium">Real PDF editing:</span> Changes modify the actual PDF content, not just overlays
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Editing Mode Controls */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Editing Mode</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <Button
+            onClick={() => setEditMode('select')}
+            variant={editMode === 'select' ? 'default' : 'outline'}
+            size="sm"
+            className="w-full justify-start"
+          >
+            <MousePointer className="w-4 h-4 mr-2" />
+            Select & Edit
+          </Button>
+          <Button
+            onClick={() => setEditMode('add-text')}
+            variant={editMode === 'add-text' ? 'default' : 'outline'}
+            size="sm"
+            className="w-full justify-start"
+          >
+            <Type className="w-4 h-4 mr-2" />
+            Add Text
+          </Button>
         </CardContent>
       </Card>
 
       {/* Stats */}
-      {totalEditedBlocks > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <h3 className="font-medium text-orange-900 mb-2">Edit Summary</h3>
-            <p className="text-sm text-orange-800">
-              {totalEditedBlocks} text block{totalEditedBlocks !== 1 ? 's' : ''} modified
-            </p>
+      {pdfDocument && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Document Stats</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Pages:</span>
+              <Badge variant="secondary">{pdfPagesLength}</Badge>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Text Edits:</span>
+              <Badge variant={totalEditedBlocks > 0 ? 'default' : 'secondary'}>
+                {totalEditedBlocks}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Tools */}
+      {/* Actions */}
       <Card>
-        <CardContent className="p-4">
-          <Label className="text-sm font-medium mb-2 block">Actions</Label>
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={onExportPDF}
-              disabled={!pdfDocument}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Edited PDF
-            </Button>
-          </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Button
+            onClick={onExportPDF}
+            disabled={!pdfDocument}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export Edited PDF
+          </Button>
         </CardContent>
       </Card>
     </div>
