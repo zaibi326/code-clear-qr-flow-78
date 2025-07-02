@@ -27,6 +27,7 @@ interface PDFSidebarContentProps {
   onExportPDF: () => void;
   pdfDocument: PDFDocument | null;
   hideFileUpload?: boolean;
+  onTriggerFileUpload?: () => void;
 }
 
 export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
@@ -38,7 +39,8 @@ export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
   onFileUpload,
   onExportPDF,
   pdfDocument,
-  hideFileUpload = false
+  hideFileUpload = false,
+  onTriggerFileUpload
 }) => {
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -50,15 +52,8 @@ export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-3">
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={onFileUpload}
-                className="hidden"
-                id="pdf-upload"
-              />
               <Button
-                onClick={() => document.getElementById('pdf-upload')?.click()}
+                onClick={onTriggerFileUpload}
                 variant="outline"
                 className="w-full"
                 size="sm"

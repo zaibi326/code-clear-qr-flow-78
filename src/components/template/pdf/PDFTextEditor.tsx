@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -51,6 +51,19 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     exportPDF
   } = usePDFTextEditor();
 
+  // Auto-enable text editing mode when PDF is loaded
+  useEffect(() => {
+    if (pdfPages.length > 0 && !isLoading) {
+      // PDF has been loaded successfully, enable select mode for editing
+      setEditMode('select');
+      
+      toast({
+        title: 'PDF Loaded Successfully',
+        description: 'You can now click on any text to edit it directly!',
+      });
+    }
+  }, [pdfPages.length, isLoading]);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
@@ -62,6 +75,14 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
         description: 'Please select a PDF file.',
         variant: 'destructive'
       });
+    }
+  };
+
+  // Function to trigger file input click
+  const triggerFileUpload = () => {
+    const fileInput = document.getElementById('pdf-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
 
@@ -91,7 +112,16 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
 
   return (
     <div className="h-screen bg-gray-50 flex">
-      {/* Sidebar - Always show for PDF editing */}
+      {/* Hidden file input */}
+      <input
+        id="pdf-file-input"
+        type="file"
+        accept=".pdf"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+
+      {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
         <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardTitle className="flex items-center gap-2 text-blue-900">
@@ -113,6 +143,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
           onExportPDF={exportPDF}
           pdfDocument={pdfDocument}
           hideFileUpload={hideFileUpload}
+          onTriggerFileUpload={triggerFileUpload}
         />
 
         <PDFPageNavigation
@@ -179,7 +210,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Edit PDF text directly like in Canva. Changes are applied to the actual PDF content, not just overlays.
                 </p>
                 <Button
-                  onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+                  onClick={triggerFileUpload}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Upload className="w-4 h-4 mr-2" />
