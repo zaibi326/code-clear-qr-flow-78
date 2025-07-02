@@ -262,7 +262,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Edit PDF text directly like in Canva
                 </p>
                 <Button
-                  onClick={() => (document.querySelector('input[type="file"]') as HTMLElement)?.click()}
+                  onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   Choose PDF File
