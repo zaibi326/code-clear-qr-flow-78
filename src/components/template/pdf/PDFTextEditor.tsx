@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,8 +78,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
       setEditMode('select');
       
       toast({
-        title: 'PDF Auto-Scaled Successfully',
-        description: 'PDF has been optimally scaled to fit your editor. All text is perfectly aligned!',
+        title: 'PDF Loaded Successfully',
+        description: 'Text layer perfectly aligned with visual content. All text is editable and positioned accurately!',
       });
     }
   }, [pdfPages.length, isLoading]);
@@ -211,7 +210,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             PDF Text Editor
           </CardTitle>
           <p className="text-sm text-blue-700">
-            Auto-scaled PDF with perfect text alignment
+            Perfect text alignment with visual content
           </p>
         </CardHeader>
         
@@ -278,8 +277,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Auto-scaling PDF to fit perfectly...</p>
-                <p className="text-sm text-gray-500">Aligning text blocks for optimal editing</p>
+                <p className="text-gray-600">Processing PDF with accurate text alignment...</p>
+                <p className="text-sm text-gray-500">Mapping editable text layer to visual content</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -290,7 +289,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Your PDF will be automatically scaled to fit perfectly with aligned text for easy editing.
+                  Your PDF will be processed with perfect text alignment and accurate positioning for seamless editing.
                 </p>
                 <Button
                   onClick={triggerFileUpload}
