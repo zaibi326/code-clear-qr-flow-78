@@ -44,7 +44,7 @@ export const usePDFLoader = () => {
         const page = await pdfJsDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale: 2.0 });
         
-        // Create canvas for background
+        // Create clean white background canvas
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) {
@@ -54,17 +54,11 @@ export const usePDFLoader = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Fill with white background first
+        // Fill with white background only - no PDF content
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Render PDF page - remove the renderTextLayer property as it's not supported
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-
-        // Extract text content separately for editable text blocks
+        // Extract text content for editable text blocks
         const textContent = await page.getTextContent();
         const textBlocks: PDFTextBlock[] = [];
 
