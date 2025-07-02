@@ -44,9 +44,13 @@ export const usePDFLoader = () => {
         const page = await pdfJsDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale: 2.0 });
         
-        // Create canvas for background without text
+        // Create canvas for background
         const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d')!;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          throw new Error('Could not get canvas context');
+        }
+        
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
@@ -54,12 +58,10 @@ export const usePDFLoader = () => {
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Render PDF page with text rendering disabled
+        // Render PDF page - remove the renderTextLayer property as it's not supported
         await page.render({
           canvasContext: context,
-          viewport: viewport,
-          renderTextLayer: false, // This prevents text from being rendered in the background
-          includeAnnotations: false // Also exclude annotations that might contain text
+          viewport: viewport
         }).promise;
 
         // Extract text content separately for editable text blocks
@@ -114,12 +116,6 @@ export const usePDFLoader = () => {
     } catch (error) {
       console.error('Error loading PDF:', error);
       
-      // Fallback approach if renderTextLayer is not supported
-      if (error instanceof Error && error.message.includes('renderTextLayer')) {
-        console.log('Falling back to CSS-based text hiding approach');
-        return await this.loadPDFWithCSSMasking(file);
-      }
-      
       toast({
         title: 'Error loading PDF',
         description: 'Failed to load PDF file. Please try again.',
@@ -129,74 +125,6 @@ export const usePDFLoader = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Fallback method using CSS to hide background text
-  const loadPDFWithCSSMasking = useCallback(async (file: File) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const originalBytes = new Uint8Array(arrayBuffer);
-
-    const pdfJsDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const pages: PDFPageData[] = [];
-
-    for (let pageNum = 1; pageNum <= pdfJsDoc.numPages; pageNum++) {
-      const page = await pdfJsDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 });
-      
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      // Render normally but we'll mask the text with CSS
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-
-      const textContent = await page.getTextContent();
-      const textBlocks: PDFTextBlock[] = [];
-
-      const textItems = textContent.items.filter((item: any) => item.str && item.str.trim());
-      
-      textItems.forEach((item: any, index: number) => {
-        const transform = item.transform;
-        const x = transform[4];
-        const y = viewport.height - transform[5];
-        const fontSize = Math.abs(transform[0]) || 12;
-        
-        const fontName = item.fontName || 'Helvetica';
-        const isBold = fontName.toLowerCase().includes('bold');
-        const isItalic = fontName.toLowerCase().includes('italic') || fontName.toLowerCase().includes('oblique');
-        
-        textBlocks.push({
-          id: `page-${pageNum}-text-${index}`,
-          text: item.str.trim(),
-          originalText: item.str.trim(),
-          x: x,
-          y: y - fontSize,
-          width: item.width || (item.str.length * fontSize * 0.6),
-          height: fontSize,
-          fontSize: fontSize,
-          fontName: 'Helvetica',
-          fontWeight: isBold ? 'bold' : 'normal',
-          fontStyle: isItalic ? 'italic' : 'normal',
-          color: { r: 0, g: 0, b: 0 },
-          pageNumber: pageNum,
-          isEdited: false
-        });
-      });
-
-      pages.push({
-        pageNumber: pageNum,
-        width: viewport.width,
-        height: viewport.height,
-        backgroundImage: canvas.toDataURL('image/png'),
-        textBlocks
-      });
-    }
-
-    return { pages, originalBytes };
   }, []);
 
   return {
