@@ -44,7 +44,7 @@ export const usePDFLoader = () => {
         const page = await pdfJsDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale: 2.0 });
         
-        // Create clean white background canvas
+        // Create clean white background canvas (no original PDF content)
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) {
@@ -54,23 +54,56 @@ export const usePDFLoader = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Fill with white background only - no PDF content, no text extraction
+        // Fill with white background only - no PDF visual content
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Create empty page with no text blocks - completely clean slate
+        // Extract text content for editable text blocks
+        const textContent = await page.getTextContent();
+        const textBlocks: PDFTextBlock[] = [];
+
+        const textItems = textContent.items.filter((item: any) => item.str && item.str.trim());
+        
+        textItems.forEach((item: any, index: number) => {
+          const transform = item.transform;
+          const x = transform[4];
+          const y = viewport.height - transform[5];
+          const fontSize = Math.abs(transform[0]) || 12;
+          
+          const fontName = item.fontName || 'Helvetica';
+          const isBold = fontName.toLowerCase().includes('bold');
+          const isItalic = fontName.toLowerCase().includes('italic') || fontName.toLowerCase().includes('oblique');
+          
+          textBlocks.push({
+            id: `page-${pageNum}-text-${index}`,
+            text: item.str.trim(),
+            originalText: item.str.trim(),
+            x: x,
+            y: y - fontSize,
+            width: item.width || (item.str.length * fontSize * 0.6),
+            height: fontSize,
+            fontSize: fontSize,
+            fontName: 'Helvetica',
+            fontWeight: isBold ? 'bold' : 'normal',
+            fontStyle: isItalic ? 'italic' : 'normal',
+            color: { r: 0, g: 0, b: 0 },
+            pageNumber: pageNum,
+            isEdited: false
+          });
+        });
+
         pages.push({
           pageNumber: pageNum,
           width: viewport.width,
           height: viewport.height,
           backgroundImage: canvas.toDataURL('image/png'),
-          textBlocks: [] // Empty array - no original text content
+          textBlocks
         });
       }
 
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Loaded ${pages.length} clean page(s). Start adding your own text using "Add Text" mode!`,
+        description: `Loaded ${pages.length} page(s). Click on any text to edit it directly like in Canva!`,
       });
 
       return { pages, originalBytes };
