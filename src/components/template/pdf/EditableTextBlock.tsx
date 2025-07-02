@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Type } from 'lucide-react';
-import { TextBlockToolbar } from './components/TextBlockToolbar';
+import { AdvancedTextToolbar } from './components/AdvancedTextToolbar';
 import { TextBlockEditor } from './components/TextBlockEditor';
 
 interface PDFTextBlock {
@@ -19,6 +19,13 @@ interface PDFTextBlock {
   originalText?: string;
   fontWeight?: 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
+  textDecoration?: 'none' | 'underline';
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+  rotation?: number;
+  opacity?: number;
+  shadow?: boolean;
+  borderColor?: { r: number; g: number; b: number };
+  borderWidth?: number;
 }
 
 interface EditableTextBlockProps {
@@ -26,13 +33,15 @@ interface EditableTextBlockProps {
   scale: number;
   onUpdate: (blockId: string, updates: Partial<PDFTextBlock>) => void;
   onDelete?: (blockId: string) => void;
+  onDuplicate?: (blockId: string) => void;
 }
 
 export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
   textBlock,
   scale,
   onUpdate,
-  onDelete
+  onDelete,
+  onDuplicate
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localText, setLocalText] = useState(textBlock.text);
@@ -89,6 +98,30 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
     return `#${r}${g}${b}`;
   };
 
+  const getTextStyle = () => {
+    const baseStyle = {
+      fontSize: textBlock.fontSize * scale,
+      color: colorToHex(textBlock.color),
+      fontFamily: textBlock.fontName || 'Arial',
+      fontWeight: textBlock.fontWeight || 'normal',
+      fontStyle: textBlock.fontStyle || 'normal',
+      textDecoration: textBlock.textDecoration || 'none',
+      textAlign: textBlock.textAlign || 'left',
+      opacity: textBlock.opacity || 1,
+      transform: `rotate(${textBlock.rotation || 0}deg)`,
+    };
+
+    if (textBlock.borderColor && textBlock.borderWidth) {
+      return {
+        ...baseStyle,
+        border: `${textBlock.borderWidth}px solid ${colorToHex(textBlock.borderColor)}`,
+        padding: '2px'
+      };
+    }
+
+    return baseStyle;
+  };
+
   return (
     <div
       ref={textRef}
@@ -100,8 +133,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
         top: textBlock.y * scale,
         width: Math.max(textBlock.width * scale, 50),
         minHeight: textBlock.height * scale,
-        fontSize: textBlock.fontSize * scale,
-        color: colorToHex(textBlock.color),
+        ...getTextStyle(),
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -118,12 +150,13 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
         onFinishEditing={handleFinishEditing}
       />
 
-      {/* Floating Toolbar */}
+      {/* Enhanced Floating Toolbar */}
       {showToolbar && (
-        <TextBlockToolbar
+        <AdvancedTextToolbar
           textBlock={textBlock}
           onUpdate={onUpdate}
           onDelete={onDelete}
+          onDuplicate={onDuplicate}
         />
       )}
       
