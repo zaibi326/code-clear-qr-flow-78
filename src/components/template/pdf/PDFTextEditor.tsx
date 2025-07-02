@@ -25,13 +25,15 @@ interface PDFTextEditorProps {
   onCancel?: () => void;
   template?: Template;
   hideFileUpload?: boolean;
+  forceShowContent?: boolean;
 }
 
 export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   onSave,
   onCancel,
   template,
-  hideFileUpload = false
+  hideFileUpload = false,
+  forceShowContent = false
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
@@ -87,6 +89,9 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     block => block.pageNumber === currentPage + 1
   );
   const totalEditedBlocks = editedTextBlocks.size;
+
+  // Determine if we should show content
+  const shouldShowContent = forceShowContent || pdfPages.length > 0;
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -168,7 +173,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 <p className="text-sm text-gray-500">Extracting editable text blocks</p>
               </div>
             </div>
-          ) : pdfPages.length === 0 ? (
+          ) : !shouldShowContent ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-8 max-w-md">
                 {hideFileUpload ? (

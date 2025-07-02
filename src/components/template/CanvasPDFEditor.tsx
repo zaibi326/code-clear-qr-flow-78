@@ -15,16 +15,18 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   onSave,
   onCancel
 }) => {
-  const { loadPDF } = usePDFTextEditor();
+  const { loadPDF, pdfPages, isLoading } = usePDFTextEditor();
   const [isTemplateLoaded, setIsTemplateLoaded] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
   // Auto-load the PDF when template is provided
   useEffect(() => {
     const loadTemplateFile = async () => {
-      if (template && !isTemplateLoaded) {
+      if (template && !isTemplateLoaded && !isLoading) {
         console.log('Loading template file:', template.name);
         
         try {
+          setLoadingError(null);
           let fileToLoad: File | null = null;
           
           // If template has a file object, use it directly
@@ -51,17 +53,20 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
             console.log('Loading PDF file:', fileToLoad.name, fileToLoad.type);
             await loadPDF(fileToLoad);
             setIsTemplateLoaded(true);
+            console.log('Template loaded successfully');
           } else {
             console.error('No valid file source found for template');
+            setLoadingError('No valid PDF file found for this template');
           }
         } catch (error) {
           console.error('Error loading template file:', error);
+          setLoadingError('Failed to load PDF template');
         }
       }
     };
 
     loadTemplateFile();
-  }, [template, loadPDF, isTemplateLoaded]);
+  }, [template, loadPDF, isTemplateLoaded, isLoading]);
 
   const handleSave = () => {
     // For now, we'll create a basic template structure
@@ -77,6 +82,24 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     onSave(updatedTemplate);
   };
 
+  // Show loading error if there's one
+  if (loadingError) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="text-red-500 text-lg mb-4">Error Loading PDF</div>
+          <p className="text-gray-600 mb-4">{loadingError}</p>
+          <button 
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-full">
       <PDFTextEditor
@@ -84,6 +107,7 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         onCancel={onCancel}
         template={template}
         hideFileUpload={true}
+        forceShowContent={isTemplateLoaded && pdfPages.length > 0}
       />
     </div>
   );
