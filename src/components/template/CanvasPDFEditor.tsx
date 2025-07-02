@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Template } from '@/types/template';
 import { PDFTextEditor } from './pdf/PDFTextEditor';
+import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
 
 interface CanvasPDFEditorProps {
   template?: Template;
@@ -14,6 +15,16 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   onSave,
   onCancel
 }) => {
+  const { loadPDF } = usePDFTextEditor();
+
+  // Auto-load the PDF when template is provided
+  useEffect(() => {
+    if (template?.file && template.file.type === 'application/pdf') {
+      console.log('Auto-loading PDF from template:', template.name);
+      loadPDF(template.file);
+    }
+  }, [template, loadPDF]);
+
   const handleSave = () => {
     // For now, we'll create a basic template structure
     // In a real implementation, you'd want to save the PDF edits
@@ -29,9 +40,11 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   };
 
   return (
-    <PDFTextEditor
-      onSave={handleSave}
-      onCancel={onCancel}
-    />
+    <div className="h-screen w-full">
+      <PDFTextEditor
+        onSave={handleSave}
+        onCancel={onCancel}
+      />
+    </div>
   );
 };

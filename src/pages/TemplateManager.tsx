@@ -27,6 +27,31 @@ const TemplateManager = () => {
     handleTemplateDuplicate
   } = useTemplateActions({ templates, setTemplates, fileToDataUrl });
 
+  // Helper function to determine if a template is a PDF
+  const isPDFTemplate = (template: Template): boolean => {
+    // Check file type first
+    if (template.file?.type === 'application/pdf') {
+      return true;
+    }
+    
+    // Check preview data URL
+    if (template.preview?.startsWith('data:application/pdf')) {
+      return true;
+    }
+    
+    // Check template URL for PDF extension
+    if (template.template_url?.toLowerCase().includes('.pdf')) {
+      return true;
+    }
+    
+    // Check file name for PDF extension
+    if (template.file?.name?.toLowerCase().endsWith('.pdf')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Handle URL parameters for editing state with proper browser history
   useEffect(() => {
     const editingId = searchParams.get('editing');
@@ -38,16 +63,20 @@ const TemplateManager = () => {
         hasPreview: !!template?.preview,
         hasTemplateUrl: !!template?.template_url,
         previewLength: template?.preview?.length || 0,
-        fileType: template?.file?.type
+        fileType: template?.file?.type,
+        fileName: template?.file?.name,
+        isPDF: template ? isPDFTemplate(template) : false
       });
       
       if (template) {
         setEditingTemplate(template);
-        // Set editing mode based on file type
-        if (template.file?.type === 'application/pdf') {
+        // Improved PDF detection
+        if (isPDFTemplate(template)) {
           setEditingMode('pdf');
+          console.log('Setting PDF editing mode for template:', template.name);
         } else {
           setEditingMode('canvas');
+          console.log('Setting canvas editing mode for template:', template.name);
         }
       } else {
         console.warn('Template not found for ID:', editingId);
@@ -80,27 +109,33 @@ const TemplateManager = () => {
   }, [editingTemplate]);
 
   const handleTemplateEdit = (template: Template) => {
+    const isPDF = isPDFTemplate(template);
+    
     console.log('Editing template:', template.name, {
       hasPreview: !!template?.preview,
       hasTemplateUrl: !!template?.template_url,
       hasThumbnailUrl: !!template?.thumbnail_url,
       previewType: template?.preview?.substring(0, 30) + '...',
-      fileType: template?.file?.type
+      fileType: template?.file?.type,
+      fileName: template?.file?.name,
+      isPDF: isPDF
     });
     
-    // Ensure template has valid image data for editing
+    // Ensure template has valid data for editing
     if (!template.preview && !template.template_url && !template.thumbnail_url && !template.file) {
-      console.error('Template has no valid image data for editing');
+      console.error('Template has no valid data for editing');
       return;
     }
     
     setEditingTemplate(template);
     
-    // Set editing mode based on file type
-    if (template.file?.type === 'application/pdf') {
+    // Set editing mode based on improved PDF detection
+    if (isPDF) {
       setEditingMode('pdf');
+      console.log('Using PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
+      console.log('Using canvas editor for template:', template.name);
     }
     
     // Update URL with proper history entry
@@ -143,6 +178,7 @@ const TemplateManager = () => {
   // Show template editor if editing - Full screen editor
   if (editingTemplate) {
     if (editingMode === 'pdf') {
+      console.log('Rendering PDF editor for:', editingTemplate.name);
       return (
         <PDFEditorWrapper
           template={editingTemplate}
@@ -151,6 +187,7 @@ const TemplateManager = () => {
         />
       );
     } else {
+      console.log('Rendering canvas editor for:', editingTemplate.name);
       return (
         <TemplateEditorWrapper
           template={editingTemplate}
