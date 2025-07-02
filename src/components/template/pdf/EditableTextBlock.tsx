@@ -48,6 +48,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showToolbar, setShowToolbar] = useState(false);
+  const [lastClickTime, setLastClickTime] = useState(0);
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,12 +61,24 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.detail === 2) { // Double click
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastClickTime;
+    
+    // Double click detection (within 300ms)
+    if (timeDiff < 300 && timeDiff > 0) {
+      console.log('Double click detected, starting edit mode');
       setIsEditing(true);
       setShowToolbar(true);
+      setLastClickTime(0); // Reset to prevent triple click
       return;
     }
     
+    setLastClickTime(currentTime);
+    
+    // Start dragging
     setIsDragging(true);
     setDragStart({
       x: e.clientX - textBlock.x * scale,
@@ -87,6 +100,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
   };
 
   const handleFinishEditing = () => {
+    console.log('Finishing edit mode');
     setIsEditing(false);
     setShowToolbar(false);
   };
@@ -126,7 +140,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
     <div
       ref={textRef}
       className={`absolute cursor-move border-2 transition-all group ${
-        isEditing ? 'border-blue-500 bg-blue-50 shadow-lg' : 'border-transparent hover:border-blue-300 hover:bg-blue-50/50'
+        isEditing ? 'border-blue-500 bg-blue-50 shadow-lg z-50' : 'border-transparent hover:border-blue-300 hover:bg-blue-50/50'
       } ${textBlock.isEdited ? 'bg-yellow-50/80' : ''}`}
       style={{
         left: textBlock.x * scale,
@@ -138,7 +152,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseEnter={() => setShowToolbar(true)}
+      onMouseEnter={() => !isEditing && setShowToolbar(true)}
       onMouseLeave={() => !isEditing && setShowToolbar(false)}
     >
       <TextBlockEditor
@@ -151,7 +165,7 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
       />
 
       {/* Enhanced Floating Toolbar */}
-      {showToolbar && (
+      {showToolbar && !isEditing && (
         <AdvancedTextToolbar
           textBlock={textBlock}
           onUpdate={onUpdate}

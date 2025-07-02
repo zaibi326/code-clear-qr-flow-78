@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
 import { usePDFLoader } from './usePDFLoader';
@@ -36,25 +36,55 @@ export const usePDFTextEditor = () => {
   const [pdfPages, setPdfPages] = useState<PDFPageData[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [editedTextBlocks, setEditedTextBlocks] = useState<Map<string, PDFTextBlock>>(new Map());
+  const [currentFileName, setCurrentFileName] = useState<string>('');
+  const isLoadingRef = useRef(false);
 
   const { loadPDF: loadPDFFile, isLoading } = usePDFLoader();
   const { addTextBlock: createTextBlock, exportPDFWithEdits } = usePDFTextOperations();
 
   const loadPDF = useCallback(async (file: File) => {
+    // Prevent duplicate loading
+    if (isLoadingRef.current || currentFileName === file.name) {
+      console.log('PDF already loading or same file, skipping...');
+      return;
+    }
+
+    isLoadingRef.current = true;
+    
     try {
+      console.log('Loading PDF:', file.name);
+      
+      // Clear previous state
+      setPdfDocument(null);
+      setOriginalPdfBytes(null);
+      setPdfPages([]);
+      setEditedTextBlocks(new Map());
+      setCurrentPage(0);
+      
       const { pages, originalBytes } = await loadPDFFile(file);
       
       // Load PDF with pdf-lib for editing
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
+      
       setPdfDocument(pdfDoc);
       setOriginalPdfBytes(originalBytes);
       setPdfPages(pages);
       setCurrentPage(0);
+      setCurrentFileName(file.name);
+      
+      console.log('PDF loaded successfully:', file.name, 'Pages:', pages.length);
     } catch (error) {
       console.error('Error in loadPDF:', error);
+      toast({
+        title: 'Error loading PDF',
+        description: 'Failed to load the PDF file. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      isLoadingRef.current = false;
     }
-  }, [loadPDFFile]);
+  }, [loadPDFFile, currentFileName]);
 
   const updateTextBlock = useCallback((blockId: string, updates: Partial<PDFTextBlock>) => {
     setEditedTextBlocks(prev => {
@@ -101,6 +131,28 @@ export const usePDFTextEditor = () => {
     });
   }, []);
 
+  const duplicateTextBlock = useCallback((blockId: string) => {
+    const textBlock = editedTextBlocks.get(blockId) || findOriginalTextBlock(blockId);
+    if (textBlock) {
+      const newId = `custom-text-${Date.now()}`;
+      const duplicatedBlock: PDFTextBlock = {
+        ...textBlock,
+        id: newId,
+        x: textBlock.x + 20,
+        y: textBlock.y + 20,
+        isEdited: true
+      };
+
+      setEditedTextBlocks(prev => {
+        const newMap = new Map(prev);
+        newMap.set(newId, duplicatedBlock);
+        return newMap;
+      });
+
+      return newId;
+    }
+  }, [editedTextBlocks, findOriginalTextBlock]);
+
   const exportPDF = useCallback(async () => {
     if (!pdfDocument || !pdfPages.length || !originalPdfBytes) {
       toast({
@@ -119,7 +171,7 @@ export const usePDFTextEditor = () => {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'edited-document.pdf';
+      link.download = `edited-${currentFileName || 'document.pdf'}`;
       link.click();
       
       URL.revokeObjectURL(url);
@@ -136,7 +188,7 @@ export const usePDFTextEditor = () => {
         variant: 'destructive'
       });
     }
-  }, [pdfDocument, pdfPages, editedTextBlocks, originalPdfBytes, exportPDFWithEdits]);
+  }, [pdfDocument, pdfPages, editedTextBlocks, originalPdfBytes, exportPDFWithEdits, currentFileName]);
 
   return {
     pdfDocument,
@@ -149,6 +201,7 @@ export const usePDFTextEditor = () => {
     updateTextBlock,
     addTextBlock,
     deleteTextBlock,
+    duplicateTextBlock,
     exportPDF
   };
 };
