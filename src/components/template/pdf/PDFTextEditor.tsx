@@ -8,25 +8,33 @@ import {
   ZoomIn, 
   ZoomOut, 
   Save,
-  Upload
+  Upload,
+  Type,
+  Edit3,
+  MousePointer
 } from 'lucide-react';
 import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
 import { EditableTextBlock } from './EditableTextBlock';
 import { PDFSidebarContent } from './components/PDFSidebarContent';
 import { PDFPageNavigation } from './components/PDFPageNavigation';
 import { toast } from '@/hooks/use-toast';
+import { Template } from '@/types/template';
 
 interface PDFTextEditorProps {
   onSave?: () => void;
   onCancel?: () => void;
+  template?: Template;
+  hideFileUpload?: boolean;
 }
 
 export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   onSave,
-  onCancel
+  onCancel,
+  template,
+  hideFileUpload = false
 }) => {
   const [zoom, setZoom] = useState(1);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
   const [editMode, setEditMode] = useState<'select' | 'add-text'>('select');
   
   const {
@@ -82,35 +90,37 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
 
   return (
     <div className="h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
-        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardTitle className="flex items-center gap-2 text-blue-900">
-            <FileText className="w-5 h-5" />
-            PDF Text Editor
-          </CardTitle>
-          <p className="text-sm text-blue-700">
-            Edit PDF text directly like Canva - True PDF editing, not overlays
-          </p>
-        </CardHeader>
-        
-        <PDFSidebarContent
-          selectedFile={selectedFile}
-          editMode={editMode}
-          setEditMode={setEditMode}
-          totalEditedBlocks={totalEditedBlocks}
-          pdfPagesLength={pdfPages.length}
-          onFileUpload={handleFileUpload}
-          onExportPDF={exportPDF}
-          pdfDocument={pdfDocument}
-        />
+      {/* Sidebar - Only show if no template or hideFileUpload is false */}
+      {!hideFileUpload && (
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardTitle className="flex items-center gap-2 text-blue-900">
+              <FileText className="w-5 h-5" />
+              PDF Text Editor
+            </CardTitle>
+            <p className="text-sm text-blue-700">
+              Edit PDF text directly like Canva - True PDF editing, not overlays
+            </p>
+          </CardHeader>
+          
+          <PDFSidebarContent
+            selectedFile={selectedFile}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            totalEditedBlocks={totalEditedBlocks}
+            pdfPagesLength={pdfPages.length}
+            onFileUpload={handleFileUpload}
+            onExportPDF={exportPDF}
+            pdfDocument={pdfDocument}
+          />
 
-        <PDFPageNavigation
-          pdfPages={pdfPages}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-      </div>
+          <PDFPageNavigation
+            pdfPages={pdfPages}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+          />
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -158,7 +168,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 <p className="text-sm text-gray-500">Extracting editable text blocks</p>
               </div>
             </div>
-          ) : pdfPages.length === 0 ? (
+          ) : pdfPages.length === 0 && !hideFileUpload ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-8 max-w-md">
                 <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -177,7 +187,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 </Button>
               </div>
             </div>
-          ) : (
+          ) : pdfPages.length > 0 ? (
             <div className="flex justify-center">
               <div 
                 className={`bg-white rounded-lg shadow-lg relative ${
@@ -214,9 +224,35 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                     onDelete={deleteTextBlock}
                   />
                 ))}
+
+                {/* Floating Page Editing Options */}
+                <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant={editMode === 'select' ? 'default' : 'outline'}
+                    onClick={() => setEditMode('select')}
+                    className="h-8 px-3"
+                  >
+                    <MousePointer className="w-4 h-4 mr-1" />
+                    Select
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={editMode === 'add-text' ? 'default' : 'outline'}
+                    onClick={() => setEditMode('add-text')}
+                    className="h-8 px-3"
+                  >
+                    <Type className="w-4 h-4 mr-1" />
+                    Add Text
+                  </Button>
+                  <div className="h-6 w-px bg-gray-300"></div>
+                  <span className="text-xs text-gray-500">
+                    Page {currentPage + 1}/{pdfPages.length}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
