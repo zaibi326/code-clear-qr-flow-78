@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -11,7 +10,8 @@ import {
   TrendingUp,
   Users,
   HelpCircle,
-  List
+  List,
+  FileImage
 } from 'lucide-react';
 
 interface MenuItem {
@@ -53,6 +53,12 @@ export const SidebarMenuItems = React.memo(({ collapsed }: SidebarMenuItemsProps
       icon: Database,
       href: "/qr-database",
       isActive: location.pathname === "/qr-database"
+    },
+    {
+      title: "Template Manager",
+      icon: FileImage,
+      href: "/template-manager",
+      isActive: location.pathname === "/template-manager"
     },
     {
       title: "Tags Management",
