@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -278,12 +277,29 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 }}
                 onClick={editMode === 'add-text' ? handleAddText : undefined}
               >
-                <img
-                  src={currentPageData.backgroundImage}
-                  alt={`Page ${currentPage + 1}`}
-                  className="w-full h-full object-contain rounded-lg"
-                  style={{ width: '100%', height: '100%' }}
-                />
+                {/* Background image container with text masking */}
+                <div 
+                  className="w-full h-full relative overflow-hidden rounded-lg"
+                  style={{
+                    background: `url(${currentPageData.backgroundImage}) no-repeat center center`,
+                    backgroundSize: 'cover'
+                  }}
+                >
+                  {/* CSS mask overlay to hide background text where editable text exists */}
+                  {unifiedTextBlocks.map((textBlock) => (
+                    <div
+                      key={`mask-${textBlock.id}`}
+                      className="absolute bg-white"
+                      style={{
+                        left: textBlock.x * zoom,
+                        top: textBlock.y * zoom,
+                        width: textBlock.width * zoom,
+                        height: textBlock.height * zoom,
+                        zIndex: 0
+                      }}
+                    />
+                  ))}
+                </div>
                 
                 {/* Render unified text blocks - no more doubling! */}
                 {unifiedTextBlocks.map((textBlock) => (
