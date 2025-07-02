@@ -25,15 +25,13 @@ interface PDFTextEditorProps {
   onCancel?: () => void;
   template?: Template;
   hideFileUpload?: boolean;
-  forceShowContent?: boolean;
 }
 
 export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   onSave,
   onCancel,
   template,
-  hideFileUpload = false,
-  forceShowContent = false
+  hideFileUpload = false
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
@@ -83,15 +81,13 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     });
   };
 
+  // Safety check for current page data
   const currentPageData = pdfPages[currentPage];
   const currentPageTextBlocks = currentPageData?.textBlocks || [];
   const currentPageEdits = Array.from(editedTextBlocks.values()).filter(
     block => block.pageNumber === currentPage + 1
   );
   const totalEditedBlocks = editedTextBlocks.size;
-
-  // Determine if we should show content
-  const shouldShowContent = forceShowContent || pdfPages.length > 0;
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -173,7 +169,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 <p className="text-sm text-gray-500">Extracting editable text blocks</p>
               </div>
             </div>
-          ) : !shouldShowContent ? (
+          ) : pdfPages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center p-8 max-w-md">
                 {hideFileUpload ? (
@@ -206,7 +202,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 )}
               </div>
             </div>
-          ) : (
+          ) : currentPageData ? (
             <div className="flex justify-center">
               <div 
                 className={`bg-white rounded-lg shadow-lg relative ${
@@ -244,7 +240,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   />
                 ))}
 
-                {/* Floating Page Editing Options - Always show when PDF is loaded */}
+                {/* Floating Page Editing Options */}
                 <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 flex items-center space-x-2">
                   <Button
                     size="sm"
@@ -269,6 +265,16 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                     Page {currentPage + 1}/{pdfPages.length}
                   </span>
                 </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center p-8">
+                <div className="text-red-500 text-lg mb-4">Error Loading PDF Page</div>
+                <p className="text-gray-600 mb-4">There was an issue loading the PDF page data.</p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Reload Page
+                </Button>
               </div>
             </div>
           )}

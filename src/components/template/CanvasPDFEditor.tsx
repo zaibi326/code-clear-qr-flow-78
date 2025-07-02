@@ -107,7 +107,6 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
         onCancel={onCancel}
         template={template}
         hideFileUpload={true}
-        forceShowContent={isTemplateLoaded && pdfPages.length > 0}
       />
     </div>
   );
