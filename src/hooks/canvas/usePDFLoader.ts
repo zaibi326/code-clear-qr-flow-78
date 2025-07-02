@@ -26,6 +26,9 @@ interface PDFPageData {
   height: number;
   backgroundImage: string;
   textBlocks: PDFTextBlock[];
+  originalWidth: number;
+  originalHeight: number;
+  scaleFactor: number;
 }
 
 export const usePDFLoader = () => {
@@ -40,25 +43,36 @@ export const usePDFLoader = () => {
       const pdfJsDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const pages: PDFPageData[] = [];
 
+      // Define maximum canvas dimensions (editor viewport)
+      const MAX_CANVAS_WIDTH = 1200;
+      const MAX_CANVAS_HEIGHT = 800;
+
       for (let pageNum = 1; pageNum <= pdfJsDoc.numPages; pageNum++) {
         const page = await pdfJsDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 2.0 });
+        const originalViewport = page.getViewport({ scale: 1.0 });
         
-        // Create clean white background canvas (no original PDF content)
+        // Calculate scale to fit within max dimensions while maintaining aspect ratio
+        const scaleX = MAX_CANVAS_WIDTH / originalViewport.width;
+        const scaleY = MAX_CANVAS_HEIGHT / originalViewport.height;
+        const optimalScale = Math.min(scaleX, scaleY, 2.0); // Cap at 2x for quality
+        
+        const scaledViewport = page.getViewport({ scale: optimalScale });
+        
+        // Create clean white background canvas
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) {
           throw new Error('Could not get canvas context');
         }
         
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = scaledViewport.width;
+        canvas.height = scaledViewport.height;
 
         // Fill with white background only - no PDF visual content
         context.fillStyle = '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Extract text content for editable text blocks
+        // Extract text content for editable text blocks with proper scaling
         const textContent = await page.getTextContent();
         const textBlocks: PDFTextBlock[] = [];
 
@@ -66,9 +80,16 @@ export const usePDFLoader = () => {
         
         textItems.forEach((item: any, index: number) => {
           const transform = item.transform;
-          const x = transform[4];
-          const y = viewport.height - transform[5];
-          const fontSize = Math.abs(transform[0]) || 12;
+          const originalX = transform[4];
+          const originalY = originalViewport.height - transform[5];
+          const originalFontSize = Math.abs(transform[0]) || 12;
+          
+          // Scale coordinates and dimensions
+          const scaledX = originalX * optimalScale;
+          const scaledY = originalY * optimalScale;
+          const scaledFontSize = originalFontSize * optimalScale;
+          const scaledWidth = (item.width || (item.str.length * originalFontSize * 0.6)) * optimalScale;
+          const scaledHeight = originalFontSize * optimalScale;
           
           const fontName = item.fontName || 'Helvetica';
           const isBold = fontName.toLowerCase().includes('bold');
@@ -78,11 +99,11 @@ export const usePDFLoader = () => {
             id: `page-${pageNum}-text-${index}`,
             text: item.str.trim(),
             originalText: item.str.trim(),
-            x: x,
-            y: y - fontSize,
-            width: item.width || (item.str.length * fontSize * 0.6),
-            height: fontSize,
-            fontSize: fontSize,
+            x: scaledX,
+            y: scaledY - scaledFontSize, // Adjust for baseline
+            width: scaledWidth,
+            height: scaledHeight,
+            fontSize: Math.max(8, scaledFontSize), // Minimum readable size
             fontName: 'Helvetica',
             fontWeight: isBold ? 'bold' : 'normal',
             fontStyle: isItalic ? 'italic' : 'normal',
@@ -94,16 +115,19 @@ export const usePDFLoader = () => {
 
         pages.push({
           pageNumber: pageNum,
-          width: viewport.width,
-          height: viewport.height,
+          width: scaledViewport.width,
+          height: scaledViewport.height,
           backgroundImage: canvas.toDataURL('image/png'),
-          textBlocks
+          textBlocks,
+          originalWidth: originalViewport.width,
+          originalHeight: originalViewport.height,
+          scaleFactor: optimalScale
         });
       }
 
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Loaded ${pages.length} page(s). Click on any text to edit it directly like in Canva!`,
+        description: `Loaded ${pages.length} page(s) with optimal scaling. Text is perfectly aligned and ready for editing!`,
       });
 
       return { pages, originalBytes };

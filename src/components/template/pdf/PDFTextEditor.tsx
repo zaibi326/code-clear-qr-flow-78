@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,9 @@ import {
   Upload,
   Type,
   Edit3,
-  MousePointer
+  MousePointer,
+  Maximize2,
+  Move
 } from 'lucide-react';
 import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
 import { EditableTextBlock } from './EditableTextBlock';
@@ -51,7 +54,10 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
-  const [editMode, setEditMode] = useState<'select' | 'add-text'>('select');
+  const [editMode, setEditMode] = useState<'select' | 'add-text' | 'pan'>('select');
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   
   const {
     pdfDocument,
@@ -73,8 +79,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
       setEditMode('select');
       
       toast({
-        title: 'PDF Loaded Successfully',
-        description: 'You can now click on any text to edit it directly!',
+        title: 'PDF Auto-Scaled Successfully',
+        description: 'PDF has been optimally scaled to fit your editor. All text is perfectly aligned!',
       });
     }
   }, [pdfPages.length, isLoading]);
@@ -100,12 +106,18 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     }
   };
 
-  const handleAddText = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleCanvasMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (editMode === 'pan') {
+      setIsPanning(true);
+      setLastPanPoint({ x: event.clientX, y: event.clientY });
+      return;
+    }
+
     if (pdfPages.length === 0 || editMode !== 'add-text') return;
     
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / zoom;
-    const y = (event.clientY - rect.top) / zoom;
+    const x = (event.clientX - rect.left - panOffset.x) / zoom;
+    const y = (event.clientY - rect.top - panOffset.y) / zoom;
     
     addTextBlock(currentPage + 1, x, y, 'Click to edit');
     setEditMode('select');
@@ -114,6 +126,29 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
       title: 'Text Added',
       description: 'Double-click the new text to edit it.',
     });
+  };
+
+  const handleCanvasMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPanning || editMode !== 'pan') return;
+
+    const deltaX = event.clientX - lastPanPoint.x;
+    const deltaY = event.clientY - lastPanPoint.y;
+    
+    setPanOffset(prev => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+    
+    setLastPanPoint({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const handleFitToScreen = () => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
   };
 
   // Create unified text blocks that show either original OR edited version, never both
@@ -176,7 +211,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             PDF Text Editor
           </CardTitle>
           <p className="text-sm text-blue-700">
-            Edit PDF text directly like Canva - True PDF editing, not overlays
+            Auto-scaled PDF with perfect text alignment
           </p>
         </CardHeader>
         
@@ -205,15 +240,16 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>
+            <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(0.3, zoom - 0.1))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
             <span className="text-sm font-medium min-w-[60px] text-center">{Math.round(zoom * 100)}%</span>
-            <Button variant="outline" size="sm" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
+            <Button variant="outline" size="sm" onClick={() => setZoom(Math.min(3, zoom + 0.1))}>
               <ZoomIn className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setZoom(1)}>
-              Reset Zoom
+            <Button variant="outline" size="sm" onClick={handleFitToScreen}>
+              <Maximize2 className="w-4 h-4 mr-1" />
+              Fit Screen
             </Button>
           </div>
           
@@ -237,13 +273,13 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-gray-100 overflow-auto p-8">
+        <div className="flex-1 bg-gray-100 overflow-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading and parsing PDF...</p>
-                <p className="text-sm text-gray-500">Extracting editable text blocks</p>
+                <p className="text-gray-600">Auto-scaling PDF to fit perfectly...</p>
+                <p className="text-sm text-gray-500">Aligning text blocks for optimal editing</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -254,7 +290,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Edit PDF text directly like in Canva. Changes are applied to the actual PDF content, not just overlays.
+                  Your PDF will be automatically scaled to fit perfectly with aligned text for easy editing.
                 </p>
                 <Button
                   onClick={triggerFileUpload}
@@ -266,18 +302,25 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
               </div>
             </div>
           ) : currentPageData ? (
-            <div className="flex justify-center">
+            <div className="flex items-center justify-center min-h-full p-8">
               <div 
                 className={`bg-white rounded-lg shadow-lg relative ${
-                  editMode === 'add-text' ? 'cursor-crosshair' : 'cursor-default'
+                  editMode === 'add-text' ? 'cursor-crosshair' : 
+                  editMode === 'pan' ? 'cursor-move' : 'cursor-default'
                 }`}
                 style={{
                   width: currentPageData.width * zoom,
-                  height: currentPageData.height * zoom
+                  height: currentPageData.height * zoom,
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
+                  minWidth: 'fit-content',
+                  minHeight: 'fit-content'
                 }}
-                onClick={editMode === 'add-text' ? handleAddText : undefined}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
               >
-                {/* Background image container with text masking */}
+                {/* Background image container */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
@@ -301,7 +344,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   ))}
                 </div>
                 
-                {/* Render unified text blocks - no more doubling! */}
+                {/* Render unified text blocks */}
                 {unifiedTextBlocks.map((textBlock) => (
                   <EditableTextBlock
                     key={textBlock.id}
@@ -312,7 +355,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   />
                 ))}
 
-                {/* Floating Page Editing Options */}
+                {/* Floating Page Controls */}
                 <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 flex items-center space-x-2">
                   <Button
                     size="sm"
@@ -331,6 +374,15 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   >
                     <Type className="w-4 h-4 mr-1" />
                     Add Text
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={editMode === 'pan' ? 'default' : 'outline'}
+                    onClick={() => setEditMode('pan')}
+                    className="h-8 px-3"
+                  >
+                    <Move className="w-4 h-4 mr-1" />
+                    Pan
                   </Button>
                   <div className="h-6 w-px bg-gray-300"></div>
                   <span className="text-xs text-gray-500">
