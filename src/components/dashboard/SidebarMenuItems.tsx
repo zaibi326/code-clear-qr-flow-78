@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -9,9 +10,7 @@ import {
   Settings,
   TrendingUp,
   Users,
-  FileText,
   HelpCircle,
-  Puzzle,
   List
 } from 'lucide-react';
 
@@ -72,18 +71,6 @@ export const SidebarMenuItems = React.memo(({ collapsed }: SidebarMenuItemsProps
       icon: List,
       href: "/list-management",
       isActive: location.pathname === "/list-management"
-    },
-    {
-      title: "Template Manager",
-      icon: FileText,
-      href: "/template-manager",
-      isActive: location.pathname === "/template-manager"
-    },
-    {
-      title: "Integrations",
-      icon: Puzzle,
-      href: "/dashboard/integrations",
-      isActive: location.pathname === "/dashboard/integrations"
     },
     {
       title: "Analytics",

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,10 @@ import {
   ChevronLeft, 
   ChevronRight,
   Save,
-  Upload
+  Upload,
+  Edit3,
+  Type,
+  MousePointer
 } from 'lucide-react';
 import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
 import { EditableTextBlock } from './EditableTextBlock';
@@ -28,6 +32,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editMode, setEditMode] = useState<'select' | 'add-text'>('select');
   
   const {
     pdfDocument,
@@ -39,6 +44,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     loadPDF,
     updateTextBlock,
     addTextBlock,
+    deleteTextBlock,
     exportPDF
   } = usePDFTextEditor();
 
@@ -57,19 +63,21 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   };
 
   const handleAddText = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (pdfPages.length === 0) return;
+    if (pdfPages.length === 0 || editMode !== 'add-text') return;
     
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / zoom;
     const y = (event.clientY - rect.top) / zoom;
     
-    addTextBlock(currentPage + 1, x, y);
-  };
-
-  const handleDeleteTextBlock = (blockId: string) => {
-    const newMap = new Map(editedTextBlocks);
-    newMap.delete(blockId);
-    // This would need to be handled in the hook, but for now we'll just update it
+    const textId = addTextBlock(currentPage + 1, x, y, 'Click to edit');
+    
+    // Switch back to select mode after adding text
+    setEditMode('select');
+    
+    toast({
+      title: 'Text Added',
+      description: 'Double-click the new text to edit it.',
+    });
   };
 
   const currentPageData = pdfPages[currentPage];
@@ -78,67 +86,110 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     block => block.pageNumber === currentPage + 1
   );
 
+  const totalEditedBlocks = editedTextBlocks.size;
+
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="flex items-center gap-2 text-blue-900">
             <FileText className="w-5 h-5" />
             PDF Text Editor
           </CardTitle>
-          <p className="text-sm text-gray-600">
-            Edit PDF text directly like Canva
+          <p className="text-sm text-blue-700">
+            Edit PDF text directly like Canva - True PDF editing, not overlays
           </p>
         </CardHeader>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* File Upload */}
-          <Card>
+          <Card className="border-2 border-dashed border-blue-200 bg-blue-50/50">
             <CardContent className="p-4">
-              <Label className="text-sm font-medium mb-2 block">Upload PDF</Label>
+              <Label className="text-sm font-medium mb-2 block text-blue-900">Upload PDF Document</Label>
               <input
                 type="file"
                 accept=".pdf"
                 onChange={handleFileUpload}
-                className="w-full text-sm"
+                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
               />
               {selectedFile && (
-                <p className="text-xs text-green-600 mt-2">
-                  ✓ {selectedFile.name} loaded
+                <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  {selectedFile.name} loaded successfully
                 </p>
               )}
             </CardContent>
           </Card>
 
+          {/* Edit Mode Selector */}
+          {pdfPages.length > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Label className="text-sm font-medium mb-3 block">Edit Mode</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={editMode === 'select' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEditMode('select')}
+                    className="flex items-center gap-2"
+                  >
+                    <MousePointer className="w-4 h-4" />
+                    Select & Edit
+                  </Button>
+                  <Button
+                    variant={editMode === 'add-text' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEditMode('add-text')}
+                    className="flex items-center gap-2"
+                  >
+                    <Type className="w-4 h-4" />
+                    Add Text
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  {editMode === 'select' 
+                    ? 'Double-click any text to edit. Drag to move.' 
+                    : 'Click anywhere on the PDF to add new text.'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Instructions */}
-          <Card className="border-blue-200 bg-blue-50">
+          <Card className="border-emerald-200 bg-emerald-50">
             <CardContent className="p-4">
-              <h3 className="font-medium text-blue-900 mb-2">How to Edit:</h3>
-              <ul className="text-xs text-blue-800 space-y-1">
-                <li>• Double-click any text to edit</li>
-                <li>• Drag text to move position</li>
-                <li>• Click canvas to add new text</li>
-                <li>• Yellow dot = edited text</li>
-                <li>• Export saves real PDF changes</li>
+              <h3 className="font-medium text-emerald-900 mb-2 flex items-center gap-2">
+                <Edit3 className="w-4 h-4" />
+                How to Edit:
+              </h3>
+              <ul className="text-xs text-emerald-800 space-y-1">
+                <li>• <strong>Edit existing text:</strong> Double-click any text</li>
+                <li>• <strong>Move text:</strong> Drag text blocks around</li>
+                <li>• <strong>Add new text:</strong> Switch to "Add Text" mode, then click</li>
+                <li>• <strong>Format text:</strong> Use the floating toolbar</li>
+                <li>• <strong>Real PDF editing:</strong> Changes modify the actual PDF</li>
               </ul>
             </CardContent>
           </Card>
 
+          {/* Stats */}
+          {totalEditedBlocks > 0 && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="p-4">
+                <h3 className="font-medium text-orange-900 mb-2">Edit Summary</h3>
+                <p className="text-sm text-orange-800">
+                  {totalEditedBlocks} text block{totalEditedBlocks !== 1 ? 's' : ''} modified
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tools */}
           <Card>
             <CardContent className="p-4">
-              <Label className="text-sm font-medium mb-2 block">Tools</Label>
+              <Label className="text-sm font-medium mb-2 block">Actions</Label>
               <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => toast({ title: 'Click on the canvas to add text' })}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Text
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -147,7 +198,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   disabled={!pdfDocument}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export PDF
+                  Export Edited PDF
                 </Button>
               </div>
             </CardContent>
@@ -209,17 +260,17 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
-        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
-            <span className="text-sm font-medium">{Math.round(zoom * 100)}%</span>
+            <span className="text-sm font-medium min-w-[60px] text-center">{Math.round(zoom * 100)}%</span>
             <Button variant="outline" size="sm" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
               <ZoomIn className="w-4 h-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={() => setZoom(1)}>
-              Reset
+              Reset Zoom
             </Button>
           </div>
           
@@ -229,9 +280,9 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
               Export PDF
             </Button>
             {onSave && (
-              <Button onClick={onSave}>
+              <Button onClick={onSave} className="bg-blue-600 hover:bg-blue-700">
                 <Save className="w-4 h-4 mr-1" />
-                Save
+                Save Changes
               </Button>
             )}
             {onCancel && (
@@ -248,23 +299,25 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading PDF...</p>
+                <p className="text-gray-600">Loading and parsing PDF...</p>
+                <p className="text-sm text-gray-500">Extracting editable text blocks</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center p-8">
+              <div className="text-center p-8 max-w-md">
                 <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-700 mb-2">
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Edit PDF text directly like in Canva
+                  Edit PDF text directly like in Canva. Changes are applied to the actual PDF content, not just overlays.
                 </p>
                 <Button
                   onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
+                  <Upload className="w-4 h-4 mr-2" />
                   Choose PDF File
                 </Button>
               </div>
@@ -272,18 +325,20 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
           ) : (
             <div className="flex justify-center">
               <div 
-                className="bg-white rounded-lg shadow-lg relative cursor-crosshair" 
+                className={`bg-white rounded-lg shadow-lg relative ${
+                  editMode === 'add-text' ? 'cursor-crosshair' : 'cursor-default'
+                }`}
                 style={{
                   width: currentPageData.width * zoom,
                   height: currentPageData.height * zoom
                 }}
-                onClick={handleAddText}
+                onClick={editMode === 'add-text' ? handleAddText : undefined}
               >
                 {/* Background Image */}
                 <img
                   src={currentPageData.backgroundImage}
                   alt={`Page ${currentPage + 1}`}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain rounded-lg"
                   style={{ width: '100%', height: '100%' }}
                 />
                 
@@ -304,7 +359,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                     textBlock={textBlock}
                     scale={zoom}
                     onUpdate={updateTextBlock}
-                    onDelete={handleDeleteTextBlock}
+                    onDelete={deleteTextBlock}
                   />
                 ))}
               </div>
