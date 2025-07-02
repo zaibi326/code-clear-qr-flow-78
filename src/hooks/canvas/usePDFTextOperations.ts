@@ -1,6 +1,5 @@
-
 import { useCallback } from 'react';
-import { PDFDocument, PDFPage, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFPage, rgb, StandardFonts, degrees } from 'pdf-lib';
 
 interface PDFTextBlock {
   id: string;
@@ -124,7 +123,7 @@ export const usePDFTextOperations = () => {
           font: font,
           color: rgb(textBlock.color.r, textBlock.color.g, textBlock.color.b),
           opacity: textBlock.opacity || 1,
-          rotate: textBlock.rotation ? { angle: textBlock.rotation * (Math.PI / 180) } : undefined,
+          rotate: textBlock.rotation ? degrees(textBlock.rotation) : undefined,
         });
 
         // Draw underline if specified
