@@ -38,6 +38,8 @@ interface PDFTextBlock {
   fontStyle?: 'normal' | 'italic';
 }
 
+type EditMode = 'select' | 'add-text' | 'pan';
+
 interface PDFTextEditorProps {
   onSave?: () => void;
   onCancel?: () => void;
@@ -53,7 +55,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
-  const [editMode, setEditMode] = useState<'select' | 'add-text' | 'pan'>('select');
+  const [editMode, setEditMode] = useState<EditMode>('select');
   const [isPanning, setIsPanning] = useState(false);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
