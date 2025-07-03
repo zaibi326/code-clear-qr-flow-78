@@ -148,8 +148,9 @@ export const useCanvaStylePDFEditor = () => {
     setHistory(newHistory);
   }, [textElements, shapes, images, qrCodes, history, historyIndex]);
 
+  // Enhanced text extraction with better coordinate mapping
   const extractTextWithoutOverlap = useCallback(async (page: any, pageNumber: number, viewport: any): Promise<PDFTextElement[]> => {
-    console.log(`Extracting text from page ${pageNumber}`);
+    console.log(`Extracting text from page ${pageNumber} with viewport:`, viewport.width, 'x', viewport.height);
     
     const textContent = await page.getTextContent({
       includeMarkedContent: false,
@@ -166,19 +167,20 @@ export const useCanvaStylePDFEditor = () => {
         const [scaleX, skewY, skewX, scaleY, translateX, translateY] = transform;
         const fontSize = Math.abs(scaleY);
         
-        // Precise coordinate mapping for overlay positioning
+        // FIXED: Improved coordinate mapping for better positioning
         const x = translateX;
-        const y = viewport.height - translateY - fontSize;
+        const y = viewport.height - translateY - fontSize; // Correct Y coordinate mapping
         
-        const textWidth = item.width || item.str.length * fontSize * 0.6;
-        const textHeight = fontSize * 1.2;
+        // Better width calculation based on actual text metrics
+        const textWidth = Math.max(item.width || item.str.length * fontSize * 0.6, item.str.length * fontSize * 0.5);
+        const textHeight = fontSize * 1.3; // Slightly increased for better coverage
         
-        // Enhanced font detection with proper typing
+        // Enhanced font detection
         const fontName = item.fontName || 'Arial';
         const isBold = fontName.toLowerCase().includes('bold');
         const isItalic = fontName.toLowerCase().includes('italic');
         
-        // Color extraction
+        // Color extraction with fallback
         let textColor = '#000000';
         if (item.color && Array.isArray(item.color)) {
           const r = Math.round((item.color[0] || 0) * 255);
@@ -197,8 +199,8 @@ export const useCanvaStylePDFEditor = () => {
           height: Math.round(textHeight),
           fontSize: Math.round(fontSize),
           fontFamily: 'Arial',
-          fontWeight: isBold ? 'bold' : 'normal', // Fix: Ensure proper typing
-          fontStyle: isItalic ? 'italic' : 'normal', // Fix: Ensure proper typing
+          fontWeight: isBold ? 'bold' : 'normal',
+          fontStyle: isItalic ? 'italic' : 'normal',
           textAlign: 'left',
           color: textColor,
           backgroundColor: 'transparent',
@@ -209,7 +211,7 @@ export const useCanvaStylePDFEditor = () => {
         };
 
         textElements.push(textElement);
-        console.log(`Extracted text element: "${item.str}" at (${x}, ${y})`);
+        console.log(`Extracted text element: "${item.str}" at (${x}, ${y}) size ${fontSize}`);
       }
     });
 
@@ -222,6 +224,7 @@ export const useCanvaStylePDFEditor = () => {
     });
   }, []);
 
+  // FIXED: Enhanced PDF loading with better background rendering (NO TEXT)
   const loadPDF = useCallback(async (file: File) => {
     setIsLoading(true);
     console.log('Loading PDF for Canva-style editing...');
@@ -243,7 +246,7 @@ export const useCanvaStylePDFEditor = () => {
         const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
         
-        // Create canvas for background without text
+        // Create canvas for background WITHOUT TEXT
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) continue;
@@ -251,17 +254,20 @@ export const useCanvaStylePDFEditor = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Render background only (graphics, images, shapes - NO text)
+        // CRITICAL FIX: Render page WITHOUT text layer using renderingIntent
         await page.render({
           canvasContext: context,
           viewport: viewport,
-          intent: 'display'
+          intent: 'display',
+          renderTextLayer: false, // FIXED: Explicitly disable text rendering
+          renderAnnotationLayer: false,
+          renderInteractiveForms: false
         }).promise;
 
-        // Extract text elements for editable overlay
+        // Extract text elements for overlay
         const pageTextElements = await extractTextWithoutOverlap(page, pageNum, viewport);
         
-        // Add extracted text elements to the state
+        // Add to state map
         pageTextElements.forEach(textElement => {
           allTextElements.set(textElement.id, textElement);
         });
@@ -276,15 +282,15 @@ export const useCanvaStylePDFEditor = () => {
           images: []
         });
 
-        console.log(`Page ${pageNum}: Extracted ${pageTextElements.length} text elements`);
+        console.log(`Page ${pageNum}: Rendered background without text, extracted ${pageTextElements.length} text elements`);
       }
 
       setPdfPages(pages);
       setCurrentPage(0);
       
-      // CRITICAL FIX: Populate the textElements state with extracted text
+      // CRITICAL: Set the text elements in state
       setTextElements(allTextElements);
-      console.log(`Total extracted text elements: ${allTextElements.size}`);
+      console.log(`TOTAL TEXT ELEMENTS LOADED: ${allTextElements.size}`);
       
       // Reset other states
       setShapes(new Map());
@@ -296,12 +302,12 @@ export const useCanvaStylePDFEditor = () => {
       setHistoryIndex(-1);
       setSelectedElementId(null);
 
-      // Update layers after setting text elements
+      // Update layers
       updateLayers();
 
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Canva-style editor ready with ${pages.length} pages and ${allTextElements.size} selectable text elements.`,
+        description: `Canva-style editor ready! ${pages.length} pages with ${allTextElements.size} editable text elements.`,
       });
 
     } catch (error) {

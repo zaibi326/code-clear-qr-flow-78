@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 
 interface PDFTextElement {
@@ -56,7 +57,7 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
     }
   }, [isEditing]);
 
-  // Enhanced click handler with better event stopping
+  // ENHANCED: Better click handling with proper event delegation
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -157,7 +158,7 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
     }
   };
 
-  // Enhanced styling with better hover and selection states
+  // ENHANCED: Much better styling with proper visual feedback
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${textElement.x * scale}px`,
@@ -174,13 +175,13 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
     opacity: textElement.opacity,
     transform: `rotate(${textElement.rotation}deg)`,
     margin: 0,
-    padding: `${2 * scale}px ${4 * scale}px`,
+    padding: `${4 * scale}px ${6 * scale}px`,
     border: isSelected 
-      ? `${Math.max(2 * scale, 2)}px solid #3B82F6` 
+      ? `${Math.max(3 * scale, 2)}px solid #3B82F6` 
       : isHovered 
-        ? `${Math.max(1 * scale, 1)}px solid #93C5FD` 
-        : `${Math.max(1 * scale, 1)}px solid transparent`,
-    borderRadius: `${4 * scale}px`,
+        ? `${Math.max(2 * scale, 1)}px solid #93C5FD` 
+        : `${Math.max(1 * scale, 1)}px solid rgba(59, 130, 246, 0.3)`,
+    borderRadius: `${6 * scale}px`,
     outline: 'none',
     cursor: isEditing 
       ? 'text' 
@@ -190,35 +191,42 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
           ? 'grab' 
           : 'pointer',
     whiteSpace: 'pre-wrap',
-    lineHeight: '1.2',
+    lineHeight: '1.3',
     zIndex: isSelected ? 1000 : isHovered ? 900 : isEditing ? 1100 : 800,
     boxShadow: isSelected 
       ? `0 4px 12px rgba(59, 130, 246, 0.4)` 
       : isHovered 
-        ? `0 2px 8px rgba(59, 130, 246, 0.2)` 
-        : 'none',
+        ? `0 2px 8px rgba(59, 130, 246, 0.3)` 
+        : `0 1px 3px rgba(0, 0, 0, 0.1)`,
     transition: 'all 0.2s ease',
     userSelect: isEditing ? 'text' : 'none',
-    pointerEvents: 'auto'
+    pointerEvents: 'auto',
+    // CRITICAL: Ensure text appears above PDF background
+    background: isSelected || isHovered 
+      ? 'rgba(255, 255, 255, 0.95)' 
+      : textElement.backgroundColor === 'transparent' 
+        ? 'rgba(255, 255, 255, 0.8)' 
+        : textElement.backgroundColor
   };
 
   const editStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
-    border: `${Math.max(2 * scale, 2)}px solid #3B82F6`,
+    border: `${Math.max(3 * scale, 2)}px solid #3B82F6`,
     resize: 'none',
     zIndex: 1200,
     boxShadow: '0 8px 24px rgba(59, 130, 246, 0.5)',
     cursor: 'text'
   };
 
-  // Debug info (can be removed in production)
-  const debugInfo = process.env.NODE_ENV === 'development' ? {
+  // Debug attributes (remove in production)
+  const debugProps = process.env.NODE_ENV === 'development' ? {
     'data-text-id': textElement.id,
     'data-is-selected': isSelected,
     'data-is-editing': isEditing,
     'data-coordinates': `${textElement.x},${textElement.y}`,
-    'data-scale': scale
+    'data-scale': scale,
+    'data-text': textElement.text
   } : {};
 
   if (isEditing) {
@@ -233,7 +241,7 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
         spellCheck="false"
         autoComplete="off"
         placeholder="Type your text..."
-        {...debugInfo}
+        {...debugProps}
       />
     );
   }
@@ -250,43 +258,60 @@ export const CanvaStyleTextEditor: React.FC<CanvaStyleTextEditorProps> = ({
       onMouseEnter={handleMouseEnter}
       style={baseStyle}
       title={`${textElement.isEdited ? 'Modified' : 'Original'} text • Click to select • Double-click to edit`}
-      {...debugInfo}
+      {...debugProps}
     >
       {textElement.text || 'Empty text'}
       
-      {/* Enhanced selection handles */}
+      {/* ENHANCED: Better selection handles */}
       {isSelected && !isEditing && (
         <>
           <div 
-            className="absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+            className="absolute -top-2 -left-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md"
+            style={{ 
+              transform: `scale(${Math.max(1 / scale, 0.5)})`, 
+              transformOrigin: 'center',
+              zIndex: 1
+            }}
           />
           <div 
-            className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+            className="absolute -top-2 -right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md"
+            style={{ 
+              transform: `scale(${Math.max(1 / scale, 0.5)})`, 
+              transformOrigin: 'center',
+              zIndex: 1
+            }}
           />
           <div 
-            className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+            className="absolute -bottom-2 -left-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md"
+            style={{ 
+              transform: `scale(${Math.max(1 / scale, 0.5)})`, 
+              transformOrigin: 'center',
+              zIndex: 1
+            }}
           />
           <div 
-            className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+            className="absolute -bottom-2 -right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-md"
+            style={{ 
+              transform: `scale(${Math.max(1 / scale, 0.5)})`, 
+              transformOrigin: 'center',
+              zIndex: 1
+            }}
           />
         </>
       )}
       
-      {/* Hover indicator */}
+      {/* ENHANCED: Better hover indicator */}
       {isHovered && !isSelected && !isEditing && (
         <div 
-          className="absolute -top-6 left-0 bg-gray-800 text-white px-2 py-1 rounded text-xs whitespace-nowrap"
+          className="absolute -top-8 left-0 bg-gray-800 text-white px-3 py-1 rounded-md text-sm whitespace-nowrap shadow-lg"
           style={{ 
-            fontSize: `${12 / scale}px`,
-            transform: `scale(${1 / scale})`,
-            transformOrigin: 'left bottom'
+            fontSize: `${Math.max(12 / scale, 10)}px`,
+            transform: `scale(${Math.max(1 / scale, 0.7)})`,
+            transformOrigin: 'left bottom',
+            zIndex: 2
           }}
         >
-          Click to select
+          Click to select • Double-click to edit
         </div>
       )}
     </div>

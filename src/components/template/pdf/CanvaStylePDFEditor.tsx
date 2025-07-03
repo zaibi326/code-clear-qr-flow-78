@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,6 +94,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   // Auto-load PDF from template
   React.useEffect(() => {
     if (template?.file && template.file.type === 'application/pdf') {
+      console.log('Auto-loading PDF from template:', template.name || 'Unnamed PDF');
       loadPDF(template.file);
       setSelectedFile(template.file);
     }
@@ -112,14 +114,15 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     }
   };
 
-  // Enhanced canvas click handler that properly delegates to text elements
+  // ENHANCED: Better canvas click handler with improved delegation
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    // Only handle background clicks, not clicks on text elements
+    // Only handle clicks on the canvas background, not on text elements
     if (event.target !== event.currentTarget) {
-      return; // Let text element handle its own click
+      console.log('Click intercepted by child element, not handling canvas click');
+      return;
     }
 
-    console.log('Canvas background clicked - current tool:', selectedTool);
+    console.log('Canvas background clicked - tool:', selectedTool);
     
     if (pdfPages.length === 0) return;
     
@@ -127,10 +130,13 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     const x = (event.clientX - rect.left) / zoom;
     const y = (event.clientY - rect.top) / zoom;
     
+    console.log('Canvas click coordinates:', { x, y, zoom });
+    
     if (selectedTool === 'text') {
-      console.log('Adding new text at:', x, y);
-      addTextElement(currentPage + 1, x, y, 'Click to edit');
+      console.log('Adding new text element at:', x, y);
+      const newTextId = addTextElement(currentPage + 1, x, y, 'Click to edit');
       setSelectedTool('select');
+      console.log('Created new text element:', newTextId);
     } else if (selectedTool === 'rectangle') {
       addShape(currentPage + 1, 'rectangle', x, y);
       setSelectedTool('select');
@@ -168,13 +174,25 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const currentPageImages = Array.from(images.values()).filter(img => img.pageNumber === currentPage + 1);
   const currentPageQRCodes = Array.from(qrCodes.values()).filter(qr => qr.pageNumber === currentPage + 1);
 
-  // Debug info
+  // ENHANCED: Better debug logging
   React.useEffect(() => {
-    console.log('Current page text elements count:', currentPageTextElements.length);
+    console.log('=== CANVA PDF EDITOR STATE ===');
     console.log('Total text elements in state:', textElements.size);
+    console.log('Current page text elements:', currentPageTextElements.length);
     console.log('Selected element ID:', selectedElementId);
     console.log('Selected element:', selectedElement);
-  }, [currentPageTextElements.length, textElements.size, selectedElementId, selectedElement]);
+    console.log('Current tool:', selectedTool);
+    console.log('PDF pages loaded:', pdfPages.length);
+    if (currentPageTextElements.length > 0) {
+      console.log('Sample text elements:', currentPageTextElements.slice(0, 3).map(el => ({
+        id: el.id,
+        text: el.text.substring(0, 20),
+        x: el.x,
+        y: el.y
+      })));
+    }
+    console.log('=============================');
+  }, [textElements.size, currentPageTextElements.length, selectedElementId, selectedTool, pdfPages.length]);
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -198,13 +216,15 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Canva-Style PDF Editor</h2>
-          <p className="text-sm text-gray-600">Professional PDF editing with advanced features</p>
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 mt-2 space-y-1">
-            <div>Text Elements: {textElements.size}</div>
+          <p className="text-sm text-gray-600">Professional PDF editing with selectable text</p>
+          {/* ENHANCED Debug info */}
+          <div className="text-xs text-gray-500 mt-2 space-y-1 bg-gray-50 p-2 rounded">
+            <div className="font-semibold">Debug Info:</div>
+            <div>Total Text Elements: {textElements.size}</div>
             <div>Current Page Elements: {currentPageTextElements.length}</div>
-            <div>Selected Tool: {selectedTool}</div>
+            <div>Selected Tool: <span className="font-medium text-blue-600">{selectedTool}</span></div>
             <div>Selected Element: {selectedElementId ? 'Yes' : 'None'}</div>
+            <div>PDF Loaded: {pdfPages.length > 0 ? 'Yes' : 'No'}</div>
           </div>
         </div>
 
@@ -585,7 +605,8 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading PDF with Canva-style editing...</p>
+                <p className="text-gray-600">Processing PDF for Canva-style editing...</p>
+                <p className="text-sm text-gray-500">Rendering background without text layer...</p>
                 <p className="text-sm text-gray-500">Extracting selectable text elements...</p>
               </div>
             </div>
@@ -597,7 +618,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Experience professional PDF editing with Canva-style tools and selectable text elements.
+                  Experience true Canva-style editing with selectable text elements overlay.
                 </p>
                 <Button onClick={() => fileInputRef.current?.click()} className="bg-blue-600 hover:bg-blue-700">
                   <Upload className="w-4 h-4 mr-2" />
@@ -618,7 +639,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                 }}
                 onClick={handleCanvasClick}
               >
-                {/* Background image - PDF rendered WITHOUT text layer */}
+                {/* FIXED: Background image - PDF rendered WITHOUT text layer */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
@@ -628,23 +649,14 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                   }}
                 />
                 
-                {/* Debug overlay for text element positions */}
-                {process.env.NODE_ENV === 'development' && currentPageTextElements.map((textElement) => (
-                  <div
-                    key={`debug-${textElement.id}`}
-                    className="absolute border border-red-300 bg-red-100 opacity-30"
-                    style={{
-                      left: `${textElement.x * zoom}px`,
-                      top: `${textElement.y * zoom}px`,
-                      width: `${textElement.width * zoom}px`,
-                      height: `${textElement.height * zoom}px`,
-                      pointerEvents: 'none',
-                      zIndex: 1
-                    }}
-                  />
-                ))}
+                {/* ENHANCED: Debug overlay for development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50">
+                    Page {currentPage + 1} | Elements: {currentPageTextElements.length} | Tool: {selectedTool}
+                  </div>
+                )}
                 
-                {/* Editable text overlay */}
+                {/* CRITICAL: Editable text overlay - ONLY source of visible text */}
                 {currentPageTextElements.map((textElement) => (
                   <CanvaStyleTextEditor
                     key={textElement.id}
@@ -652,7 +664,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                     scale={zoom}
                     isSelected={selectedElementId === textElement.id}
                     onSelect={() => {
-                      console.log('Text element selected:', textElement.id, textElement.text);
+                      console.log('Text element selected via onSelect:', textElement.id, textElement.text);
                       setSelectedElementId(textElement.id);
                     }}
                     onUpdate={updateTextElement}
