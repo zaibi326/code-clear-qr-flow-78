@@ -8,25 +8,27 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useSupabaseAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
-import CreateQRCode from "./pages/CreateQRCode";
-import Dashboard from "./pages/Dashboard";
-import EnhancedDashboard from "./pages/EnhancedDashboard";
-import QuickGenerate from "./pages/QuickGenerate";
-import QRCodeDatabase from "./pages/QRCodeDatabase";
-import TagsManagement from "./pages/TagsManagement";
-import LeadsManagement from "./pages/LeadsManagement";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import TemplateManager from "./pages/TemplateManager";
-import Support from "./pages/Support";
-import DashboardIntegrationsPage from "./pages/DashboardIntegrationsPage";
-import HelpCenter from "./pages/HelpCenter";
-import Integrations from "./pages/Integrations";
-import ListManagement from "./pages/ListManagement";
-import EntryDetail from "./pages/EntryDetail";
 
-const Auth = lazy(() => import("./pages/Login"));
+// Lazy load heavy components
+const CreateQRCode = lazy(() => import("./pages/CreateQRCode"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EnhancedDashboard = lazy(() => import("./pages/EnhancedDashboard"));
+const QuickGenerate = lazy(() => import("./pages/QuickGenerate"));
+const QRCodeDatabase = lazy(() => import("./pages/QRCodeDatabase"));
+const TagsManagement = lazy(() => import("./pages/TagsManagement"));
+const LeadsManagement = lazy(() => import("./pages/LeadsManagement"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
+const TemplateManager = lazy(() => import("./pages/TemplateManager"));
+const Support = lazy(() => import("./pages/Support"));
+const DashboardIntegrationsPage = lazy(() => import("./pages/DashboardIntegrationsPage"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const ListManagement = lazy(() => import("./pages/ListManagement"));
+const EntryDetail = lazy(() => import("./pages/EntryDetail"));
+const Auth = lazy(() => import("./pages/Auth"));
 const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Contact = lazy(() => import("./pages/company/Contact"));
 const Blog = lazy(() => import("./pages/Blog"));
@@ -66,22 +68,134 @@ const App = () => {
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/create" element={<CreateQRCode />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
-                  <Route path="/quick-generate" element={<QuickGenerate />} />
-                  <Route path="/qr-database" element={<QRCodeDatabase />} />
-                  <Route path="/tags" element={<TagsManagement />} />
-                  <Route path="/leads" element={<LeadsManagement />} />
-                  <Route path="/list-management" element={<ListManagement />} />
-                  <Route path="/entry/:entryPath" element={<EntryDetail />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/template-manager" element={<TemplateManager />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/dashboard/integrations" element={<DashboardIntegrationsPage />} />
-                  <Route path="/help-center" element={<HelpCenter />} />
-                  <Route path="/integrations" element={<Integrations />} />
+                  <Route 
+                    path="/create" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading QR creator..." />}>
+                        <CreateQRCode />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading dashboard..." />}>
+                        <Dashboard />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/enhanced-dashboard" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading enhanced dashboard..." />}>
+                        <EnhancedDashboard />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/quick-generate" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading quick generator..." />}>
+                        <QuickGenerate />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/qr-database" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading QR database..." />}>
+                        <QRCodeDatabase />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/tags" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading tags..." />}>
+                        <TagsManagement />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/leads" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading leads..." />}>
+                        <LeadsManagement />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/list-management" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading list management..." />}>
+                        <ListManagement />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/entry/:entryPath" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading entry details..." />}>
+                        <EntryDetail />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/analytics" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading analytics..." />}>
+                        <Analytics />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/settings" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading settings..." />}>
+                        <Settings />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/template-manager" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading template manager..." />}>
+                        <TemplateManager />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/support" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading support..." />}>
+                        <Support />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard/integrations" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading integrations..." />}>
+                        <DashboardIntegrationsPage />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/help-center" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading help center..." />}>
+                        <HelpCenter />
+                      </Suspense>
+                    } 
+                  />
+                  <Route 
+                    path="/integrations" 
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading integrations..." />}>
+                        <Integrations />
+                      </Suspense>
+                    } 
+                  />
                   <Route
                     path="/auth"
                     element={
@@ -95,6 +209,14 @@ const App = () => {
                     element={
                       <Suspense fallback={<LoadingFallback message="Loading login page..." />}>
                         <Login />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <Suspense fallback={<LoadingFallback message="Loading registration..." />}>
+                        <Register />
                       </Suspense>
                     }
                   />

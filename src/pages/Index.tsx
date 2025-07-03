@@ -23,29 +23,6 @@ const LoadingFallback = () => (
   </div>
 );
 
-const ErrorFallback = ({ error }: { error?: string }) => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-red-900 to-purple-900">
-    <div className="text-center p-8">
-      <h2 className="text-2xl font-bold text-white mb-4">Connection Error</h2>
-      <p className="text-gray-300 mb-4">
-        {error || 'Unable to connect. You can still browse the landing page.'}
-      </p>
-      <button 
-        onClick={() => window.location.reload()} 
-        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 mr-4"
-      >
-        Retry
-      </button>
-      <button 
-        onClick={() => window.location.href = '/login'} 
-        className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700"
-      >
-        Go to Login
-      </button>
-    </div>
-  </div>
-);
-
 const LandingPageContent = () => (
   <div className="min-h-screen">
     {/* Animated Background */}
@@ -109,12 +86,6 @@ const LandingPageContent = () => (
           <NextGenCTA />
         </ErrorBoundary>
       </div>
-      
-      <div id="support">
-        <ErrorBoundary fallback={<div className="p-4 text-center text-red-600">Support section error</div>}>
-          <NextGenCTA />
-        </ErrorBoundary>
-      </div>
     </div>
   </div>
 );
@@ -134,7 +105,8 @@ const Index = () => {
   useEffect(() => {
     console.log('Index: useEffect triggered', { user: !!user, userRole, loading });
     
-    if (!loading && user && !error) {
+    // Only redirect if we have a confirmed authenticated user and role
+    if (!loading && user && !error && userRole) {
       console.log('Index: User is authenticated, checking role for redirect');
       console.log('User role:', userRole);
       
@@ -142,7 +114,7 @@ const Index = () => {
       const redirectTimer = setTimeout(() => {
         if (userRole === 'admin' || userRole === 'super_admin') {
           console.log('Redirecting admin user to admin dashboard');
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/admin', { replace: true });
         } else {
           console.log('Redirecting regular user to dashboard');
           navigate('/dashboard', { replace: true });
@@ -153,30 +125,14 @@ const Index = () => {
     }
   }, [user, userRole, loading, error, navigate]);
 
-  // Show loading screen with timeout protection
+  // Show loading screen only for a short period
   if (loading && !error) {
     console.log('Index: Showing loading screen');
     return <LoadingFallback />;
   }
 
-  // Show error fallback if there's an authentication error
-  if (error && !user) {
-    console.log('Index: Showing error fallback due to:', error);
-    return <ErrorFallback error={error} />;
-  }
-
-  // Show landing page for unauthenticated users or if auth fails
-  if (!user || error) {
-    console.log('Index: Showing landing page for unauthenticated user');
-    return (
-      <ErrorBoundary>
-        <LandingPageContent />
-      </ErrorBoundary>
-    );
-  }
-
-  // Fallback: should not reach here, but show landing page just in case
-  console.log('Index: Fallback render - showing landing page');
+  // Always show landing page for unauthenticated users or if there are issues
+  console.log('Index: Showing landing page');
   return (
     <ErrorBoundary>
       <LandingPageContent />
