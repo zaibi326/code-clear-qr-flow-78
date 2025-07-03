@@ -168,20 +168,16 @@ export const useCanvaStylePDFEditor = () => {
         const [scaleX, skewY, skewX, scaleY, translateX, translateY] = transform;
         const fontSize = Math.abs(scaleY);
         
-        // FIXED: Improved coordinate mapping for better positioning
         const x = translateX;
-        const y = viewport.height - translateY - fontSize; // Correct Y coordinate mapping
+        const y = viewport.height - translateY - fontSize;
         
-        // Better width calculation based on actual text metrics
         const textWidth = Math.max(item.width || item.str.length * fontSize * 0.6, item.str.length * fontSize * 0.5);
-        const textHeight = fontSize * 1.3; // Slightly increased for better coverage
+        const textHeight = fontSize * 1.3;
         
-        // Enhanced font detection
         const fontName = item.fontName || 'Arial';
         const isBold = fontName.toLowerCase().includes('bold');
         const isItalic = fontName.toLowerCase().includes('italic');
         
-        // Color extraction with fallback
         let textColor = '#000000';
         if (item.color && Array.isArray(item.color)) {
           const r = Math.round((item.color[0] || 0) * 255);
@@ -225,97 +221,119 @@ export const useCanvaStylePDFEditor = () => {
     });
   }, []);
 
-  // FIXED: Enhanced PDF loading with better background rendering (NO TEXT)
+  // FIXED: Enhanced PDF loading with better error handling and logging
   const loadPDF = useCallback(async (file: File) => {
     setIsLoading(true);
-    console.log('Loading PDF for Canva-style editing...');
+    console.log('Starting PDF load process for:', file.name);
     
     try {
+      // Reset states first
+      setPdfDocument(null);
+      setOriginalPdfBytes(null);
+      setPdfPages([]);
+      setTextElements(new Map());
+      setShapes(new Map());
+      setImages(new Map());
+      setQrCodes(new Map());
+      setCurrentPage(0);
+
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       setOriginalPdfBytes(uint8Array);
+      console.log('PDF file loaded into memory, size:', uint8Array.length);
 
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      // Initialize PDF.js with proper worker
+      if (typeof window !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+      }
+
+      const loadingTask = pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        verbosity: 0
+      });
       const pdfDoc = await loadingTask.promise;
       setPdfDocument(pdfDoc);
+      console.log('PDF document loaded, pages:', pdfDoc.numPages);
 
       const pages: PDFPageData[] = [];
       const allTextElements = new Map<string, PDFTextElement>();
-      const scale = 2.0; // High quality rendering
+      const scale = 1.5; // Reasonable scale for display
 
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        console.log(`Processing page ${pageNum}...`);
         const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
         
-        // Create canvas for background WITHOUT TEXT
+        // Create canvas for background rendering
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        if (!context) continue;
+        if (!context) {
+          throw new Error('Could not get canvas context');
+        }
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // CRITICAL FIX: Render page WITHOUT text layer
-        await page.render({
+        // Render page to canvas
+        const renderContext = {
           canvasContext: context,
-          viewport: viewport,
-          intent: 'display'
-          // Removed invalid renderTextLayer property
-        }).promise;
+          viewport: viewport
+        };
 
-        // Extract text elements for overlay
+        await page.render(renderContext).promise;
+        console.log(`Page ${pageNum} rendered to canvas`);
+
+        // Extract text elements
         const pageTextElements = await extractTextWithoutOverlap(page, pageNum, viewport);
+        console.log(`Page ${pageNum}: extracted ${pageTextElements.length} text elements`);
         
         // Add to state map
         pageTextElements.forEach(textElement => {
           allTextElements.set(textElement.id, textElement);
         });
 
-        pages.push({
+        const pageData: PDFPageData = {
           pageNumber: pageNum,
           width: viewport.width,
           height: viewport.height,
-          backgroundImage: canvas.toDataURL('image/png', 0.95),
+          backgroundImage: canvas.toDataURL('image/png', 0.9),
           textElements: pageTextElements,
           shapes: [],
           images: []
-        });
+        };
 
-        console.log(`Page ${pageNum}: Rendered background without text, extracted ${pageTextElements.length} text elements`);
+        pages.push(pageData);
+        console.log(`Page ${pageNum} data prepared, background image length:`, pageData.backgroundImage.length);
       }
 
+      console.log('All pages processed, setting state...');
       setPdfPages(pages);
+      setTextElements(allTextElements);
       setCurrentPage(0);
       
-      // CRITICAL: Set the text elements in state
-      setTextElements(allTextElements);
-      console.log(`TOTAL TEXT ELEMENTS LOADED: ${allTextElements.size}`);
-      
-      // Reset other states
-      setShapes(new Map());
-      setImages(new Map());
-      setQrCodes(new Map());
-      setLayers([]);
-      setMaxZIndex(100);
-      setHistory([]);
-      setHistoryIndex(-1);
-      setSelectedElementId(null);
-
-      // Update layers
+      // Initialize layers
       updateLayers();
 
+      console.log(`PDF loading complete! ${pages.length} pages, ${allTextElements.size} text elements`);
+      
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Canva-style editor ready! ${pages.length} pages with ${allTextElements.size} editable text elements.`,
+        description: `Ready for editing! ${pages.length} pages with ${allTextElements.size} text elements.`,
       });
 
     } catch (error) {
       console.error('Error loading PDF:', error);
       toast({
         title: 'Error Loading PDF',
-        description: 'Failed to load PDF file. Please try again.',
+        description: `Failed to load PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
+      
+      // Reset states on error
+      setPdfPages([]);
+      setTextElements(new Map());
+      setPdfDocument(null);
+      setOriginalPdfBytes(null);
     } finally {
       setIsLoading(false);
     }
