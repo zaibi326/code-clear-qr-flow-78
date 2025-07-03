@@ -113,27 +113,36 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     }
   };
 
+  // Enhanced canvas click handler that doesn't interfere with text selection
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (pdfPages.length === 0) return;
-    
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / zoom;
-    const y = (event.clientY - rect.top) / zoom;
-    
-    if (selectedTool === 'text') {
-      addTextElement(currentPage + 1, x, y, 'Click to edit');
-      setSelectedTool('select');
-    } else if (selectedTool === 'rectangle') {
-      addShape(currentPage + 1, 'rectangle', x, y);
-      setSelectedTool('select');
-    } else if (selectedTool === 'circle') {
-      addShape(currentPage + 1, 'circle', x, y);
-      setSelectedTool('select');
-    } else if (selectedTool === 'qr') {
-      addQRCode(currentPage + 1, x, y, 'https://example.com');
-      setSelectedTool('select');
-    } else {
-      setSelectedElementId(null);
+    // Only handle clicks if they're directly on the canvas background
+    if (event.target === event.currentTarget) {
+      console.log('Canvas background clicked');
+      
+      if (pdfPages.length === 0) return;
+      
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / zoom;
+      const y = (event.clientY - rect.top) / zoom;
+      
+      if (selectedTool === 'text') {
+        console.log('Adding text at:', x, y);
+        addTextElement(currentPage + 1, x, y, 'Click to edit');
+        setSelectedTool('select');
+      } else if (selectedTool === 'rectangle') {
+        addShape(currentPage + 1, 'rectangle', x, y);
+        setSelectedTool('select');
+      } else if (selectedTool === 'circle') {
+        addShape(currentPage + 1, 'circle', x, y);
+        setSelectedTool('select');
+      } else if (selectedTool === 'qr') {
+        addQRCode(currentPage + 1, x, y, 'https://example.com');
+        setSelectedTool('select');
+      } else if (selectedTool === 'select') {
+        // Only deselect if clicking on empty canvas
+        console.log('Deselecting element');
+        setSelectedElementId(null);
+      }
     }
   };
 
@@ -145,6 +154,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     }
   };
 
+  // Enhanced selected element detection with proper type checking
   const selectedElement = selectedElementId ? 
     textElements.get(selectedElementId) || 
     shapes.get(selectedElementId) || 
@@ -582,12 +592,13 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
           ) : currentPageData ? (
             <div className="flex items-center justify-center min-h-full">
               <div 
-                className="bg-white rounded-lg shadow-lg relative cursor-crosshair pdf-canvas"
+                className="bg-white rounded-lg shadow-lg relative pdf-canvas"
                 style={{
                   width: currentPageData.width * zoom,
                   height: currentPageData.height * zoom,
                   minWidth: 'fit-content',
-                  minHeight: 'fit-content'
+                  minHeight: 'fit-content',
+                  cursor: selectedTool === 'select' ? 'default' : 'crosshair'
                 }}
                 onClick={handleCanvasClick}
               >
@@ -596,7 +607,8 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
                     background: `url(${currentPageData.backgroundImage}) no-repeat center center`,
-                    backgroundSize: 'cover'
+                    backgroundSize: 'cover',
+                    pointerEvents: 'none'
                   }}
                 />
                 
@@ -607,7 +619,10 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                     textElement={textElement}
                     scale={zoom}
                     isSelected={selectedElementId === textElement.id}
-                    onSelect={() => setSelectedElementId(textElement.id)}
+                    onSelect={() => {
+                      console.log('Selecting text element:', textElement.id);
+                      setSelectedElementId(textElement.id);
+                    }}
                     onUpdate={updateTextElement}
                   />
                 ))}
