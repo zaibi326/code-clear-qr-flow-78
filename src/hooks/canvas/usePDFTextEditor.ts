@@ -132,12 +132,10 @@ export const usePDFTextEditor = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Render with text layer disabled to prevent duplication
+        // Render with only visual content - no text layer or annotations
         await page.render({
           canvasContext: context,
-          viewport: viewport,
-          textLayerMode: 0, // Disable text layer rendering
-          annotationMode: 0 // Disable annotations
+          viewport: viewport
         }).promise;
 
         // Extract text blocks separately for editable overlay
