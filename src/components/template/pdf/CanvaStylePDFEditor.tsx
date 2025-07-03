@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
   const [activeSidebarTab, setActiveSidebarTab] = useState('tools');
+  const [selectedTool, setSelectedTool] = useState<'select' | 'text' | 'rectangle' | 'circle' | 'image' | 'qr' | 'triangle' | 'star'>('select');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const {
@@ -66,8 +68,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     images,
     selectedElementId,
     setSelectedElementId,
-    selectedTool,
-    setSelectedTool,
     canUndo,
     canRedo,
     loadPDF,
@@ -148,7 +148,8 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const selectedElement = selectedElementId ? 
     textElements.get(selectedElementId) || 
     shapes.get(selectedElementId) || 
-    images.get(selectedElementId) : null;
+    images.get(selectedElementId) ||
+    qrCodes.get(selectedElementId) : null;
 
   const currentPageData = pdfPages[currentPage];
   const currentPageTextElements = Array.from(textElements.values()).filter(el => el.pageNumber === currentPage + 1);
@@ -396,14 +397,14 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
               )}
 
               {/* QR Code Properties */}
-              {selectedElement && 'content' in selectedElement && (
+              {selectedElement && 'content' in selectedElement && 'foregroundColor' in selectedElement && (
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-gray-700">QR Code Properties</Label>
                   <div>
                     <Label className="text-xs text-gray-600">Content</Label>
                     <Input
                       type="text"
-                      value={selectedElement.content}
+                      value={String(selectedElement.content)}
                       onChange={(e) => updateQRCode(selectedElementId!, { content: e.target.value })}
                       className="h-8"
                       placeholder="Enter URL or text"

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -292,6 +293,67 @@ export const useCanvaStylePDFEditor = () => {
     }
   }, [extractTextWithoutOverlap]);
 
+  // Enhanced layer management
+  const updateLayers = useCallback(() => {
+    const newLayers: Layer[] = [];
+    let zIndex = 1;
+
+    // Add text layers
+    Array.from(textElements.values()).forEach(element => {
+      newLayers.push({
+        id: element.id,
+        name: element.text.substring(0, 20) + (element.text.length > 20 ? '...' : ''),
+        type: 'text',
+        visible: true,
+        locked: false,
+        pageNumber: element.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add shape layers
+    Array.from(shapes.values()).forEach(shape => {
+      newLayers.push({
+        id: shape.id,
+        name: `${shape.type.charAt(0).toUpperCase() + shape.type.slice(1)}`,
+        type: 'shape',
+        visible: true,
+        locked: false,
+        pageNumber: shape.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add image layers
+    Array.from(images.values()).forEach(image => {
+      newLayers.push({
+        id: image.id,
+        name: 'Image',
+        type: 'image',
+        visible: true,
+        locked: false,
+        pageNumber: image.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add QR code layers
+    Array.from(qrCodes.values()).forEach(qr => {
+      newLayers.push({
+        id: qr.id,
+        name: qr.content.substring(0, 15) + (qr.content.length > 15 ? '...' : ''),
+        type: 'qr',
+        visible: true,
+        locked: false,
+        pageNumber: qr.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    setLayers(newLayers);
+    setMaxZIndex(zIndex);
+  }, [textElements, shapes, images, qrCodes]);
+
   // Text operations
   const updateTextElement = useCallback((elementId: string, updates: Partial<PDFTextElement>) => {
     setTextElements(prev => {
@@ -446,67 +508,6 @@ export const useCanvaStylePDFEditor = () => {
     });
   }, [saveHistoryState, updateLayers]);
 
-  // Enhanced layer management
-  const updateLayers = useCallback(() => {
-    const newLayers: Layer[] = [];
-    let zIndex = 1;
-
-    // Add text layers
-    Array.from(textElements.values()).forEach(element => {
-      newLayers.push({
-        id: element.id,
-        name: element.text.substring(0, 20) + (element.text.length > 20 ? '...' : ''),
-        type: 'text',
-        visible: true,
-        locked: false,
-        pageNumber: element.pageNumber,
-        zIndex: zIndex++
-      });
-    });
-
-    // Add shape layers
-    Array.from(shapes.values()).forEach(shape => {
-      newLayers.push({
-        id: shape.id,
-        name: `${shape.type.charAt(0).toUpperCase() + shape.type.slice(1)}`,
-        type: 'shape',
-        visible: true,
-        locked: false,
-        pageNumber: shape.pageNumber,
-        zIndex: zIndex++
-      });
-    });
-
-    // Add image layers
-    Array.from(images.values()).forEach(image => {
-      newLayers.push({
-        id: image.id,
-        name: 'Image',
-        type: 'image',
-        visible: true,
-        locked: false,
-        pageNumber: image.pageNumber,
-        zIndex: zIndex++
-      });
-    });
-
-    // Add QR code layers
-    Array.from(qrCodes.values()).forEach(qr => {
-      newLayers.push({
-        id: qr.id,
-        name: qr.content.substring(0, 15) + (qr.content.length > 15 ? '...' : ''),
-        type: 'qr',
-        visible: true,
-        locked: false,
-        pageNumber: qr.pageNumber,
-        zIndex: zIndex++
-      });
-    });
-
-    setLayers(newLayers);
-    setMaxZIndex(zIndex);
-  }, [textElements, shapes, images, qrCodes]);
-
   // Enhanced delete operations
   const deleteElement = useCallback((elementId: string) => {
     setTextElements(prev => {
@@ -625,88 +626,6 @@ export const useCanvaStylePDFEditor = () => {
     updateLayers();
   }, [textElements, shapes, images, qrCodes, saveHistoryState, updateLayers]);
 
-  // Advanced export functionality
-  const exportWithOptions = useCallback(async (options: ExportOptions) => {
-    if (!originalPdfBytes && !pdfPages.length) {
-      toast({
-        title: 'Nothing to Export',
-        description: 'No content available for export.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsExporting(true);
-    
-    try {
-      if (options.format === 'pdf') {
-        await exportPDF();
-      } else {
-        // Export as image
-        const canvasElement = document.querySelector('.pdf-canvas') as HTMLElement;
-        if (canvasElement) {
-          const canvas = await html2canvas(canvasElement, {
-            scale: options.resolution === 'print' ? 4 : 
-                   options.resolution === 'high' ? 2 : 
-                   options.resolution === 'medium' ? 1.5 : 1,
-            useCORS: true,
-            backgroundColor: '#ffffff'
-          });
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `exported-document.${options.format}`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }
-          }, `image/${options.format}`, options.quality / 100);
-
-          toast({
-            title: 'Export Successful',
-            description: `Document exported as ${options.format.toUpperCase()}.`,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Export error:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to export document. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [originalPdfBytes, pdfPages, exportPDF]);
-
-  // Undo/Redo operations
-  const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const prevState = history[historyIndex - 1];
-      setTextElements(new Map(prevState.textElements));
-      setShapes(new Map(prevState.shapes));
-      setImages(new Map(prevState.images));
-      setQrCodes(new Map(prevState.qrCodes));
-      setHistoryIndex(prev => prev - 1);
-    }
-  }, [history, historyIndex]);
-
-  const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const nextState = history[historyIndex + 1];
-      setTextElements(new Map(nextState.textElements));
-      setShapes(new Map(nextState.shapes));
-      setImages(new Map(nextState.images));
-      setQrCodes(new Map(nextState.qrCodes));
-      setHistoryIndex(prev => prev + 1);
-    }
-  }, [history, historyIndex]);
-
   // Export functionality
   const exportPDF = useCallback(async () => {
     if (!originalPdfBytes || (!textElements.size && !shapes.size && !images.size && !qrCodes.size)) {
@@ -799,6 +718,88 @@ export const useCanvaStylePDFEditor = () => {
       });
     }
   }, [originalPdfBytes, textElements, shapes, images, qrCodes]);
+
+  // Advanced export functionality
+  const exportWithOptions = useCallback(async (options: ExportOptions) => {
+    if (!originalPdfBytes && !pdfPages.length) {
+      toast({
+        title: 'Nothing to Export',
+        description: 'No content available for export.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      if (options.format === 'pdf') {
+        await exportPDF();
+      } else {
+        // Export as image
+        const canvasElement = document.querySelector('.pdf-canvas') as HTMLElement;
+        if (canvasElement) {
+          const canvas = await html2canvas(canvasElement, {
+            scale: options.resolution === 'print' ? 4 : 
+                   options.resolution === 'high' ? 2 : 
+                   options.resolution === 'medium' ? 1.5 : 1,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `exported-document.${options.format}`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }
+          }, `image/${options.format}`, options.quality / 100);
+
+          toast({
+            title: 'Export Successful',
+            description: `Document exported as ${options.format.toUpperCase()}.`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export document. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [originalPdfBytes, pdfPages, exportPDF]);
+
+  // Undo/Redo operations
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevState = history[historyIndex - 1];
+      setTextElements(new Map(prevState.textElements));
+      setShapes(new Map(prevState.shapes));
+      setImages(new Map(prevState.images));
+      setQrCodes(new Map(prevState.qrCodes));
+      setHistoryIndex(prev => prev - 1);
+    }
+  }, [history, historyIndex]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      setTextElements(new Map(nextState.textElements));
+      setShapes(new Map(nextState.shapes));
+      setImages(new Map(nextState.images));
+      setQrCodes(new Map(nextState.qrCodes));
+      setHistoryIndex(prev => prev + 1);
+    }
+  }, [history, historyIndex]);
 
   return {
     // State
