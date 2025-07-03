@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 
 interface PDFWord {
@@ -74,23 +75,24 @@ export const EditableWord: React.FC<EditableWordProps> = ({
   const handleFinishEditing = () => {
     setIsEditing(false);
     if (localText !== word.text && localText.trim() !== '') {
-      // Calculate new dimensions based on text content
+      // Calculate new dimensions based on text content with improved accuracy
       const lines = localText.split('\n');
       const maxLineLength = Math.max(...lines.map(line => line.length));
-      const charWidth = word.fontSize * 0.55 * scale;
-      const lineHeight = word.fontSize * 1.2 * scale;
       
-      const newWidth = maxLineLength * charWidth;
-      const newHeight = lines.length * lineHeight;
+      // Enhanced character width calculation based on font size
+      const charWidth = word.fontSize * 0.6 * scale; // Improved from 0.55 to 0.6
+      const lineHeight = word.fontSize * 1.15 * scale; // Improved from 1.2 to 1.15
+      
+      const newWidth = Math.max(maxLineLength * charWidth, word.width * scale);
+      const newHeight = Math.max(lines.length * lineHeight, word.height * scale);
       
       onUpdate(word.id, { 
         text: localText.trim(),
-        width: newWidth,
-        height: newHeight,
+        width: newWidth / scale, // Convert back to original scale
+        height: newHeight / scale,
         isEdited: true
       });
     } else if (localText.trim() === '') {
-      // If text is empty, mark for deletion
       onDelete?.(word.id);
     }
   };
@@ -99,7 +101,6 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     e.stopPropagation();
     
     if (e.key === 'Enter' && e.ctrlKey) {
-      // Ctrl+Enter to finish editing
       e.preventDefault();
       handleFinishEditing();
     } else if (e.key === 'Escape') {
@@ -109,7 +110,6 @@ export const EditableWord: React.FC<EditableWordProps> = ({
       e.preventDefault();
       onDelete(word.id);
     }
-    // Allow normal Enter key for line breaks in textarea
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -117,7 +117,22 @@ export const EditableWord: React.FC<EditableWordProps> = ({
   };
 
   const getFontFamily = () => {
-    return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    // Use system fonts that closely match common PDF fonts for better consistency
+    const fontMap: { [key: string]: string } = {
+      'helvetica': '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      'arial': 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+      'times': '"Times New Roman", Times, serif',
+      'courier': '"Courier New", Courier, monospace'
+    };
+    
+    const fontName = word.fontName?.toLowerCase() || '';
+    for (const [key, value] of Object.entries(fontMap)) {
+      if (fontName.includes(key)) {
+        return value;
+      }
+    }
+    
+    return 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
   };
 
   const colorToHex = (color: { r: number; g: number; b: number }) => {
@@ -127,7 +142,7 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     return `#${r}${g}${b}`;
   };
 
-  // Simplified styling with consistent z-index
+  // Enhanced styling with better font rendering and positioning
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${word.x * scale}px`,
@@ -138,7 +153,7 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     fontStyle: word.fontStyle === 'italic' ? 'italic' : 'normal',
     color: colorToHex(word.color),
     margin: 0,
-    padding: '2px',
+    padding: '1px 2px', // Reduced padding for better precision
     border: 'none',
     outline: 'none',
     background: 'transparent',
@@ -146,31 +161,37 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     whiteSpace: 'pre-wrap',
     minWidth: `${Math.max(word.width * scale, 50)}px`,
     minHeight: `${word.height * scale}px`,
-    lineHeight: `${word.fontSize * 1.2 * scale}px`,
+    lineHeight: `${word.fontSize * 1.15 * scale}px`, // Improved line height
     textRendering: 'optimizeLegibility' as const,
     WebkitFontSmoothing: 'antialiased' as const,
     MozOsxFontSmoothing: 'grayscale' as const,
     direction: word.dir as 'ltr' | 'rtl' | undefined,
-    userSelect: 'none'
+    userSelect: 'none',
+    // Enhanced text rendering for PDF accuracy
+    letterSpacing: 'normal',
+    wordSpacing: 'normal',
+    textAlign: 'left'
   };
 
   const editStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
     border: '2px solid #3B82F6',
-    borderRadius: '4px',
-    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+    borderRadius: '3px',
+    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.25)',
     userSelect: 'text',
     cursor: 'text',
     resize: 'none',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    zIndex: 100 // Ensure editing text is on top
   };
 
   const hoverStyle: React.CSSProperties = {
     ...baseStyle,
-    backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '3px'
+    backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.08)' : 'rgba(59, 130, 246, 0.08)',
+    border: '1px solid rgba(59, 130, 246, 0.2)',
+    borderRadius: '2px',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
   };
 
   return (
@@ -186,7 +207,8 @@ export const EditableWord: React.FC<EditableWordProps> = ({
           left: '-2000px',
           whiteSpace: 'pre-wrap',
           width: 'auto',
-          height: 'auto'
+          height: 'auto',
+          padding: '1px 2px'
         }}
         aria-hidden="true"
       />
@@ -201,7 +223,7 @@ export const EditableWord: React.FC<EditableWordProps> = ({
           style={editStyle}
           spellCheck="false"
           autoComplete="off"
-          placeholder="Type your text here... (Ctrl+Enter to save, Esc to cancel)"
+          placeholder="Edit text... (Ctrl+Enter to save, Esc to cancel)"
         />
       ) : (
         <div
@@ -210,12 +232,12 @@ export const EditableWord: React.FC<EditableWordProps> = ({
           onMouseLeave={() => setIsHovered(false)}
           style={isHovered ? hoverStyle : {
             ...baseStyle,
-            backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
+            backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.03)' : 'transparent'
           }}
-          title={`Double-click to edit • Original: "${word.originalText || word.text}" • Ctrl+Enter to save`}
+          title={`Double-click to edit${word.originalText && word.originalText !== word.text ? ` • Original: "${word.originalText}"` : ''}`}
         >
           {word.text.split('\n').map((line, index) => (
-            <div key={index} style={{ minHeight: `${word.fontSize * 1.2 * scale}px` }}>
+            <div key={index} style={{ minHeight: `${word.fontSize * 1.15 * scale}px` }}>
               {line}
               {word.spaceAfter && index === word.text.split('\n').length - 1 && '\u00A0'}
             </div>

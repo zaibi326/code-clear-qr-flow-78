@@ -22,7 +22,8 @@ import {
   Copy,
   Trash2,
   QrCode,
-  Eye
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { usePDFWordEditor } from '@/hooks/canvas/usePDFWordEditor';
 import { EditableWord } from './EditableWord';
@@ -100,7 +101,8 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
     elementId?: string;
   }>({ isDragging: false, startPos: { x: 0, y: 0 } });
   const [showQRGenerator, setShowQRGenerator] = useState(false);
-  const [showOriginalLayer, setShowOriginalLayer] = useState(false); // Toggle for original PDF layer
+  // Changed default to false - no original layer showing by default
+  const [showOriginalLayer, setShowOriginalLayer] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -121,7 +123,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
     if (pdfPages.length > 0 && !isLoading) {
       toast({
         title: 'PDF Loaded Successfully',
-        description: 'Ready for Canva-style editing! Add text, images, shapes, and annotations.',
+        description: 'Ready for editing! PDF content extracted and ready for modification.',
       });
     }
   }, [pdfPages.length, isLoading]);
@@ -720,13 +722,14 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            {/* Original Layer Toggle */}
+            {/* Original Layer Toggle - Now with clearer labeling */}
             <Button
               variant={showOriginalLayer ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOriginalLayer(!showOriginalLayer)}
+              title={showOriginalLayer ? "Hide original PDF background" : "Show original PDF background for reference"}
             >
-              <Eye className="w-4 h-4 mr-1" />
+              {showOriginalLayer ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
               {showOriginalLayer ? 'Hide' : 'Show'} Original
             </Button>
             
@@ -776,8 +779,8 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Processing PDF for advanced editing...</p>
-                <p className="text-sm text-gray-500">Preparing Canva-style editor with word-level editing</p>
+                <p className="text-gray-600">Processing PDF for editing...</p>
+                <p className="text-sm text-gray-500">Extracting text and layout with precise positioning</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -785,10 +788,10 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
               <div className="text-center p-8 max-w-md">
                 <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-700 mb-2">
-                  Upload a PDF for Canva-Style Editing
+                  Upload a PDF for Editing
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Your PDF will be processed to enable advanced editing with text, images, shapes, QR codes, and annotations.
+                  Your PDF will be processed for editing with exact layout preservation.
                 </p>
                 <Button
                   onClick={triggerFileUpload}
@@ -816,17 +819,17 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
-                {/* Clean background - either original PDF or plain white */}
+                {/* Background Layer - only show when toggled ON */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
                     background: showOriginalLayer 
                       ? `url(${currentPageData.backgroundImage}) no-repeat center center`
                       : '#ffffff',
-                    backgroundSize: 'cover'
+                    backgroundSize: showOriginalLayer ? 'cover' : 'auto'
                   }}
                 >
-                  {/* Complete text masking layer - only when showing original */}
+                  {/* Text masking layer - only when showing original background */}
                   {showOriginalLayer && unifiedWords.map((word) => (
                     <div
                       key={`mask-${word.id}`}
@@ -836,7 +839,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                         top: Math.max(0, word.y * zoom - 3),
                         width: (word.width * zoom) + 6,
                         height: (word.height * zoom) + 6,
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
                         zIndex: 1,
                         pointerEvents: 'none'
                       }}
@@ -844,7 +847,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                   ))}
                 </div>
                 
-                {/* Editable words layer - always visible */}
+                {/* Editable words layer - ALWAYS visible with perfect positioning */}
                 <div className="absolute inset-0" style={{ zIndex: 10 }}>
                   {unifiedWords.map((word) => (
                     <EditableWord
@@ -862,14 +865,21 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                   {currentPageElements.map(element => renderCanvaElement(element))}
                 </div>
 
-                {/* Page info */}
+                {/* Status indicator */}
                 <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 30 }}>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs text-gray-500">
                       Page {currentPage + 1}/{pdfPages.length} • {unifiedWords.length} words • {currentPageElements.length} elements
                     </span>
                     {!showOriginalLayer && (
-                      <span className="text-xs text-green-600 font-medium">Clean Mode</span>
+                      <span className="text-xs text-green-600 font-medium">
+                        ✓ Clean Edit Mode
+                      </span>
+                    )}
+                    {showOriginalLayer && (
+                      <span className="text-xs text-blue-600 font-medium">
+                        📄 Reference Mode
+                      </span>
                     )}
                   </div>
                 </div>
