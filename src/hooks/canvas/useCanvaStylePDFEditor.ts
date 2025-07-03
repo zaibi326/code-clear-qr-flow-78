@@ -1,8 +1,8 @@
-
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
+import html2canvas from 'html2canvas';
 
 interface PDFTextElement {
   id: string;
@@ -52,6 +52,38 @@ interface PDFImage {
   pageNumber: number;
 }
 
+interface PDFQRCode {
+  id: string;
+  content: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  opacity: number;
+  rotation: number;
+  pageNumber: number;
+  backgroundColor: string;
+  foregroundColor: string;
+}
+
+interface Layer {
+  id: string;
+  name: string;
+  type: 'text' | 'shape' | 'image' | 'qr';
+  visible: boolean;
+  locked: boolean;
+  pageNumber: number;
+  zIndex: number;
+}
+
+interface ExportOptions {
+  format: 'pdf' | 'png' | 'jpg';
+  quality: number;
+  resolution: 'low' | 'medium' | 'high' | 'print';
+  pages: 'all' | 'current' | 'range';
+  pageRange?: string;
+}
+
 interface PDFPageData {
   pageNumber: number;
   width: number;
@@ -66,6 +98,7 @@ interface HistoryState {
   textElements: Map<string, PDFTextElement>;
   shapes: Map<string, PDFShape>;
   images: Map<string, PDFImage>;
+  qrCodes: Map<string, PDFQRCode>;
 }
 
 export const useCanvaStylePDFEditor = () => {
@@ -88,11 +121,18 @@ export const useCanvaStylePDFEditor = () => {
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
+  // New state for Phase 3 & 4 features
+  const [qrCodes, setQrCodes] = useState<Map<string, PDFQRCode>>(new Map());
+  const [layers, setLayers] = useState<Layer[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [maxZIndex, setMaxZIndex] = useState(100);
+
   const saveHistoryState = useCallback(() => {
     const state: HistoryState = {
       textElements: new Map(textElements),
       shapes: new Map(shapes),
-      images: new Map(images)
+      images: new Map(images),
+      qrCodes: new Map(qrCodes)
     };
     
     const newHistory = history.slice(0, historyIndex + 1);
@@ -106,7 +146,7 @@ export const useCanvaStylePDFEditor = () => {
     }
     
     setHistory(newHistory);
-  }, [textElements, shapes, images, history, historyIndex]);
+  }, [textElements, shapes, images, qrCodes, history, historyIndex]);
 
   const extractTextWithoutOverlap = useCallback(async (page: any, pageNumber: number, viewport: any): Promise<PDFTextElement[]> => {
     const textContent = await page.getTextContent({
@@ -229,6 +269,9 @@ export const useCanvaStylePDFEditor = () => {
       setTextElements(new Map());
       setShapes(new Map());
       setImages(new Map());
+      setQrCodes(new Map());
+      setLayers([]);
+      setMaxZIndex(100);
       setHistory([]);
       setHistoryIndex(-1);
 
@@ -359,7 +402,112 @@ export const useCanvaStylePDFEditor = () => {
     });
   }, [saveHistoryState]);
 
-  // Delete operations
+  // QR Code operations
+  const addQRCode = useCallback((pageNumber: number, x: number, y: number, content: string = 'https://example.com') => {
+    const newId = `qr-${Date.now()}`;
+    const newQRCode: PDFQRCode = {
+      id: newId,
+      content,
+      x,
+      y,
+      width: 100,
+      height: 100,
+      opacity: 1,
+      rotation: 0,
+      pageNumber,
+      backgroundColor: '#FFFFFF',
+      foregroundColor: '#000000'
+    };
+    
+    setQrCodes(prev => {
+      const newMap = new Map(prev);
+      newMap.set(newId, newQRCode);
+      return newMap;
+    });
+    
+    setSelectedElementId(newId);
+    saveHistoryState();
+    updateLayers();
+    return newId;
+  }, [saveHistoryState, updateLayers]);
+
+  const updateQRCode = useCallback((qrId: string, updates: Partial<PDFQRCode>) => {
+    setQrCodes(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(qrId);
+      
+      if (existing) {
+        newMap.set(qrId, { ...existing, ...updates });
+        saveHistoryState();
+        updateLayers();
+      }
+      
+      return newMap;
+    });
+  }, [saveHistoryState, updateLayers]);
+
+  // Enhanced layer management
+  const updateLayers = useCallback(() => {
+    const newLayers: Layer[] = [];
+    let zIndex = 1;
+
+    // Add text layers
+    Array.from(textElements.values()).forEach(element => {
+      newLayers.push({
+        id: element.id,
+        name: element.text.substring(0, 20) + (element.text.length > 20 ? '...' : ''),
+        type: 'text',
+        visible: true,
+        locked: false,
+        pageNumber: element.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add shape layers
+    Array.from(shapes.values()).forEach(shape => {
+      newLayers.push({
+        id: shape.id,
+        name: `${shape.type.charAt(0).toUpperCase() + shape.type.slice(1)}`,
+        type: 'shape',
+        visible: true,
+        locked: false,
+        pageNumber: shape.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add image layers
+    Array.from(images.values()).forEach(image => {
+      newLayers.push({
+        id: image.id,
+        name: 'Image',
+        type: 'image',
+        visible: true,
+        locked: false,
+        pageNumber: image.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    // Add QR code layers
+    Array.from(qrCodes.values()).forEach(qr => {
+      newLayers.push({
+        id: qr.id,
+        name: qr.content.substring(0, 15) + (qr.content.length > 15 ? '...' : ''),
+        type: 'qr',
+        visible: true,
+        locked: false,
+        pageNumber: qr.pageNumber,
+        zIndex: zIndex++
+      });
+    });
+
+    setLayers(newLayers);
+    setMaxZIndex(zIndex);
+  }, [textElements, shapes, images, qrCodes]);
+
+  // Enhanced delete operations
   const deleteElement = useCallback((elementId: string) => {
     setTextElements(prev => {
       const newMap = new Map(prev);
@@ -378,13 +526,163 @@ export const useCanvaStylePDFEditor = () => {
       newMap.delete(elementId);
       return newMap;
     });
+
+    setQrCodes(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(elementId);
+      return newMap;
+    });
     
     if (selectedElementId === elementId) {
       setSelectedElementId(null);
     }
     
     saveHistoryState();
-  }, [selectedElementId, saveHistoryState]);
+    updateLayers();
+  }, [selectedElementId, saveHistoryState, updateLayers]);
+
+  // Layer management operations
+  const handleLayerToggleVisibility = useCallback((layerId: string) => {
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === layerId 
+          ? { ...layer, visible: !layer.visible }
+          : layer
+      )
+    );
+  }, []);
+
+  const handleLayerToggleLock = useCallback((layerId: string) => {
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === layerId 
+          ? { ...layer, locked: !layer.locked }
+          : layer
+      )
+    );
+  }, []);
+
+  const handleLayerMove = useCallback((layerId: string, direction: 'up' | 'down') => {
+    const adjustment = direction === 'up' ? 1 : -1;
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === layerId 
+          ? { ...layer, zIndex: Math.max(1, layer.zIndex + adjustment) }
+          : layer
+      )
+    );
+  }, []);
+
+  const duplicateElement = useCallback((elementId: string) => {
+    const textElement = textElements.get(elementId);
+    const shape = shapes.get(elementId);
+    const image = images.get(elementId);
+    const qrCode = qrCodes.get(elementId);
+
+    if (textElement) {
+      const newId = `text-${Date.now()}`;
+      const duplicated = {
+        ...textElement,
+        id: newId,
+        x: textElement.x + 10,
+        y: textElement.y + 10
+      };
+      setTextElements(prev => new Map(prev).set(newId, duplicated));
+      setSelectedElementId(newId);
+    } else if (shape) {
+      const newId = `shape-${Date.now()}`;
+      const duplicated = {
+        ...shape,
+        id: newId,
+        x: shape.x + 10,
+        y: shape.y + 10
+      };
+      setShapes(prev => new Map(prev).set(newId, duplicated));
+      setSelectedElementId(newId);
+    } else if (image) {
+      const newId = `image-${Date.now()}`;
+      const duplicated = {
+        ...image,
+        id: newId,
+        x: image.x + 10,
+        y: image.y + 10
+      };
+      setImages(prev => new Map(prev).set(newId, duplicated));
+      setSelectedElementId(newId);
+    } else if (qrCode) {
+      const newId = `qr-${Date.now()}`;
+      const duplicated = {
+        ...qrCode,
+        id: newId,
+        x: qrCode.x + 10,
+        y: qrCode.y + 10
+      };
+      setQrCodes(prev => new Map(prev).set(newId, duplicated));
+      setSelectedElementId(newId);
+    }
+
+    saveHistoryState();
+    updateLayers();
+  }, [textElements, shapes, images, qrCodes, saveHistoryState, updateLayers]);
+
+  // Advanced export functionality
+  const exportWithOptions = useCallback(async (options: ExportOptions) => {
+    if (!originalPdfBytes && !pdfPages.length) {
+      toast({
+        title: 'Nothing to Export',
+        description: 'No content available for export.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      if (options.format === 'pdf') {
+        await exportPDF();
+      } else {
+        // Export as image
+        const canvasElement = document.querySelector('.pdf-canvas') as HTMLElement;
+        if (canvasElement) {
+          const canvas = await html2canvas(canvasElement, {
+            scale: options.resolution === 'print' ? 4 : 
+                   options.resolution === 'high' ? 2 : 
+                   options.resolution === 'medium' ? 1.5 : 1,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `exported-document.${options.format}`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }
+          }, `image/${options.format}`, options.quality / 100);
+
+          toast({
+            title: 'Export Successful',
+            description: `Document exported as ${options.format.toUpperCase()}.`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export document. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [originalPdfBytes, pdfPages, exportPDF]);
 
   // Undo/Redo operations
   const undo = useCallback(() => {
@@ -393,6 +691,7 @@ export const useCanvaStylePDFEditor = () => {
       setTextElements(new Map(prevState.textElements));
       setShapes(new Map(prevState.shapes));
       setImages(new Map(prevState.images));
+      setQrCodes(new Map(prevState.qrCodes));
       setHistoryIndex(prev => prev - 1);
     }
   }, [history, historyIndex]);
@@ -403,13 +702,14 @@ export const useCanvaStylePDFEditor = () => {
       setTextElements(new Map(nextState.textElements));
       setShapes(new Map(nextState.shapes));
       setImages(new Map(nextState.images));
+      setQrCodes(new Map(nextState.qrCodes));
       setHistoryIndex(prev => prev + 1);
     }
   }, [history, historyIndex]);
 
   // Export functionality
   const exportPDF = useCallback(async () => {
-    if (!originalPdfBytes || (!textElements.size && !shapes.size && !images.size)) {
+    if (!originalPdfBytes || (!textElements.size && !shapes.size && !images.size && !qrCodes.size)) {
       toast({
         title: 'No Changes to Export',
         description: 'Make some edits before exporting.',
@@ -498,7 +798,7 @@ export const useCanvaStylePDFEditor = () => {
         variant: 'destructive'
       });
     }
-  }, [originalPdfBytes, textElements, shapes, images]);
+  }, [originalPdfBytes, textElements, shapes, images, qrCodes]);
 
   return {
     // State
@@ -532,6 +832,24 @@ export const useCanvaStylePDFEditor = () => {
     deleteElement,
     undo,
     redo,
-    exportPDF
+    exportPDF,
+    
+    // New Phase 3 & 4 features
+    qrCodes,
+    layers,
+    isExporting,
+    
+    // QR operations
+    addQRCode,
+    updateQRCode,
+    
+    // Layer operations
+    handleLayerToggleVisibility,
+    handleLayerToggleLock,
+    handleLayerMove,
+    duplicateElement,
+    
+    // Export operations
+    exportWithOptions
   };
 };
