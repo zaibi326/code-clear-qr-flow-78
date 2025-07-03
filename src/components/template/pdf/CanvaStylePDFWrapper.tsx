@@ -18,7 +18,7 @@ export const CanvaStylePDFWrapper: React.FC<CanvaStylePDFWrapperProps> = ({
     // Create updated template with edited PDF
     const updatedTemplate = {
       ...template,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(), // Fix: Use Date object instead of string
       // Add any additional metadata for the edited PDF
       isEdited: true,
       editedPDF: editedPDF

@@ -30,7 +30,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface FullFeaturedPDFEditorProps {
   template?: any;
-  onSave?: (editedPDF: Blob) => void;
+  onSave?: (editedPDF?: Blob) => void;
   onCancel?: () => void;
 }
 
@@ -88,7 +88,10 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
 
   const handleExportPDF = async () => {
     try {
-      await exportPDF();
+      const editedPDF = await exportPDF();
+      if (onSave && editedPDF) {
+        onSave(editedPDF);
+      }
       toast({
         title: 'PDF Exported Successfully',
         description: 'Your edited PDF has been downloaded.',
@@ -101,6 +104,27 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
       });
     }
   };
+
+  // Fix: Create proper handler functions for tool changes
+  const handleToolChange = useCallback((tool: string) => {
+    setSelectedTool(tool as typeof selectedTool);
+  }, []);
+
+  // Fix: Create proper save handler
+  const handleSaveClick = useCallback(async () => {
+    try {
+      const editedPDF = await exportPDF();
+      if (onSave) {
+        onSave(editedPDF);
+      }
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: 'Failed to save PDF. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  }, [exportPDF, onSave]);
 
   const currentPageData = pdfPages[currentPage];
 
@@ -147,7 +171,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="text" className="p-4 space-y-4 mt-0">
               <PDFTextEditor
                 selectedTool={selectedTool}
-                onToolChange={setSelectedTool}
+                onToolChange={handleToolChange}
                 selectedElementId={selectedElementId}
                 textElements={textElements}
                 onUpdateTextElement={updateTextElement}
@@ -157,7 +181,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="annotate" className="p-4 space-y-4 mt-0">
               <PDFAnnotationTool
                 selectedTool={selectedTool}
-                onToolChange={setSelectedTool}
+                onToolChange={handleToolChange}
                 onAddAnnotation={(type, x, y) => {
                   if (type === 'shape') {
                     addShape(currentPage + 1, 'rectangle', x, y);
@@ -180,7 +204,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
                   <Download className="w-4 h-4 mr-2" />
                   Download Edited PDF
                 </Button>
-                <Button onClick={onSave} variant="outline" className="w-full">
+                <Button onClick={handleSaveClick} variant="outline" className="w-full">
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
                 </Button>
