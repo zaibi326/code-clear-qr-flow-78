@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -169,10 +168,10 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     qrCodes.get(selectedElementId) : null;
 
   const currentPageData = pdfPages[currentPage];
-  const currentPageTextElements = Array.from(textElements.values()).filter(el => el.pageNumber === currentPage + 1);
-  const currentPageShapes = Array.from(shapes.values()).filter(shape => shape.pageNumber === currentPage + 1);
-  const currentPageImages = Array.from(images.values()).filter(img => img.pageNumber === currentPage + 1);
-  const currentPageQRCodes = Array.from(qrCodes.values()).filter(qr => qr.pageNumber === currentPage + 1);
+  const currentPageTextElements = Array.from(textElements.values()).filter((el: any) => el.pageNumber === currentPage + 1);
+  const currentPageShapes = Array.from(shapes.values()).filter((shape: any) => shape.pageNumber === currentPage + 1);
+  const currentPageImages = Array.from(images.values()).filter((img: any) => img.pageNumber === currentPage + 1);
+  const currentPageQRCodes = Array.from(qrCodes.values()).filter((qr: any) => qr.pageNumber === currentPage + 1);
 
   // ENHANCED: Better debug logging
   React.useEffect(() => {

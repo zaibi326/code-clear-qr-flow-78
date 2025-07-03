@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,7 +32,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
   onCancel
 }) => {
   const [activeTab, setActiveTab] = useState('text');
-  const [selectedTool, setSelectedTool] = useState<'select' | 'text' | 'highlight' | 'shape'>('select');
+  const [selectedTool, setSelectedTool] = useState<'select' | 'text' | 'shape' | 'highlight'>('select');
   const [zoom, setZoom] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,6 +126,12 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
     }
   };
 
+  const handleToolChange = (tool: string) => {
+    if (tool === 'select' || tool === 'text' || tool === 'shape' || tool === 'highlight') {
+      setSelectedTool(tool);
+    }
+  };
+
   const currentPageData = pdfPages[currentPage];
 
   return (
@@ -166,7 +171,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="text" className="p-4 space-y-4 mt-0">
               <PDFTextEditor
                 selectedTool={selectedTool}
-                onToolChange={setSelectedTool}
+                onToolChange={handleToolChange}
                 selectedElementId={selectedElementId}
                 textElements={textElements}
                 onUpdateTextElement={updateTextElement}
@@ -176,7 +181,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="annotate" className="p-4 space-y-4 mt-0">
               <PDFAnnotationTool
                 selectedTool={selectedTool}
-                onToolChange={setSelectedTool}
+                onToolChange={handleToolChange}
                 onAddAnnotation={(type, x, y) => {
                   if (type === 'shape') {
                     addShape(currentPage + 1, 'rectangle', x, y);
