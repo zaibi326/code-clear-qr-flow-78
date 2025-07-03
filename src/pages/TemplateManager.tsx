@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
@@ -7,7 +6,7 @@ import { useTemplateActions } from '@/hooks/template/useTemplateActions';
 import { TemplateManagerLayout } from '@/components/template/TemplateManagerLayout';
 import { TemplateManagerContent } from '@/components/template/TemplateManagerContent';
 import { TemplateEditorWrapper } from '@/components/template/TemplateEditorWrapper';
-import { PDFEditorWrapper } from '@/components/template/PDFEditorWrapper';
+import { CanvaStylePDFWrapper } from '@/components/template/pdf/CanvaStylePDFWrapper';
 import { LoadingScreen } from '@/components/template/LoadingScreen';
 
 const TemplateManager = () => {
@@ -178,9 +177,9 @@ const TemplateManager = () => {
   // Show template editor if editing - Full screen editor
   if (editingTemplate) {
     if (editingMode === 'pdf') {
-      console.log('Rendering PDF editor for:', editingTemplate.name);
+      console.log('Rendering Canva-style PDF editor for:', editingTemplate.name);
       return (
-        <PDFEditorWrapper
+        <CanvaStylePDFWrapper
           template={editingTemplate}
           onSave={handleTemplateCustomizationSave}
           onCancel={handleTemplateCustomizationCancel}
