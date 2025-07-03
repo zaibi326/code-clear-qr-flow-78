@@ -173,7 +173,7 @@ export const useCanvaStylePDFEditor = () => {
         const textWidth = item.width || item.str.length * fontSize * 0.6;
         const textHeight = fontSize * 1.2;
         
-        // Enhanced font detection
+        // Enhanced font detection with proper typing
         const fontName = item.fontName || 'Arial';
         const isBold = fontName.toLowerCase().includes('bold');
         const isItalic = fontName.toLowerCase().includes('italic');
@@ -187,7 +187,7 @@ export const useCanvaStylePDFEditor = () => {
           textColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         }
 
-        const textElement = {
+        const textElement: PDFTextElement = {
           id: `extracted-text-${pageNumber}-${index}`,
           text: item.str,
           originalText: item.str,
@@ -197,9 +197,9 @@ export const useCanvaStylePDFEditor = () => {
           height: Math.round(textHeight),
           fontSize: Math.round(fontSize),
           fontFamily: 'Arial',
-          fontWeight: isBold ? 'bold' : 'normal',
-          fontStyle: isItalic ? 'italic' : 'normal',
-          textAlign: 'left' as const,
+          fontWeight: isBold ? 'bold' : 'normal', // Fix: Ensure proper typing
+          fontStyle: isItalic ? 'italic' : 'normal', // Fix: Ensure proper typing
+          textAlign: 'left',
           color: textColor,
           backgroundColor: 'transparent',
           opacity: 1,
@@ -412,8 +412,8 @@ export const useCanvaStylePDFEditor = () => {
       height: 20,
       fontSize: 16,
       fontFamily: 'Arial',
-      fontWeight: 'normal',
-      fontStyle: 'normal',
+      fontWeight: 'normal', // Fix: Ensure proper typing
+      fontStyle: 'normal', // Fix: Ensure proper typing
       textAlign: 'left',
       color: '#000000',
       backgroundColor: 'transparent',
