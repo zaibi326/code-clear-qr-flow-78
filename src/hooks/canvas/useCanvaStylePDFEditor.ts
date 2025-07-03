@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -150,6 +149,8 @@ export const useCanvaStylePDFEditor = () => {
   }, [textElements, shapes, images, qrCodes, history, historyIndex]);
 
   const extractTextWithoutOverlap = useCallback(async (page: any, pageNumber: number, viewport: any): Promise<PDFTextElement[]> => {
+    console.log(`Extracting text from page ${pageNumber}`);
+    
     const textContent = await page.getTextContent({
       includeMarkedContent: false,
       disableCombineTextItems: false
@@ -165,7 +166,7 @@ export const useCanvaStylePDFEditor = () => {
         const [scaleX, skewY, skewX, scaleY, translateX, translateY] = transform;
         const fontSize = Math.abs(scaleY);
         
-        // Precise coordinate mapping
+        // Precise coordinate mapping for overlay positioning
         const x = translateX;
         const y = viewport.height - translateY - fontSize;
         
@@ -186,8 +187,8 @@ export const useCanvaStylePDFEditor = () => {
           textColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         }
 
-        textElements.push({
-          id: `text-${pageNumber}-${index}`,
+        const textElement = {
+          id: `extracted-text-${pageNumber}-${index}`,
           text: item.str,
           originalText: item.str,
           x: Math.round(x),
@@ -198,14 +199,17 @@ export const useCanvaStylePDFEditor = () => {
           fontFamily: 'Arial',
           fontWeight: isBold ? 'bold' : 'normal',
           fontStyle: isItalic ? 'italic' : 'normal',
-          textAlign: 'left',
+          textAlign: 'left' as const,
           color: textColor,
           backgroundColor: 'transparent',
           opacity: 1,
           rotation: 0,
           pageNumber: pageNumber,
           isEdited: false
-        });
+        };
+
+        textElements.push(textElement);
+        console.log(`Extracted text element: "${item.str}" at (${x}, ${y})`);
       }
     });
 
@@ -220,6 +224,8 @@ export const useCanvaStylePDFEditor = () => {
 
   const loadPDF = useCallback(async (file: File) => {
     setIsLoading(true);
+    console.log('Loading PDF for Canva-style editing...');
+    
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -230,6 +236,7 @@ export const useCanvaStylePDFEditor = () => {
       setPdfDocument(pdfDoc);
 
       const pages: PDFPageData[] = [];
+      const allTextElements = new Map<string, PDFTextElement>();
       const scale = 2.0; // High quality rendering
 
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
@@ -252,22 +259,34 @@ export const useCanvaStylePDFEditor = () => {
         }).promise;
 
         // Extract text elements for editable overlay
-        const textElements = await extractTextWithoutOverlap(page, pageNum, viewport);
+        const pageTextElements = await extractTextWithoutOverlap(page, pageNum, viewport);
+        
+        // Add extracted text elements to the state
+        pageTextElements.forEach(textElement => {
+          allTextElements.set(textElement.id, textElement);
+        });
 
         pages.push({
           pageNumber: pageNum,
           width: viewport.width,
           height: viewport.height,
           backgroundImage: canvas.toDataURL('image/png', 0.95),
-          textElements: textElements,
+          textElements: pageTextElements,
           shapes: [],
           images: []
         });
+
+        console.log(`Page ${pageNum}: Extracted ${pageTextElements.length} text elements`);
       }
 
       setPdfPages(pages);
       setCurrentPage(0);
-      setTextElements(new Map());
+      
+      // CRITICAL FIX: Populate the textElements state with extracted text
+      setTextElements(allTextElements);
+      console.log(`Total extracted text elements: ${allTextElements.size}`);
+      
+      // Reset other states
       setShapes(new Map());
       setImages(new Map());
       setQrCodes(new Map());
@@ -275,10 +294,14 @@ export const useCanvaStylePDFEditor = () => {
       setMaxZIndex(100);
       setHistory([]);
       setHistoryIndex(-1);
+      setSelectedElementId(null);
+
+      // Update layers after setting text elements
+      updateLayers();
 
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Canva-style editor ready with ${pages.length} pages and no text overlap.`,
+        description: `Canva-style editor ready with ${pages.length} pages and ${allTextElements.size} selectable text elements.`,
       });
 
     } catch (error) {
@@ -293,7 +316,7 @@ export const useCanvaStylePDFEditor = () => {
     }
   }, [extractTextWithoutOverlap]);
 
-  // Enhanced layer management
+  // Enhanced layer management - fix to work with new text elements
   const updateLayers = useCallback(() => {
     const newLayers: Layer[] = [];
     let zIndex = 1;
@@ -356,18 +379,27 @@ export const useCanvaStylePDFEditor = () => {
 
   // Text operations
   const updateTextElement = useCallback((elementId: string, updates: Partial<PDFTextElement>) => {
+    console.log('Updating text element:', elementId, updates);
+    
     setTextElements(prev => {
       const newMap = new Map(prev);
       const existing = newMap.get(elementId);
       
       if (existing) {
-        newMap.set(elementId, { ...existing, ...updates, isEdited: true });
+        const updated = { ...existing, ...updates, isEdited: true };
+        newMap.set(elementId, updated);
+        console.log('Text element updated:', updated);
         saveHistoryState();
+      } else {
+        console.warn('Text element not found for update:', elementId);
       }
       
       return newMap;
     });
-  }, [saveHistoryState]);
+    
+    // Update layers after text element change
+    setTimeout(() => updateLayers(), 0);
+  }, [saveHistoryState, updateLayers]);
 
   const addTextElement = useCallback((pageNumber: number, x: number, y: number, text: string = 'New Text') => {
     const newId = `custom-text-${Date.now()}`;
