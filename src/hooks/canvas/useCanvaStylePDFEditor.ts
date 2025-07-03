@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -671,7 +672,6 @@ export const useCanvaStylePDFEditor = () => {
 
     try {
       // Create a new PDF document using pdf-lib
-      const { PDFDocument } = await import('pdf-lib');
       const pdfDoc = await PDFDocument.create();
 
       // Process each page
@@ -688,11 +688,12 @@ export const useCanvaStylePDFEditor = () => {
         );
 
         for (const textElement of pageTextElements) {
+          const color = hexToRgb(textElement.color || '#000000');
           page.drawText(textElement.text || '', {
             x: textElement.x,
             y: page.getHeight() - textElement.y - (textElement.fontSize || 16),
             size: textElement.fontSize || 16,
-            color: textElement.color ? hexToRgb(textElement.color) : { r: 0, g: 0, b: 0 }
+            color: rgb(color.r, color.g, color.b)
           });
         }
 
@@ -703,13 +704,16 @@ export const useCanvaStylePDFEditor = () => {
 
         for (const shape of pageShapes) {
           if (shape.type === 'rectangle') {
+            const borderColor = hexToRgb(shape.stroke || '#000000');
+            const fillColor = hexToRgb(shape.fill || '#000000');
+            
             page.drawRectangle({
               x: shape.x,
               y: page.getHeight() - shape.y - shape.height,
               width: shape.width,
               height: shape.height,
-              borderColor: shape.stroke ? hexToRgb(shape.stroke) : { r: 0, g: 0, b: 0 },
-              color: shape.fill ? hexToRgb(shape.fill) : undefined,
+              borderColor: rgb(borderColor.r, borderColor.g, borderColor.b),
+              color: shape.fill && shape.fill !== 'transparent' ? rgb(fillColor.r, fillColor.g, fillColor.b) : undefined,
               opacity: shape.opacity || 1
             });
           }
@@ -725,7 +729,7 @@ export const useCanvaStylePDFEditor = () => {
     }
   }, [pdfDocument, pdfPages, textElements, shapes]);
 
-  // Helper function to convert hex color to RGB
+  // Helper function to convert hex color to RGB values (0-1 range)
   const hexToRgb = (hex: string) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
