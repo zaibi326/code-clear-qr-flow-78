@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 
 interface PDFWord {
@@ -128,7 +127,7 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     return `#${r}${g}${b}`;
   };
 
-  // More precise positioning with subpixel accuracy
+  // Simplified styling with consistent z-index
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${word.x * scale}px`,
@@ -138,7 +137,6 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     fontWeight: word.fontWeight === 'bold' ? 'bold' : 'normal',
     fontStyle: word.fontStyle === 'italic' ? 'italic' : 'normal',
     color: colorToHex(word.color),
-    zIndex: 15, // Ensure editable text is above masks but below UI elements
     margin: 0,
     padding: '2px',
     border: 'none',
@@ -165,16 +163,14 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     userSelect: 'text',
     cursor: 'text',
     resize: 'none',
-    overflow: 'hidden',
-    zIndex: 25 // Higher z-index when editing
+    overflow: 'hidden'
   };
 
   const hoverStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
     border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '3px',
-    zIndex: 16 // Slightly higher when hovered
+    borderRadius: '3px'
   };
 
   return (
@@ -189,7 +185,6 @@ export const EditableWord: React.FC<EditableWordProps> = ({
           top: '-2000px',
           left: '-2000px',
           whiteSpace: 'pre-wrap',
-          zIndex: -1,
           width: 'auto',
           height: 'auto'
         }}

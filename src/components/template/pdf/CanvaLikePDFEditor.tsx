@@ -21,7 +21,8 @@ import {
   RotateCw,
   Copy,
   Trash2,
-  QrCode
+  QrCode,
+  Eye
 } from 'lucide-react';
 import { usePDFWordEditor } from '@/hooks/canvas/usePDFWordEditor';
 import { EditableWord } from './EditableWord';
@@ -99,6 +100,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
     elementId?: string;
   }>({ isDragging: false, startPos: { x: 0, y: 0 } });
   const [showQRGenerator, setShowQRGenerator] = useState(false);
+  const [showOriginalLayer, setShowOriginalLayer] = useState(false); // Toggle for original PDF layer
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -718,6 +720,16 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* Original Layer Toggle */}
+            <Button
+              variant={showOriginalLayer ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowOriginalLayer(!showOriginalLayer)}
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              {showOriginalLayer ? 'Hide' : 'Show'} Original
+            </Button>
+            
             {selectedElement && (
               <>
                 {canvaElements.get(selectedElement)?.properties.isQRCode && (
@@ -804,34 +816,37 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
-                {/* Background image with text masking */}
+                {/* Clean background - either original PDF or plain white */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
-                    background: `url(${currentPageData.backgroundImage}) no-repeat center center`,
+                    background: showOriginalLayer 
+                      ? `url(${currentPageData.backgroundImage}) no-repeat center center`
+                      : '#ffffff',
                     backgroundSize: 'cover'
                   }}
                 >
-                  {/* White masks to hide original text areas - this prevents doubling */}
-                  {unifiedWords.map((word) => (
+                  {/* Complete text masking layer - only when showing original */}
+                  {showOriginalLayer && unifiedWords.map((word) => (
                     <div
                       key={`mask-${word.id}`}
-                      className="absolute bg-white"
+                      className="absolute"
                       style={{
-                        left: Math.max(0, word.x * zoom - 1), // Slight padding to ensure complete coverage
-                        top: Math.max(0, word.y * zoom - 1),
-                        width: (word.width * zoom) + 2, // Slight padding to ensure complete coverage
-                        height: (word.height * zoom) + 2,
-                        zIndex: 1, // Above background, below editable text
-                        pointerEvents: 'none' // Don't interfere with text editing
+                        left: Math.max(0, word.x * zoom - 3),
+                        top: Math.max(0, word.y * zoom - 3),
+                        width: (word.width * zoom) + 6,
+                        height: (word.height * zoom) + 6,
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        zIndex: 1,
+                        pointerEvents: 'none'
                       }}
                     />
                   ))}
                 </div>
                 
-                {/* Editable words - rendered above masks */}
-                {unifiedWords.map((word) => (
-                  <div key={`word-container-${word.id}`} style={{ zIndex: 10 }}>
+                {/* Editable words layer - always visible */}
+                <div className="absolute inset-0" style={{ zIndex: 10 }}>
+                  {unifiedWords.map((word) => (
                     <EditableWord
                       key={word.id}
                       word={word}
@@ -839,19 +854,24 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                       onUpdate={updateWord}
                       onDelete={deleteWord}
                     />
-                  </div>
-                ))}
+                  ))}
+                </div>
 
-                {/* Canva elements - rendered at top level */}
-                <div style={{ zIndex: 20 }}>
+                {/* Canva elements layer */}
+                <div className="absolute inset-0" style={{ zIndex: 20 }}>
                   {currentPageElements.map(element => renderCanvaElement(element))}
                 </div>
 
                 {/* Page info */}
                 <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 30 }}>
-                  <span className="text-xs text-gray-500">
-                    Page {currentPage + 1}/{pdfPages.length} • {unifiedWords.length} words • {currentPageElements.length} elements
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500">
+                      Page {currentPage + 1}/{pdfPages.length} • {unifiedWords.length} words • {currentPageElements.length} elements
+                    </span>
+                    {!showOriginalLayer && (
+                      <span className="text-xs text-green-600 font-medium">Clean Mode</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
