@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -62,6 +61,7 @@ interface PDFQRCode {
   foregroundColor: string;
   backgroundColor: string;
   opacity: number;
+  rotation: number;
   pageNumber: number;
 }
 
@@ -82,6 +82,13 @@ interface Layer {
   visible: boolean;
   locked: boolean;
   pageNumber: number;
+  zIndex: number;
+}
+
+interface ExportOptions {
+  quality?: number;
+  format?: string;
+  includeAnnotations?: boolean;
 }
 
 export const useCanvaStylePDFEditor = () => {
@@ -102,39 +109,43 @@ export const useCanvaStylePDFEditor = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // Generate layers from all elements
+  // Generate layers from all elements with zIndex
   const layers: Layer[] = [
-    ...Array.from(textElements.values()).map(el => ({
+    ...Array.from(textElements.values()).map((el, index) => ({
       id: el.id,
       name: `Text: ${el.text.substring(0, 20)}...`,
       type: 'text' as const,
       visible: true,
       locked: false,
-      pageNumber: el.pageNumber
+      pageNumber: el.pageNumber,
+      zIndex: index + 100
     })),
-    ...Array.from(shapes.values()).map(shape => ({
+    ...Array.from(shapes.values()).map((shape, index) => ({
       id: shape.id,
       name: `Shape: ${shape.type}`,
       type: 'shape' as const,
       visible: true,
       locked: false,
-      pageNumber: shape.pageNumber
+      pageNumber: shape.pageNumber,
+      zIndex: index + 200
     })),
-    ...Array.from(images.values()).map(img => ({
+    ...Array.from(images.values()).map((img, index) => ({
       id: img.id,
       name: 'Image',
       type: 'image' as const,
       visible: true,
       locked: false,
-      pageNumber: img.pageNumber
+      pageNumber: img.pageNumber,
+      zIndex: index + 300
     })),
-    ...Array.from(qrCodes.values()).map(qr => ({
+    ...Array.from(qrCodes.values()).map((qr, index) => ({
       id: qr.id,
       name: 'QR Code',
       type: 'qr' as const,
       visible: true,
       locked: false,
-      pageNumber: qr.pageNumber
+      pageNumber: qr.pageNumber,
+      zIndex: index + 400
     }))
   ];
 
@@ -420,6 +431,7 @@ export const useCanvaStylePDFEditor = () => {
       foregroundColor: '#000000',
       backgroundColor: '#FFFFFF',
       opacity: 1,
+      rotation: 0,
       pageNumber
     };
     
@@ -596,8 +608,18 @@ export const useCanvaStylePDFEditor = () => {
     }
   }, [originalPdfBytes, textElements, shapes]);
 
-  const exportWithOptions = useCallback(async (options: any) => {
-    return await exportPDF();
+  const exportWithOptions = useCallback(async (options: ExportOptions): Promise<void> => {
+    const blob = await exportPDF();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'exported-pdf.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   }, [exportPDF]);
 
   const hexToRgb = (hex: string) => {
