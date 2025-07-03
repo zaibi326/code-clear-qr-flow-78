@@ -131,7 +131,7 @@ const TemplateManager = () => {
     // Set editing mode based on improved PDF detection
     if (isPDF) {
       setEditingMode('pdf');
-      console.log('Using PDF editor for template:', template.name);
+      console.log('Using floating input PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
       console.log('Using canvas editor for template:', template.name);
@@ -177,7 +177,7 @@ const TemplateManager = () => {
   // Show template editor if editing - Full screen editor
   if (editingTemplate) {
     if (editingMode === 'pdf') {
-      console.log('Rendering Canva-style PDF editor for:', editingTemplate.name);
+      console.log('Rendering floating input PDF editor for:', editingTemplate.name);
       return (
         <CanvaStylePDFWrapper
           template={editingTemplate}

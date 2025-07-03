@@ -1,7 +1,7 @@
 
 import React from 'react';
+import { FloatingInputPDFEditor } from './FloatingInputPDFEditor';
 import { Template } from '@/types/template';
-import { CanvaLikePDFEditor } from './CanvaLikePDFEditor';
 
 interface CanvaStylePDFWrapperProps {
   template: Template;
@@ -15,24 +15,16 @@ export const CanvaStylePDFWrapper: React.FC<CanvaStylePDFWrapperProps> = ({
   onCancel
 }) => {
   const handleSave = () => {
-    const updatedTemplate: Template = {
-      ...template,
-      id: template?.id || Date.now().toString(),
-      name: template?.name || 'Edited PDF',
-      type: 'pdf',
-      updatedAt: new Date()
-    };
-    
-    onSave(updatedTemplate);
+    // Save the template with any modifications
+    onSave(template);
   };
 
   return (
-    <div className="h-screen w-full">
-      <CanvaLikePDFEditor
+    <div className="h-screen">
+      <FloatingInputPDFEditor
         template={template}
         onSave={handleSave}
         onCancel={onCancel}
-        hideFileUpload={true}
       />
     </div>
   );
