@@ -34,20 +34,7 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
 }) => {
   const stageRef = useRef<any>(null);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('PDFCanvas render:', {
-      hasPageData: !!pageData,
-      pageDataKeys: pageData ? Object.keys(pageData) : [],
-      backgroundImageLength: pageData?.backgroundImage?.length || 0,
-      textElementsCount: textElements.size,
-      currentPage,
-      zoom
-    });
-  }, [pageData, textElements, currentPage, zoom]);
-
   const handleCanvasClick = useCallback((e: any) => {
-    // Only handle clicks on the canvas background
     if (e.target === e.target.getStage()) {
       const pos = e.target.getPointerPosition();
       const x = pos.x / zoom;
@@ -64,12 +51,11 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
   }, [selectedTool, currentPage, zoom, onAddTextElement, onAddShape, onSelectElement]);
 
   if (!pageData) {
-    console.log('No page data available for PDFCanvas');
     return (
       <div className="flex items-center justify-center h-full bg-gray-100">
         <div className="text-center p-8">
           <div className="text-lg font-medium text-gray-600 mb-2">No Page Data</div>
-          <div className="text-sm text-gray-500">The PDF page could not be loaded</div>
+          <div className="text-sm text-gray-500">Please upload a PDF to get started</div>
         </div>
       </div>
     );
@@ -81,55 +67,41 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
   const currentPageShapes = Array.from(shapes.values()).filter(
     shape => shape.pageNumber === currentPage + 1
   );
-  const currentPageImages = Array.from(images.values()).filter(
-    img => img.pageNumber === currentPage + 1
-  );
-
-  console.log(`Rendering page ${currentPage + 1}:`, {
-    textElements: currentPageTextElements.length,
-    shapes: currentPageShapes.length,
-    images: currentPageImages.length,
-    backgroundImage: pageData.backgroundImage ? 'present' : 'missing'
-  });
 
   return (
     <div className="flex items-center justify-center min-h-full bg-gray-50 p-4">
       <div 
         className="bg-white rounded-lg shadow-xl relative border border-gray-200"
         style={{
-          width: pageData.width * zoom,
-          height: pageData.height * zoom,
+          width: Math.max(600, pageData.width * zoom),
+          height: Math.max(400, pageData.height * zoom),
           cursor: selectedTool === 'select' ? 'default' : 'crosshair'
         }}
       >
-        {/* Background PDF Image - Enhanced visibility */}
-        {pageData.backgroundImage && (
+        {/* Background PDF Image */}
+        {pageData.backgroundImage ? (
           <div 
             className="w-full h-full absolute inset-0 rounded-lg bg-white"
             style={{
               backgroundImage: `url(${pageData.backgroundImage})`,
-              backgroundSize: 'cover',
+              backgroundSize: 'contain',
               backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              pointerEvents: 'none'
+              backgroundRepeat: 'no-repeat'
             }}
           />
-        )}
-
-        {/* Fallback if no background image */}
-        {!pageData.backgroundImage && (
+        ) : (
           <div className="w-full h-full absolute inset-0 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
             <div className="text-center text-gray-500">
               <div className="text-lg font-medium mb-2">PDF Page {currentPage + 1}</div>
-              <div className="text-sm">Background could not be loaded</div>
+              <div className="text-sm">Click to add elements</div>
             </div>
           </div>
         )}
 
-        {/* Konva Stage for Advanced Rendering */}
+        {/* Konva Stage for Shapes */}
         <Stage
-          width={pageData.width * zoom}
-          height={pageData.height * zoom}
+          width={Math.max(600, pageData.width * zoom)}
+          height={Math.max(400, pageData.height * zoom)}
           scaleX={zoom}
           scaleY={zoom}
           onClick={handleCanvasClick}
@@ -137,7 +109,6 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
           className="absolute inset-0"
         >
           <Layer>
-            {/* Render shapes using Konva */}
             {currentPageShapes.map((shape) => {
               if (shape.type === 'rectangle') {
                 return (
@@ -147,10 +118,10 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
                     y={shape.y}
                     width={shape.width}
                     height={shape.height}
-                    fill={shape.fill}
-                    stroke={shape.stroke}
-                    strokeWidth={shape.strokeWidth}
-                    opacity={shape.opacity}
+                    fill={shape.fill || '#3B82F6'}
+                    stroke={shape.stroke || '#1E40AF'}
+                    strokeWidth={shape.strokeWidth || 2}
+                    opacity={shape.opacity || 1}
                     onClick={() => onSelectElement(shape.id)}
                   />
                 );
@@ -158,13 +129,13 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
                 return (
                   <Circle
                     key={shape.id}
-                    x={shape.x + shape.width / 2}
-                    y={shape.y + shape.height / 2}
-                    radius={shape.width / 2}
-                    fill={shape.fill}
-                    stroke={shape.stroke}
-                    strokeWidth={shape.strokeWidth}
-                    opacity={shape.opacity}
+                    x={shape.x + (shape.width || 100) / 2}
+                    y={shape.y + (shape.height || 100) / 2}
+                    radius={(shape.width || 100) / 2}
+                    fill={shape.fill || '#3B82F6'}
+                    stroke={shape.stroke || '#1E40AF'}
+                    strokeWidth={shape.strokeWidth || 2}
+                    opacity={shape.opacity || 1}
                     onClick={() => onSelectElement(shape.id)}
                   />
                 );
@@ -185,18 +156,6 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
             onUpdate={onUpdateTextElement}
           />
         ))}
-
-        {/* Enhanced Debug Info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50 max-w-xs">
-            <div>Page {currentPage + 1}</div>
-            <div>Text Elements: {currentPageTextElements.length}</div>
-            <div>Tool: {selectedTool}</div>
-            <div>Selected: {selectedElementId ? 'Yes' : 'No'}</div>
-            <div>BG Image: {pageData.backgroundImage ? 'Yes' : 'No'}</div>
-            <div>Zoom: {Math.round(zoom * 100)}%</div>
-          </div>
-        )}
       </div>
     </div>
   );

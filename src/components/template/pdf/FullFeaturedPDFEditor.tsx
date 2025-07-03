@@ -1,25 +1,18 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { 
   Type, 
   Highlighter, 
-  Underline, 
-  Strikethrough,
-  MessageSquare,
   Square,
-  Circle,
   Download,
   Upload,
   Save,
   Undo,
   Redo,
-  PenTool,
   MousePointer,
-  FileText,
-  Edit
+  FileText
 } from 'lucide-react';
 import { useCanvaStylePDFEditor } from '@/hooks/canvas/useCanvaStylePDFEditor';
 import { PDFTextEditor } from './components/PDFTextEditor';
@@ -40,12 +33,11 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
   onCancel
 }) => {
   const [activeTab, setActiveTab] = useState('text');
-  const [selectedTool, setSelectedTool] = useState<'select' | 'text' | 'highlight' | 'underline' | 'strikethrough' | 'comment' | 'draw' | 'shape'>('select');
+  const [selectedTool, setSelectedTool] = useState<'select' | 'text' | 'highlight' | 'shape'>('select');
   const [zoom, setZoom] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
-    pdfDocument,
     pdfPages,
     currentPage,
     setCurrentPage,
@@ -61,7 +53,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
     updateTextElement,
     addTextElement,
     addShape,
-    deleteElement,
     undo,
     redo,
     exportPDF
@@ -90,7 +81,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
     try {
       const editedPDF = await exportPDF();
       if (editedPDF) {
-        // Create download link
         const url = URL.createObjectURL(editedPDF);
         const a = document.createElement('a');
         a.href = url;
@@ -108,8 +98,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
           title: 'PDF Exported Successfully',
           description: 'Your edited PDF has been downloaded.',
         });
-      } else {
-        throw new Error('Failed to generate PDF');
       }
     } catch (error) {
       toast({
@@ -120,13 +108,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
     }
   };
 
-  // Fix: Create proper handler functions for tool changes
-  const handleToolChange = useCallback((tool: string) => {
-    setSelectedTool(tool as typeof selectedTool);
-  }, []);
-
-  // Fix: Create proper save handler
-  const handleSaveClick = useCallback(async () => {
+  const handleSaveClick = async () => {
     try {
       const editedPDF = await exportPDF();
       if (onSave && editedPDF) {
@@ -135,8 +117,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
           title: 'Changes Saved',
           description: 'Your PDF changes have been saved.',
         });
-      } else if (!editedPDF) {
-        throw new Error('Failed to generate PDF');
       }
     } catch (error) {
       toast({
@@ -145,13 +125,12 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
         variant: 'destructive'
       });
     }
-  }, [exportPDF, onSave]);
+  };
 
   const currentPageData = pdfPages[currentPage];
 
   return (
     <div className="h-screen bg-gray-50 flex">
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -163,24 +142,19 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
       {/* Left Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">PDF Editor Pro</h2>
-          <p className="text-sm text-gray-600">Full-featured PDF editing with text, annotations, and forms</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">PDF Editor</h2>
+          <p className="text-sm text-gray-600">Edit PDFs with text, annotations, and shapes</p>
         </div>
 
-        {/* Tool Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid grid-cols-4 mx-4 mt-4">
+          <TabsList className="grid grid-cols-3 mx-4 mt-4">
             <TabsTrigger value="text" className="text-xs">
               <Type className="w-3 h-3 mr-1" />
               Text
             </TabsTrigger>
             <TabsTrigger value="annotate" className="text-xs">
               <Highlighter className="w-3 h-3 mr-1" />
-              Annotate
-            </TabsTrigger>
-            <TabsTrigger value="forms" className="text-xs">
-              <FileText className="w-3 h-3 mr-1" />
-              Forms
+              Tools
             </TabsTrigger>
             <TabsTrigger value="export" className="text-xs">
               <Download className="w-3 h-3 mr-1" />
@@ -192,7 +166,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="text" className="p-4 space-y-4 mt-0">
               <PDFTextEditor
                 selectedTool={selectedTool}
-                onToolChange={handleToolChange}
+                onToolChange={setSelectedTool}
                 selectedElementId={selectedElementId}
                 textElements={textElements}
                 onUpdateTextElement={updateTextElement}
@@ -202,7 +176,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             <TabsContent value="annotate" className="p-4 space-y-4 mt-0">
               <PDFAnnotationTool
                 selectedTool={selectedTool}
-                onToolChange={handleToolChange}
+                onToolChange={setSelectedTool}
                 onAddAnnotation={(type, x, y) => {
                   if (type === 'shape') {
                     addShape(currentPage + 1, 'rectangle', x, y);
@@ -211,19 +185,12 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
               />
             </TabsContent>
 
-            <TabsContent value="forms" className="p-4 space-y-4 mt-0">
-              <PDFFormFiller
-                currentPage={currentPage}
-                pdfDocument={pdfDocument}
-              />
-            </TabsContent>
-
             <TabsContent value="export" className="p-4 space-y-4 mt-0">
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-gray-700">Export Options</h3>
                 <Button onClick={handleExportPDF} className="w-full">
                   <Download className="w-4 h-4 mr-2" />
-                  Download Edited PDF
+                  Download PDF
                 </Button>
                 <Button onClick={handleSaveClick} variant="outline" className="w-full">
                   <Save className="w-4 h-4 mr-2" />
@@ -234,7 +201,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
           </div>
         </Tabs>
 
-        {/* Bottom Actions */}
         <div className="p-4 border-t border-gray-200 space-y-2">
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={undo} disabled={!canUndo} className="flex-1">
@@ -263,7 +229,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            {/* Zoom Controls */}
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" onClick={() => setZoom(Math.max(0.3, zoom - 0.1))}>
                 -
@@ -274,7 +239,6 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
               </Button>
             </div>
 
-            {/* Tool Selection */}
             <div className="flex items-center space-x-2">
               <Button
                 size="sm"
@@ -292,15 +256,14 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
               </Button>
               <Button
                 size="sm"
-                variant={selectedTool === 'highlight' ? 'default' : 'outline'}
-                onClick={() => setSelectedTool('highlight')}
+                variant={selectedTool === 'shape' ? 'default' : 'outline'}
+                onClick={() => setSelectedTool('shape')}
               >
-                <Highlighter className="w-4 h-4" />
+                <Square className="w-4 h-4" />
               </Button>
             </div>
           </div>
           
-          {/* Page Navigation */}
           {pdfPages.length > 1 && (
             <div className="flex items-center space-x-2">
               <Button
@@ -327,12 +290,12 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-gray-100 overflow-auto p-8">
+        <div className="flex-1 bg-gray-100 overflow-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading PDF for advanced editing...</p>
+                <p className="text-gray-600">Loading PDF...</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -343,7 +306,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
                   Upload a PDF to Start Editing
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Full-featured PDF editor with text editing, annotations, and form filling.
+                  Upload a PDF file to begin editing with our advanced editor.
                 </p>
                 <Button onClick={() => fileInputRef.current?.click()} className="bg-blue-600 hover:bg-blue-700">
                   <Upload className="w-4 h-4 mr-2" />
