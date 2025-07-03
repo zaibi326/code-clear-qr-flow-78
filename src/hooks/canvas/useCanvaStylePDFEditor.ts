@@ -663,99 +663,79 @@ export const useCanvaStylePDFEditor = () => {
   }, [textElements, shapes, images, qrCodes, saveHistoryState, updateLayers]);
 
   // Export functionality
-  const exportPDF = useCallback(async () => {
-    if (!originalPdfBytes || (!textElements.size && !shapes.size && !images.size && !qrCodes.size)) {
-      toast({
-        title: 'No Changes to Export',
-        description: 'Make some edits before exporting.',
-        variant: 'destructive'
-      });
-      return;
+  const exportPDF = useCallback(async (): Promise<Blob | null> => {
+    if (!pdfDocument || pdfPages.length === 0) {
+      console.warn('No PDF document loaded for export');
+      return null;
     }
 
     try {
-      const pdfDoc = await PDFDocument.load(originalPdfBytes);
-      const pages = pdfDoc.getPages();
-      
-      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      
+      // Create a new PDF document using pdf-lib
+      const { PDFDocument } = await import('pdf-lib');
+      const pdfDoc = await PDFDocument.create();
+
       // Process each page
-      for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-        const page = pages[pageIndex];
-        const { height: pageHeight } = page.getSize();
-        const pageNum = pageIndex + 1;
+      for (let pageIndex = 0; pageIndex < pdfPages.length; pageIndex++) {
+        const pageData = pdfPages[pageIndex];
         
-        // Add white rectangles to hide original text
-        const pageTextElements = Array.from(textElements.values()).filter(el => el.pageNumber === pageNum);
-        pageTextElements.forEach(element => {
-          if (element.originalText && element.originalText !== element.text) {
+        // Add page from original PDF
+        const [copiedPage] = await pdfDoc.copyPages(pdfDocument, [pageIndex]);
+        const page = pdfDoc.addPage(copiedPage);
+
+        // Add text elements for this page
+        const pageTextElements = Array.from(textElements.values()).filter(
+          el => el.pageNumber === pageIndex + 1
+        );
+
+        for (const textElement of pageTextElements) {
+          page.drawText(textElement.text || '', {
+            x: textElement.x,
+            y: page.getHeight() - textElement.y - (textElement.fontSize || 16),
+            size: textElement.fontSize || 16,
+            color: textElement.color ? hexToRgb(textElement.color) : { r: 0, g: 0, b: 0 }
+          });
+        }
+
+        // Add shapes for this page
+        const pageShapes = Array.from(shapes.values()).filter(
+          shape => shape.pageNumber === pageIndex + 1
+        );
+
+        for (const shape of pageShapes) {
+          if (shape.type === 'rectangle') {
             page.drawRectangle({
-              x: element.x - 2,
-              y: pageHeight - element.y - element.height - 2,
-              width: element.width + 4,
-              height: element.height + 4,
-              color: rgb(1, 1, 1),
-              opacity: 1
+              x: shape.x,
+              y: page.getHeight() - shape.y - shape.height,
+              width: shape.width,
+              height: shape.height,
+              borderColor: shape.stroke ? hexToRgb(shape.stroke) : { r: 0, g: 0, b: 0 },
+              color: shape.fill ? hexToRgb(shape.fill) : undefined,
+              opacity: shape.opacity || 1
             });
           }
-        });
-        
-        // Add edited/new text elements
-        pageTextElements.forEach(element => {
-          if (element.text.trim()) {
-            const font = element.fontWeight === 'bold' ? boldFont : regularFont;
-            const colorMatch = element.color.match(/^#([0-9a-f]{6})$/i);
-            let color = rgb(0, 0, 0);
-            
-            if (colorMatch) {
-              const hex = colorMatch[1];
-              const r = parseInt(hex.substr(0, 2), 16) / 255;
-              const g = parseInt(hex.substr(2, 2), 16) / 255;
-              const b = parseInt(hex.substr(4, 2), 16) / 255;
-              color = rgb(r, g, b);
-            }
-            
-            page.drawText(element.text, {
-              x: element.x,
-              y: pageHeight - element.y - element.fontSize * 0.8,
-              size: element.fontSize,
-              font: font,
-              color: color,
-              opacity: element.opacity
-            });
-          }
-        });
+        }
       }
-      
-      const modifiedPdfBytes = await pdfDoc.save();
-      const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'edited-document.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: 'PDF Exported Successfully',
-        description: 'Your Canva-style edited PDF has been downloaded.',
-      });
-      
+
+      // Generate PDF bytes
+      const pdfBytes = await pdfDoc.save();
+      return new Blob([pdfBytes], { type: 'application/pdf' });
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to export PDF. Please try again.',
-        variant: 'destructive'
-      });
+      return null;
     }
-  }, [originalPdfBytes, textElements, shapes, images, qrCodes]);
+  }, [pdfDocument, pdfPages, textElements, shapes]);
 
-  // Advanced export functionality
+  // Helper function to convert hex color to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16) / 255,
+      g: parseInt(result[2], 16) / 255,
+      b: parseInt(result[3], 16) / 255,
+    } : { r: 0, g: 0, b: 0 };
+  };
+
+  // Export operations
   const exportWithOptions = useCallback(async (options: ExportOptions) => {
     if (!originalPdfBytes && !pdfPages.length) {
       toast({

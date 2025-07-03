@@ -89,13 +89,28 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
   const handleExportPDF = async () => {
     try {
       const editedPDF = await exportPDF();
-      if (onSave && editedPDF) {
-        onSave(editedPDF);
+      if (editedPDF) {
+        // Create download link
+        const url = URL.createObjectURL(editedPDF);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `edited-${template?.name || 'document'}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (onSave) {
+          onSave(editedPDF);
+        }
+        
+        toast({
+          title: 'PDF Exported Successfully',
+          description: 'Your edited PDF has been downloaded.',
+        });
+      } else {
+        throw new Error('Failed to generate PDF');
       }
-      toast({
-        title: 'PDF Exported Successfully',
-        description: 'Your edited PDF has been downloaded.',
-      });
     } catch (error) {
       toast({
         title: 'Export Failed',
@@ -114,8 +129,14 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
   const handleSaveClick = useCallback(async () => {
     try {
       const editedPDF = await exportPDF();
-      if (onSave) {
+      if (onSave && editedPDF) {
         onSave(editedPDF);
+        toast({
+          title: 'Changes Saved',
+          description: 'Your PDF changes have been saved.',
+        });
+      } else if (!editedPDF) {
+        throw new Error('Failed to generate PDF');
       }
     } catch (error) {
       toast({
