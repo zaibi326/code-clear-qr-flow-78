@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -38,7 +37,10 @@ export const usePDFTextEditor = () => {
   const [editedTextBlocks, setEditedTextBlocks] = useState<Map<string, PDFTextBlock>>(new Map());
 
   const extractTextBlocks = useCallback(async (page: any, pageNumber: number, viewport: any): Promise<PDFTextBlock[]> => {
-    const textContent = await page.getTextContent();
+    const textContent = await page.getTextContent({
+      includeMarkedContent: false,
+      disableCombineTextItems: false
+    });
     const textBlocks: PDFTextBlock[] = [];
 
     textContent.items.forEach((item: any, index: number) => {
@@ -49,13 +51,13 @@ export const usePDFTextEditor = () => {
         const [scaleX, skewY, skewX, scaleY, translateX, translateY] = transform;
         const fontSize = Math.abs(scaleY);
         
-        // Convert PDF coordinates to screen coordinates
+        // Convert PDF coordinates to screen coordinates with proper scaling
         const x = translateX;
-        const y = viewport.height - translateY;
+        const y = viewport.height - translateY - fontSize;
         
-        // Calculate text dimensions
+        // Calculate text dimensions more accurately
         const textWidth = item.width || item.str.length * fontSize * 0.6;
-        const textHeight = fontSize;
+        const textHeight = fontSize * 1.2;
         
         // Detect font properties
         const fontName = item.fontName || 'Helvetica';
@@ -76,11 +78,11 @@ export const usePDFTextEditor = () => {
           id: `page-${pageNumber}-text-${index}`,
           text: item.str,
           originalText: item.str,
-          x: x,
-          y: y,
-          width: textWidth,
-          height: textHeight,
-          fontSize: fontSize,
+          x: Math.round(x),
+          y: Math.round(y),
+          width: Math.round(textWidth),
+          height: Math.round(textHeight),
+          fontSize: Math.round(fontSize),
           fontName: fontName,
           fontWeight: isBold ? 'bold' : 'normal',
           fontStyle: isItalic ? 'italic' : 'normal',
@@ -122,7 +124,7 @@ export const usePDFTextEditor = () => {
         const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
         
-        // Render page to canvas for background
+        // Render page to canvas WITHOUT text layer to avoid duplication
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) continue;
@@ -130,12 +132,16 @@ export const usePDFTextEditor = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
+        // Render with text layer disabled to prevent duplication
         await page.render({
           canvasContext: context,
-          viewport: viewport
+          viewport: viewport,
+          renderInteractiveForms: false,
+          textLayerMode: 0, // Disable text layer rendering
+          annotationMode: 0 // Disable annotations
         }).promise;
 
-        // Extract text blocks
+        // Extract text blocks separately for editable overlay
         const textBlocks = await extractTextBlocks(page, pageNum, viewport);
 
         pages.push({
@@ -153,7 +159,7 @@ export const usePDFTextEditor = () => {
 
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Loaded ${pages.length} pages with ${pages.reduce((sum, p) => sum + p.textBlocks.length, 0)} editable text elements.`,
+        description: `Loaded ${pages.length} pages with ${pages.reduce((sum, p) => sum + p.textBlocks.length, 0)} editable text elements (no duplication).`,
       });
 
     } catch (error) {

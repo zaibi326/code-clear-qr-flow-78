@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,7 +89,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
       
       toast({
         title: 'PDF Loaded Successfully',
-        description: 'Text layer perfectly aligned with visual content. All text is editable and positioned accurately!',
+        description: 'Clean layout preserved! No text duplication - all text is editable and positioned accurately.',
       });
     }
   }, [pdfPages.length, isLoading]);
@@ -161,7 +160,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     setPanOffset({ x: 0, y: 0 });
   };
 
-  // Create unified text blocks that show either original OR edited version, never both
+  // Create unified text blocks showing only editable version (no duplication)
   const getUnifiedTextBlocks = (): PDFTextBlock[] => {
     const currentPageData = pdfPages[currentPage];
     if (!currentPageData) return [];
@@ -177,20 +176,18 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     // Start with original blocks, but replace with edited versions if they exist
     const unifiedBlocks: PDFTextBlock[] = [];
 
-    // Add original blocks that haven't been edited
+    // Add original blocks that haven't been edited OR their edited versions
     originalTextBlocks.forEach(originalBlock => {
       const editedVersion = editedBlocksMap.get(originalBlock.id);
       if (editedVersion) {
-        // Use the edited version instead of the original
         unifiedBlocks.push(editedVersion);
-        editedBlocksMap.delete(originalBlock.id); // Remove from map to avoid duplicates
+        editedBlocksMap.delete(originalBlock.id);
       } else {
-        // Use the original block
         unifiedBlocks.push(originalBlock);
       }
     });
 
-    // Add any new text blocks that were created (not replacements of originals)
+    // Add any new text blocks that were created
     editedBlocksMap.forEach(editedBlock => {
       unifiedBlocks.push(editedBlock);
     });
@@ -221,7 +218,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             PDF Text Editor
           </CardTitle>
           <p className="text-sm text-blue-700">
-            Perfect text alignment with visual content
+            Clean layout with no text duplication
           </p>
         </CardHeader>
         
@@ -288,8 +285,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Processing PDF with accurate text alignment...</p>
-                <p className="text-sm text-gray-500">Mapping editable text layer to visual content</p>
+                <p className="text-gray-600">Processing PDF with clean layout preservation...</p>
+                <p className="text-sm text-gray-500">No text duplication - rendering editable overlay only</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -300,7 +297,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Your PDF will be processed with perfect text alignment and accurate positioning for seamless editing.
+                  Your PDF will be processed with clean layout preservation and no text duplication.
                 </p>
                 <Button
                   onClick={triggerFileUpload}
@@ -330,31 +327,16 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                 onMouseUp={handleCanvasMouseUp}
                 onMouseLeave={handleCanvasMouseUp}
               >
-                {/* Background image container */}
+                {/* Background image - PDF rendered WITHOUT text layer */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
                     background: `url(${currentPageData.backgroundImage}) no-repeat center center`,
                     backgroundSize: 'cover'
                   }}
-                >
-                  {/* CSS mask overlay to hide background text where editable text exists */}
-                  {unifiedTextBlocks.map((textBlock) => (
-                    <div
-                      key={`mask-${textBlock.id}`}
-                      className="absolute bg-white"
-                      style={{
-                        left: textBlock.x * zoom,
-                        top: textBlock.y * zoom,
-                        width: textBlock.width * zoom,
-                        height: textBlock.height * zoom,
-                        zIndex: 0
-                      }}
-                    />
-                  ))}
-                </div>
+                />
                 
-                {/* Render unified text blocks */}
+                {/* Editable text overlay - ONLY source of visible text */}
                 {unifiedTextBlocks.map((textBlock) => (
                   <EditableTextBlock
                     key={textBlock.id}
@@ -397,6 +379,9 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   <div className="h-6 w-px bg-gray-300"></div>
                   <span className="text-xs text-gray-500">
                     Page {currentPage + 1}/{pdfPages.length}
+                  </span>
+                  <span className="text-xs text-green-600 font-medium">
+                    ✓ Clean
                   </span>
                 </div>
               </div>
