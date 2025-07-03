@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { CanvaStylePDFEditor } from './CanvaStylePDFEditor';
 import { Template } from '@/types/template';
+import { FullFeaturedPDFEditor } from './FullFeaturedPDFEditor';
 
 interface CanvaStylePDFWrapperProps {
   template: Template;
@@ -14,14 +14,22 @@ export const CanvaStylePDFWrapper: React.FC<CanvaStylePDFWrapperProps> = ({
   onSave,
   onCancel
 }) => {
-  const handleSave = () => {
-    // Save the template with any modifications
-    onSave(template);
+  const handleSave = async (editedPDF?: Blob) => {
+    // Create updated template with edited PDF
+    const updatedTemplate = {
+      ...template,
+      updatedAt: new Date().toISOString(),
+      // Add any additional metadata for the edited PDF
+      isEdited: true,
+      editedPDF: editedPDF
+    };
+    
+    onSave(updatedTemplate);
   };
 
   return (
-    <div className="h-screen">
-      <CanvaStylePDFEditor
+    <div className="h-screen w-full">
+      <FullFeaturedPDFEditor
         template={template}
         onSave={handleSave}
         onCancel={onCancel}
