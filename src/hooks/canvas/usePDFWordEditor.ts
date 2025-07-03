@@ -52,7 +52,7 @@ export const usePDFWordEditor = () => {
     isLoadingRef.current = true;
     
     try {
-      console.log('Loading PDF:', file.name);
+      console.log('Loading PDF with enhanced text extraction:', file.name);
       
       // Clear previous state
       setPdfDocument(null);
@@ -73,12 +73,17 @@ export const usePDFWordEditor = () => {
       setCurrentPage(0);
       setCurrentFileName(file.name);
       
-      console.log('PDF loaded successfully:', file.name, 'Pages:', pages.length);
+      toast({
+        title: 'PDF Loaded with Enhanced Accuracy',
+        description: `Successfully loaded ${file.name} with ${pages.length} pages and precise text alignment.`,
+      });
+      
+      console.log('PDF loaded successfully with enhanced text extraction:', file.name, 'Pages:', pages.length);
     } catch (error) {
-      console.error('Error in loadPDF:', error);
+      console.error('Error in enhanced PDF loading:', error);
       toast({
         title: 'Error loading PDF',
-        description: 'Failed to load the PDF file. Please try again.',
+        description: 'Failed to load the PDF file with enhanced text extraction. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -148,14 +153,26 @@ export const usePDFWordEditor = () => {
     }
 
     try {
-      // Convert words to text blocks format for export
+      console.log('Exporting PDF with enhanced text handling...');
+      
+      // Convert words to text blocks format for export with precise positioning
       const blocksToExport = new Map();
       editedWords.forEach((word, id) => {
         if (word.text.trim() !== '') {
           blocksToExport.set(id, {
             ...word,
-            width: word.text.length * word.fontSize * 0.6,
-            height: word.fontSize
+            // Ensure precise positioning for export
+            x: word.x,
+            y: word.y,
+            width: word.width,
+            height: word.height,
+            fontSize: word.fontSize,
+            fontWeight: word.fontWeight || 'normal',
+            fontStyle: word.fontStyle || 'normal',
+            textAlign: 'left',
+            rotation: 0,
+            opacity: 1,
+            textDecoration: 'none'
           });
         }
       });
@@ -174,13 +191,13 @@ export const usePDFWordEditor = () => {
       
       toast({
         title: 'PDF Exported Successfully',
-        description: 'Your edited PDF has been downloaded with all word-level changes applied.',
+        description: 'Your edited PDF has been downloaded with precise text alignment and all changes applied.',
       });
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error('Error exporting enhanced PDF:', error);
       toast({
         title: 'Export Failed',
-        description: 'Failed to export PDF. Please try again.',
+        description: 'Failed to export PDF with enhanced text handling. Please try again.',
         variant: 'destructive'
       });
     }

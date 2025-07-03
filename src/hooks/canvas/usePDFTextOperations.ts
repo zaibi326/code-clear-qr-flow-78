@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { PDFDocument, PDFPage, rgb, StandardFonts, degrees } from 'pdf-lib';
 
@@ -23,6 +24,9 @@ interface PDFTextBlock {
   shadow?: boolean;
   borderColor?: { r: number; g: number; b: number };
   borderWidth?: number;
+  transform?: number[];
+  dir?: string;
+  baseline?: number;
 }
 
 export const usePDFTextOperations = () => {
@@ -47,146 +51,144 @@ export const usePDFTextOperations = () => {
       borderWidth: 0,
       color: { r: 0, g: 0, b: 0 },
       pageNumber,
-      isEdited: true
+      isEdited: true,
+      baseline: 0
     };
     
     return { newId, newTextBlock };
   }, []);
 
-  const duplicateTextBlock = useCallback((textBlock: PDFTextBlock) => {
-    const newId = `custom-text-${Date.now()}`;
-    const duplicatedBlock: PDFTextBlock = {
-      ...textBlock,
-      id: newId,
-      x: textBlock.x + 20,
-      y: textBlock.y + 20,
-      isEdited: true
-    };
-    
-    return { newId, newTextBlock: duplicatedBlock };
-  }, []);
-
   const exportPDFWithEdits = useCallback(async (
     originalPdfBytes: Uint8Array,
-    editedTextBlocks: Map<string, PDFTextBlock>,
-    shapes?: Map<string, any>
+    editedTextBlocks: Map<string, PDFTextBlock>
   ) => {
-    const newPdfDoc = await PDFDocument.load(originalPdfBytes);
-    const helveticaFont = await newPdfDoc.embedFont(StandardFonts.Helvetica);
-    const helveticaBoldFont = await newPdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const helveticaObliqueFont = await newPdfDoc.embedFont(StandardFonts.HelveticaOblique);
-
-    editedTextBlocks.forEach((textBlock) => {
-      const page = newPdfDoc.getPage(textBlock.pageNumber - 1);
-      const { width, height } = page.getSize();
+    try {
+      console.log('Starting PDF export with text edits...');
       
-      const pdfLibY = height - textBlock.y - textBlock.height;
+      const pdfDoc = await PDFDocument.load(originalPdfBytes);
+      const pages = pdfDoc.getPages();
       
-      let font = helveticaFont;
-      if (textBlock.fontWeight === 'bold' && textBlock.fontStyle === 'italic') {
-        font = helveticaBoldFont;
-      } else if (textBlock.fontWeight === 'bold') {
-        font = helveticaBoldFont;
-      } else if (textBlock.fontStyle === 'italic') {
-        font = helveticaObliqueFont;
-      }
-
-      try {
-        // Clear original text if it's an edit
-        if (textBlock.originalText && textBlock.originalText !== textBlock.text) {
-          page.drawRectangle({
-            x: textBlock.x - 2,
-            y: pdfLibY - 2,
-            width: textBlock.width + 4,
-            height: textBlock.height + 4,
-            color: rgb(1, 1, 1),
-          });
+      // Load fonts for better text rendering
+      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const boldItalicFont = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      
+      // Group edits by page for efficient processing
+      const editsByPage = new Map<number, PDFTextBlock[]>();
+      
+      editedTextBlocks.forEach((block) => {
+        const pageNum = block.pageNumber;
+        if (!editsByPage.has(pageNum)) {
+          editsByPage.set(pageNum, []);
         }
-
-        // Draw border if specified
-        if (textBlock.borderColor && textBlock.borderWidth && textBlock.borderWidth > 0) {
-          page.drawRectangle({
-            x: textBlock.x - 2,
-            y: pdfLibY - 2,
-            width: textBlock.width + 4,
-            height: textBlock.height + 4,
-            borderColor: rgb(textBlock.borderColor.r, textBlock.borderColor.g, textBlock.borderColor.b),
-            borderWidth: textBlock.borderWidth,
-          });
-        }
-
-        // Draw text
-        page.drawText(textBlock.text, {
-          x: textBlock.x,
-          y: pdfLibY,
-          size: textBlock.fontSize,
-          font: font,
-          color: rgb(textBlock.color.r, textBlock.color.g, textBlock.color.b),
-          opacity: textBlock.opacity || 1,
-          rotate: textBlock.rotation ? degrees(textBlock.rotation) : undefined,
-        });
-
-        // Draw underline if specified
-        if (textBlock.textDecoration === 'underline') {
-          page.drawLine({
-            start: { x: textBlock.x, y: pdfLibY - 2 },
-            end: { x: textBlock.x + textBlock.width, y: pdfLibY - 2 },
-            thickness: 1,
-            color: rgb(textBlock.color.r, textBlock.color.g, textBlock.color.b),
-            opacity: textBlock.opacity || 1,
-          });
-        }
-      } catch (error) {
-        console.warn('Failed to draw text block:', textBlock.id, error);
-      }
-    });
-
-    // Render shapes if provided
-    if (shapes) {
-      shapes.forEach((shape) => {
-        const page = newPdfDoc.getPage(shape.pageNumber - 1);
-        const { height } = page.getSize();
-        const pdfY = height - shape.y - shape.height;
-        
-        try {
-          switch (shape.type) {
-            case 'rectangle':
-              page.drawRectangle({
-                x: shape.x,
-                y: pdfY,
-                width: shape.width,
-                height: shape.height,
-                color: rgb(shape.fillColor.r, shape.fillColor.g, shape.fillColor.b),
-                borderColor: rgb(shape.strokeColor.r, shape.strokeColor.g, shape.strokeColor.b),
-                borderWidth: shape.strokeWidth,
-                opacity: shape.opacity
-              });
-              break;
-            case 'circle':
-              const radius = Math.min(shape.width, shape.height) / 2;
-              page.drawCircle({
-                x: shape.x + shape.width / 2,
-                y: pdfY + shape.height / 2,
-                size: radius,
-                color: rgb(shape.fillColor.r, shape.fillColor.g, shape.fillColor.b),
-                borderColor: rgb(shape.strokeColor.r, shape.strokeColor.g, shape.strokeColor.b),
-                borderWidth: shape.strokeWidth,
-                opacity: shape.opacity
-              });
-              break;
-          }
-        } catch (error) {
-          console.warn('Failed to draw shape:', shape.id, error);
-        }
+        editsByPage.get(pageNum)!.push(block);
       });
+      
+      // Process each page with edits
+      for (const [pageNum, pageEdits] of editsByPage) {
+        const page = pages[pageNum - 1];
+        if (!page) continue;
+        
+        const { width: pageWidth, height: pageHeight } = page.getSize();
+        
+        // Create white overlay to hide original text
+        pageEdits.forEach((edit) => {
+          if (edit.originalText && edit.originalText !== edit.text) {
+            // Calculate precise overlay position
+            const overlayX = edit.x;
+            const overlayY = pageHeight - edit.y - edit.height;
+            const overlayWidth = Math.max(edit.width, edit.originalText.length * edit.fontSize * 0.6);
+            const overlayHeight = edit.height;
+            
+            // Draw white rectangle to hide original text
+            page.drawRectangle({
+              x: overlayX,
+              y: overlayY,
+              width: overlayWidth,
+              height: overlayHeight,
+              color: rgb(1, 1, 1),
+              opacity: 1
+            });
+          }
+        });
+        
+        // Add new/edited text with proper positioning
+        pageEdits.forEach((edit) => {
+          if (edit.text.trim()) {
+            // Select appropriate font based on styling
+            let font = regularFont;
+            if (edit.fontWeight === 'bold' && edit.fontStyle === 'italic') {
+              font = boldItalicFont;
+            } else if (edit.fontWeight === 'bold') {
+              font = boldFont;
+            } else if (edit.fontStyle === 'italic') {
+              font = italicFont;
+            }
+            
+            // Calculate precise text position
+            const textX = edit.x;
+            const textY = pageHeight - edit.y - (edit.height * 0.8); // Adjust for baseline
+            
+            // Handle text direction and alignment
+            const textOptions: any = {
+              x: textX,
+              y: textY,
+              size: edit.fontSize,
+              font: font,
+              color: rgb(edit.color.r, edit.color.g, edit.color.b),
+              opacity: edit.opacity || 1
+            };
+            
+            // Add rotation if specified
+            if (edit.rotation) {
+              textOptions.rotate = degrees(edit.rotation);
+            }
+            
+            // Handle text alignment
+            if (edit.textAlign === 'center') {
+              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
+              textOptions.x = textX - (textWidth / 2);
+            } else if (edit.textAlign === 'right') {
+              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
+              textOptions.x = textX - textWidth;
+            }
+            
+            // Draw the text
+            page.drawText(edit.text, textOptions);
+            
+            // Add underline if specified
+            if (edit.textDecoration === 'underline') {
+              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
+              page.drawLine({
+                start: { x: textOptions.x, y: textY - 2 },
+                end: { x: textOptions.x + textWidth, y: textY - 2 },
+                thickness: 1,
+                color: rgb(edit.color.r, edit.color.g, edit.color.b),
+                opacity: edit.opacity || 1
+              });
+            }
+          }
+        });
+      }
+      
+      // Serialize the modified PDF
+      const modifiedPdfBytes = await pdfDoc.save({
+        useObjectStreams: false,
+        addDefaultPage: false
+      });
+      
+      console.log('PDF export completed successfully');
+      return modifiedPdfBytes;
+      
+    } catch (error) {
+      console.error('Error exporting PDF with text edits:', error);
+      throw new Error('Failed to export PDF with text modifications');
     }
-
-    return await newPdfDoc.save();
   }, []);
 
   return {
     addTextBlock,
-    duplicateTextBlock,
     exportPDFWithEdits
   };
 };
