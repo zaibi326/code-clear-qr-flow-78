@@ -167,7 +167,6 @@ export const usePDFWordLoader = () => {
         await page.render({
           canvasContext: context,
           viewport: scaledViewport,
-          renderInteractiveForms: false,
           intent: 'display'
         }).promise;
 

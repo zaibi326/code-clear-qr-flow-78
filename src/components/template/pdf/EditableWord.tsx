@@ -124,8 +124,8 @@ export const EditableWord: React.FC<EditableWordProps> = ({
   };
 
   // More precise positioning with subpixel accuracy
-  const baseStyle = {
-    position: 'absolute' as const,
+  const baseStyle: React.CSSProperties = {
+    position: 'absolute',
     left: `${word.x * scale}px`,
     top: `${word.y * scale}px`,
     fontSize: `${word.fontSize * scale}px`,
@@ -140,28 +140,28 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     outline: 'none',
     background: 'transparent',
     cursor: 'text',
-    whiteSpace: 'nowrap' as const,
+    whiteSpace: 'nowrap',
     minWidth: `${Math.max(word.width * scale, 20)}px`,
     height: `${word.height * scale}px`,
     lineHeight: `${word.height * scale}px`,
-    textRendering: 'optimizeLegibility',
-    WebkitFontSmoothing: 'antialiased',
-    MozOsxFontSmoothing: 'grayscale',
+    textRendering: 'optimizeLegibility' as const,
+    WebkitFontSmoothing: 'antialiased' as const,
+    MozOsxFontSmoothing: 'grayscale' as const,
     direction: word.dir as 'ltr' | 'rtl' | undefined,
-    userSelect: 'none' as const
+    userSelect: 'none'
   };
 
-  const editStyle = {
+  const editStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     border: '2px solid #3B82F6',
     borderRadius: '3px',
     boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
-    userSelect: 'text' as const,
+    userSelect: 'text',
     cursor: 'text'
   };
 
-  const hoverStyle = {
+  const hoverStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
     border: '1px solid rgba(59, 130, 246, 0.3)',
