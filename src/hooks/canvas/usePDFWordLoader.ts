@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { toast } from '@/hooks/use-toast';
@@ -187,9 +188,10 @@ export const usePDFWordLoader = () => {
         
         const words = [];
 
-        // Process text items with enhanced accuracy
+        // Process text items with enhanced accuracy - add type checking
         textContent.items.forEach((item, itemIndex) => {
-          if (item.str && item.str.trim()) {
+          // Type guard to check if item is TextItem (has str property)
+          if ('str' in item && item.str && item.str.trim()) {
             const extractedWords = extractWordsFromTextItem(
               item, 
               pageNum - 1, 
