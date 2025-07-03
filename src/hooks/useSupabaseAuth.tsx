@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ interface AuthContextType {
   userRole: string | null;
   loading: boolean;
   isLoading: boolean;
+  error: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   register: (fullName: string, email: string, password: string, company?: string) => Promise<boolean>;
@@ -29,30 +29,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    let authTimeout: NodeJS.Timeout;
+
+    console.log('useAuth: Initializing auth state');
+
+    // Set timeout to prevent infinite loading
+    authTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('useAuth: Auth initialization timeout, setting loading to false');
+        setLoading(false);
+        setError('Authentication timeout - please refresh the page');
+      }
+    }, 10000); // 10 second timeout
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
+        console.log('useAuth: Auth state change:', event, session?.user?.email);
         
         if (!mounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user && event !== 'SIGNED_OUT') {
-          // Use setTimeout to avoid potential deadlocks
-          setTimeout(async () => {
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setError(null);
+          
+          if (session?.user && event !== 'SIGNED_OUT') {
+            console.log('useAuth: User authenticated, loading profile');
+            // Use setTimeout to avoid potential deadlocks
+            setTimeout(async () => {
+              if (mounted) {
+                try {
+                  await loadUserProfile(session.user.id);
+                } catch (profileError) {
+                  console.error('useAuth: Profile loading error:', profileError);
+                  setError('Failed to load user profile');
+                }
+              }
+            }, 0);
+          } else {
+            console.log('useAuth: User signed out or no session');
+            setProfile(null);
+            setUserRole(null);
             if (mounted) {
-              await loadUserProfile(session.user.id);
+              clearTimeout(authTimeout);
+              setLoading(false);
             }
-          }, 0);
-        } else {
-          setProfile(null);
-          setUserRole(null);
+          }
+        } catch (error) {
+          console.error('useAuth: Error in auth state change handler:', error);
+          setError('Authentication error occurred');
           if (mounted) {
             setLoading(false);
           }
@@ -63,27 +93,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // THEN check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('useAuth: Checking for existing session');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Session error:', error);
+          console.error('useAuth: Session error:', error);
+          setError('Failed to get session');
           // Clear any invalid tokens
           await supabase.auth.signOut();
         }
         
         if (mounted) {
+          console.log('useAuth: Session check complete, session exists:', !!session);
           setSession(session);
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            await loadUserProfile(session.user.id);
+            try {
+              await loadUserProfile(session.user.id);
+            } catch (profileError) {
+              console.error('useAuth: Initial profile loading error:', profileError);
+              setError('Failed to load user profile');
+              setLoading(false);
+            }
           } else {
+            clearTimeout(authTimeout);
             setLoading(false);
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('useAuth: Auth initialization error:', error);
+        setError('Failed to initialize authentication');
         if (mounted) {
+          clearTimeout(authTimeout);
           setLoading(false);
         }
       }
@@ -92,23 +134,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initializeAuth();
 
     return () => {
+      console.log('useAuth: Cleaning up auth provider');
       mounted = false;
+      clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('useAuth: Loading profile for user:', userId);
+      
       // Try to get profile from Supabase first
       let userProfile = await supabaseService.getUserProfile(userId);
       
       // If no profile exists in Supabase, load from userProfileService
       if (!userProfile) {
+        console.log('useAuth: No Supabase profile found, trying userProfileService');
         userProfile = await userProfileService.loadUserProfile(userId);
       }
       
       if (userProfile) {
+        console.log('useAuth: Profile loaded successfully');
         setProfile(userProfile);
+      } else {
+        console.log('useAuth: No profile found');
       }
 
       // Load user role with proper error handling
@@ -122,25 +172,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error) {
           // Check if error is due to no rows returned (PGRST116)
           if (error.code === 'PGRST116') {
-            console.log('No role found for user, setting default role');
+            console.log('useAuth: No role found for user, setting default role');
             setUserRole('user');
           } else {
-            console.error('Error loading user role:', error);
+            console.error('useAuth: Error loading user role:', error);
             setUserRole('user'); // Default fallback
           }
         } else if (roleData) {
+          console.log('useAuth: User role loaded:', roleData.role);
           setUserRole(roleData.role);
         } else {
           // Fallback to default role
+          console.log('useAuth: No role data, setting default');
           setUserRole('user');
         }
       } catch (roleError) {
-        console.error('Unexpected error loading user role:', roleError);
+        console.error('useAuth: Unexpected error loading user role:', roleError);
         setUserRole('user'); // Default fallback
       }
       
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error('useAuth: Error loading user profile:', error);
+      throw error; // Re-throw to be caught by caller
     } finally {
       setLoading(false);
     }
@@ -149,7 +202,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log('Attempting sign in for:', email);
+      console.log('useAuth: Attempting sign in for:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -157,23 +210,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) {
-        console.error('Sign in error details:', {
+        console.error('useAuth: Sign in error details:', {
           message: error.message,
           status: error.status,
           code: error.name
         });
         
-        // Return the original error object
         return { error };
       }
       
       if (data.user) {
-        console.log('Sign in successful for user:', data.user.id);
+        console.log('useAuth: Sign in successful for user:', data.user.id);
       }
       
       return { error: null };
     } catch (error) {
-      console.error('Unexpected sign in error:', error);
+      console.error('useAuth: Unexpected sign in error:', error);
       return { 
         error: {
           message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
@@ -198,7 +250,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) {
-        console.error('Sign up error:', error);
+        console.error('useAuth: Sign up error:', error);
         return { error };
       }
       
@@ -211,7 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (fullName: string, email: string, password: string, company?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      console.log('Starting registration process for:', email);
+      console.log('useAuth: Starting registration process for:', email);
       
       const redirectUrl = `${window.location.origin}/dashboard`;
       
@@ -228,18 +280,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (error) {
-        console.error('Registration error:', error);
+        console.error('useAuth: Registration error:', error);
         return false;
       }
 
       if (data.user) {
-        console.log('User created successfully:', data.user.id);
+        console.log('useAuth: User created successfully:', data.user.id);
         
-        // Wait a moment for the auth state to settle
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         try {
-          // Create user profile in Supabase
           const profileData: Omit<DatabaseUser, 'id'> = {
             email: email.trim().toLowerCase(),
             name: fullName,
@@ -274,11 +324,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             last_login_at: null
           };
 
-          console.log('Creating profile with data:', profileData);
+          console.log('useAuth: Creating profile with data:', profileData);
           await supabaseService.createUserProfile(profileData, data.user.id);
-          console.log('Profile created successfully');
+          console.log('useAuth: Profile created successfully');
 
-          // Create default user role
           await supabase
             .from('user_roles')
             .insert({
@@ -286,7 +335,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               role: 'user'
             });
           
-          // Also sync with userProfileService for immediate local access
           await userProfileService.updateProfile({
             name: fullName,
             email: email.trim().toLowerCase(),
@@ -295,16 +343,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           return true;
         } catch (profileError) {
-          console.error('Profile creation error:', profileError);
-          // Even if profile creation fails, the user account was created
-          // We'll let them proceed and fix the profile later
+          console.error('useAuth: Profile creation error:', profileError);
           return true;
         }
       }
 
       return false;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('useAuth: Registration error:', error);
       return false;
     } finally {
       setIsLoading(false);
@@ -316,15 +362,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Sign out error:', error);
+        console.error('useAuth: Sign out error:', error);
       }
       
-      // Clear local state
       setUser(null);
       setSession(null);
       setProfile(null);
     } catch (error) {
-      console.error('Unexpected sign out error:', error);
+      console.error('useAuth: Unexpected sign out error:', error);
     } finally {
       setLoading(false);
     }
@@ -339,7 +384,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile({ ...profile, ...updates });
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('useAuth: Error updating profile:', error);
     }
   };
 
@@ -350,6 +395,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userRole,
     loading,
     isLoading,
+    error,
     signIn,
     signUp,
     register,
