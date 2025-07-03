@@ -1,33 +1,29 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Upload, 
   Download, 
   MousePointer, 
   Type, 
   Edit3,
-  FileText,
-  Target,
-  Move,
-  PlusCircle,
-  Palette
+  Move
 } from 'lucide-react';
-import { PDFDocument } from 'pdf-lib';
+
+type EditMode = 'select' | 'add-text' | 'pan';
 
 interface PDFSidebarContentProps {
   selectedFile: File | null;
-  editMode: 'select' | 'add-text';
-  setEditMode: (mode: 'select' | 'add-text') => void;
+  editMode: EditMode;
+  setEditMode: (mode: EditMode) => void;
   totalEditedBlocks: number;
   pdfPagesLength: number;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onExportPDF: () => void;
-  pdfDocument: PDFDocument | null;
+  pdfDocument: any;
   hideFileUpload?: boolean;
-  onTriggerFileUpload?: () => void;
+  onTriggerFileUpload: () => void;
 }
 
 export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
@@ -43,142 +39,131 @@ export const PDFSidebarContent: React.FC<PDFSidebarContentProps> = ({
   onTriggerFileUpload
 }) => {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {/* Upload Section - Only show if not hidden */}
-      {!hideFileUpload && (
+    <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+      {/* File Upload Section */}
+      {!hideFileUpload && !selectedFile && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Upload PDF Document</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-3">
-              <Button
+          <CardContent className="p-4">
+            <div className="text-center">
+              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 mb-3">
+                Upload a PDF file to start editing
+              </p>
+              <Button 
                 onClick={onTriggerFileUpload}
-                variant="outline"
-                className="w-full"
-                size="sm"
+                className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Choose File
+                Choose PDF File
               </Button>
-              {selectedFile && (
-                <div className="text-xs text-gray-600 truncate">
-                  {selectedFile.name}
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* File Info */}
+      {selectedFile && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <h3 className="font-medium text-sm">Current File</h3>
+              <p className="text-xs text-gray-600 break-all">{selectedFile.name}</p>
+              <p className="text-xs text-gray-500">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • {pdfPagesLength} pages
+              </p>
+              {totalEditedBlocks > 0 && (
+                <p className="text-xs text-blue-600 font-medium">
+                  {totalEditedBlocks} text blocks edited
+                </p>
               )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* How to Edit Instructions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Edit3 className="w-4 h-4" />
-            How to Edit:
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 space-y-3 text-xs text-gray-600">
-          <div className="flex items-start gap-2">
-            <Target className="w-3 h-3 mt-0.5 text-blue-500 flex-shrink-0" />
-            <div>
-              <span className="font-medium">Edit existing text:</span> Double-click any text
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <Move className="w-3 h-3 mt-0.5 text-green-500 flex-shrink-0" />
-            <div>
-              <span className="font-medium">Move text:</span> Drag text blocks around
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <PlusCircle className="w-3 h-3 mt-0.5 text-purple-500 flex-shrink-0" />
-            <div>
-              <span className="font-medium">Add new text:</span> Switch to "Add Text" mode, then click
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <Palette className="w-3 h-3 mt-0.5 text-orange-500 flex-shrink-0" />
-            <div>
-              <span className="font-medium">Format text:</span> Use the floating toolbar when editing
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <FileText className="w-3 h-3 mt-0.5 text-blue-600 flex-shrink-0" />
-            <div>
-              <span className="font-medium">Real PDF editing:</span> Changes modify the actual PDF content, not just overlays
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Editing Mode Controls */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Editing Mode</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 space-y-2">
-          <Button
-            onClick={() => setEditMode('select')}
-            variant={editMode === 'select' ? 'default' : 'outline'}
-            size="sm"
-            className="w-full justify-start"
-          >
-            <MousePointer className="w-4 h-4 mr-2" />
-            Select & Edit
-          </Button>
-          <Button
-            onClick={() => setEditMode('add-text')}
-            variant={editMode === 'add-text' ? 'default' : 'outline'}
-            size="sm"
-            className="w-full justify-start"
-          >
-            <Type className="w-4 h-4 mr-2" />
-            Add Text
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      {pdfDocument && (
+      {/* Edit Mode Controls */}
+      {pdfPagesLength > 0 && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Document Stats</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">Pages:</span>
-              <Badge variant="secondary">{pdfPagesLength}</Badge>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">Text Edits:</span>
-              <Badge variant={totalEditedBlocks > 0 ? 'default' : 'secondary'}>
-                {totalEditedBlocks}
-              </Badge>
+          <CardContent className="p-4">
+            <h3 className="font-medium text-sm mb-3">Edit Mode</h3>
+            <div className="space-y-2">
+              <Button
+                variant={editMode === 'select' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('select')}
+                className="w-full justify-start"
+              >
+                <MousePointer className="w-4 h-4 mr-2" />
+                Select & Edit Text
+              </Button>
+              <Button
+                variant={editMode === 'add-text' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('add-text')}
+                className="w-full justify-start"
+              >
+                <Type className="w-4 h-4 mr-2" />
+                Add New Text
+              </Button>
+              <Button
+                variant={editMode === 'pan' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditMode('pan')}
+                className="w-full justify-start"
+              >
+                <Move className="w-4 h-4 mr-2" />
+                Pan & Navigate
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Actions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Button
-            onClick={onExportPDF}
-            disabled={!pdfDocument}
-            variant="outline"
-            size="sm"
-            className="w-full"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export Edited PDF
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Quick Actions */}
+      {pdfDocument && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-medium text-sm mb-3">Actions</h3>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onExportPDF}
+                className="w-full justify-start"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+              {!hideFileUpload && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onTriggerFileUpload}
+                  className="w-full justify-start"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Load Different PDF
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Help Text */}
+      {pdfPagesLength > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h3 className="font-medium text-sm text-blue-900 mb-2">How to Edit</h3>
+            <div className="text-xs text-blue-800 space-y-1">
+              <p>• <strong>Select Mode:</strong> Click on text to edit it</p>
+              <p>• <strong>Add Text:</strong> Click anywhere to add new text</p>
+              <p>• <strong>Pan Mode:</strong> Drag to move around the document</p>
+              <p>• Use zoom controls to get a better view</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
