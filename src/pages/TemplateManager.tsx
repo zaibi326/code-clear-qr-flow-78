@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
@@ -19,6 +18,12 @@ const TemplateEditorWrapper = React.lazy(() =>
 const CanvaStylePDFWrapper = React.lazy(() => 
   import('@/components/template/pdf/CanvaStylePDFWrapper').then(module => ({
     default: module.CanvaStylePDFWrapper
+  }))
+);
+
+const EnhancedPDFEditor = React.lazy(() => 
+  import('@/components/template/pdf/EnhancedPDFEditor').then(module => ({
+    default: module.EnhancedPDFEditor
   }))
 );
 
@@ -54,7 +59,7 @@ const TemplateManager = () => {
   
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf'>('canvas');
+  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf' | 'enhanced-pdf'>('canvas');
 
   const { templates, setTemplates, isLoaded, fileToDataUrl } = useTemplateStorage();
   
@@ -110,8 +115,8 @@ const TemplateManager = () => {
         setEditingTemplate(template);
         // Improved PDF detection
         if (isPDFTemplate(template)) {
-          setEditingMode('pdf');
-          console.log('Setting PDF editing mode for template:', template.name);
+          setEditingMode('enhanced-pdf'); // Use enhanced PDF editor with operations
+          console.log('Setting enhanced PDF editing mode for template:', template.name);
         } else {
           setEditingMode('canvas');
           console.log('Setting canvas editing mode for template:', template.name);
@@ -169,8 +174,8 @@ const TemplateManager = () => {
     
     // Set editing mode based on improved PDF detection
     if (isPDF) {
-      setEditingMode('pdf');
-      console.log('Using PDF editor for template:', template.name);
+      setEditingMode('enhanced-pdf'); // Use enhanced PDF editor with operations
+      console.log('Using enhanced PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
       console.log('Using canvas editor for template:', template.name);
@@ -215,7 +220,20 @@ const TemplateManager = () => {
 
   // Show template editor if editing - Full screen editor with lazy loading
   if (editingTemplate) {
-    if (editingMode === 'pdf') {
+    if (editingMode === 'enhanced-pdf') {
+      console.log('Rendering enhanced PDF editor for:', editingTemplate.name);
+      return (
+        <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
+          <Suspense fallback={<EditorLoadingFallback />}>
+            <EnhancedPDFEditor
+              template={editingTemplate}
+              onSave={handleTemplateCustomizationSave}
+              onCancel={handleTemplateCustomizationCancel}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    } else if (editingMode === 'pdf') {
       console.log('Rendering PDF editor for:', editingTemplate.name);
       return (
         <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
