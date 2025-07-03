@@ -138,7 +138,7 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     fontWeight: word.fontWeight === 'bold' ? 'bold' : 'normal',
     fontStyle: word.fontStyle === 'italic' ? 'italic' : 'normal',
     color: colorToHex(word.color),
-    zIndex: 10,
+    zIndex: 15, // Ensure editable text is above masks but below UI elements
     margin: 0,
     padding: '2px',
     border: 'none',
@@ -165,14 +165,16 @@ export const EditableWord: React.FC<EditableWordProps> = ({
     userSelect: 'text',
     cursor: 'text',
     resize: 'none',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    zIndex: 25 // Higher z-index when editing
   };
 
   const hoverStyle: React.CSSProperties = {
     ...baseStyle,
     backgroundColor: word.isEdited ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
     border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '3px'
+    borderRadius: '3px',
+    zIndex: 16 // Slightly higher when hovered
   };
 
   return (

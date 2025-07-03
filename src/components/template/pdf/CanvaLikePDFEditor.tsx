@@ -804,7 +804,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
-                {/* Background image */}
+                {/* Background image with text masking */}
                 <div 
                   className="w-full h-full relative overflow-hidden rounded-lg"
                   style={{
@@ -812,38 +812,43 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                     backgroundSize: 'cover'
                   }}
                 >
-                  {/* Word masks */}
+                  {/* White masks to hide original text areas - this prevents doubling */}
                   {unifiedWords.map((word) => (
                     <div
                       key={`mask-${word.id}`}
                       className="absolute bg-white"
                       style={{
-                        left: word.x * zoom,
-                        top: word.y * zoom,
-                        width: word.width * zoom,
-                        height: word.height * zoom,
-                        zIndex: 0
+                        left: Math.max(0, word.x * zoom - 1), // Slight padding to ensure complete coverage
+                        top: Math.max(0, word.y * zoom - 1),
+                        width: (word.width * zoom) + 2, // Slight padding to ensure complete coverage
+                        height: (word.height * zoom) + 2,
+                        zIndex: 1, // Above background, below editable text
+                        pointerEvents: 'none' // Don't interfere with text editing
                       }}
                     />
                   ))}
                 </div>
                 
-                {/* Editable words */}
+                {/* Editable words - rendered above masks */}
                 {unifiedWords.map((word) => (
-                  <EditableWord
-                    key={word.id}
-                    word={word}
-                    scale={zoom}
-                    onUpdate={updateWord}
-                    onDelete={deleteWord}
-                  />
+                  <div key={`word-container-${word.id}`} style={{ zIndex: 10 }}>
+                    <EditableWord
+                      key={word.id}
+                      word={word}
+                      scale={zoom}
+                      onUpdate={updateWord}
+                      onDelete={deleteWord}
+                    />
+                  </div>
                 ))}
 
-                {/* Canva elements */}
-                {currentPageElements.map(element => renderCanvaElement(element))}
+                {/* Canva elements - rendered at top level */}
+                <div style={{ zIndex: 20 }}>
+                  {currentPageElements.map(element => renderCanvaElement(element))}
+                </div>
 
                 {/* Page info */}
-                <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3">
+                <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3" style={{ zIndex: 30 }}>
                   <span className="text-xs text-gray-500">
                     Page {currentPage + 1}/{pdfPages.length} • {unifiedWords.length} words • {currentPageElements.length} elements
                   </span>
