@@ -1,13 +1,52 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
 import { useTemplateStorage } from '@/hooks/template/useTemplateStorage';
 import { useTemplateActions } from '@/hooks/template/useTemplateActions';
 import { TemplateManagerLayout } from '@/components/template/TemplateManagerLayout';
 import { TemplateManagerContent } from '@/components/template/TemplateManagerContent';
-import { TemplateEditorWrapper } from '@/components/template/TemplateEditorWrapper';
-import { CanvaStylePDFWrapper } from '@/components/template/pdf/CanvaStylePDFWrapper';
 import { LoadingScreen } from '@/components/template/LoadingScreen';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+// Lazy load heavy editor components to prevent crashes on initial load
+const TemplateEditorWrapper = React.lazy(() => 
+  import('@/components/template/TemplateEditorWrapper').then(module => ({
+    default: module.TemplateEditorWrapper
+  }))
+);
+
+const CanvaStylePDFWrapper = React.lazy(() => 
+  import('@/components/template/pdf/CanvaStylePDFWrapper').then(module => ({
+    default: module.CanvaStylePDFWrapper
+  }))
+);
+
+// Loading fallback for editor components
+const EditorLoadingFallback = () => (
+  <div className="h-screen w-full flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading editor...</p>
+    </div>
+  </div>
+);
+
+// Error fallback for editor components
+const EditorErrorFallback = ({ onBack }: { onBack: () => void }) => (
+  <div className="h-screen w-full flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Editor Failed to Load</h2>
+      <p className="text-gray-600 mb-6">There was an error loading the template editor.</p>
+      <button
+        onClick={onBack}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Back to Template Manager
+      </button>
+    </div>
+  </div>
+);
 
 const TemplateManager = () => {
   const navigate = useNavigate();
@@ -131,7 +170,7 @@ const TemplateManager = () => {
     // Set editing mode based on improved PDF detection
     if (isPDF) {
       setEditingMode('pdf');
-      console.log('Using floating input PDF editor for template:', template.name);
+      console.log('Using PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
       console.log('Using canvas editor for template:', template.name);
@@ -174,43 +213,53 @@ const TemplateManager = () => {
     return <LoadingScreen />;
   }
 
-  // Show template editor if editing - Full screen editor
+  // Show template editor if editing - Full screen editor with lazy loading
   if (editingTemplate) {
     if (editingMode === 'pdf') {
-      console.log('Rendering floating input PDF editor for:', editingTemplate.name);
+      console.log('Rendering PDF editor for:', editingTemplate.name);
       return (
-        <CanvaStylePDFWrapper
-          template={editingTemplate}
-          onSave={handleTemplateCustomizationSave}
-          onCancel={handleTemplateCustomizationCancel}
-        />
+        <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
+          <Suspense fallback={<EditorLoadingFallback />}>
+            <CanvaStylePDFWrapper
+              template={editingTemplate}
+              onSave={handleTemplateCustomizationSave}
+              onCancel={handleTemplateCustomizationCancel}
+            />
+          </Suspense>
+        </ErrorBoundary>
       );
     } else {
       console.log('Rendering canvas editor for:', editingTemplate.name);
       return (
-        <TemplateEditorWrapper
-          template={editingTemplate}
-          onSave={handleTemplateCustomizationSave}
-          onCancel={handleTemplateCustomizationCancel}
-        />
+        <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
+          <Suspense fallback={<EditorLoadingFallback />}>
+            <TemplateEditorWrapper
+              template={editingTemplate}
+              onSave={handleTemplateCustomizationSave}
+              onCancel={handleTemplateCustomizationCancel}
+            />
+          </Suspense>
+        </ErrorBoundary>
       );
     }
   }
 
   return (
-    <TemplateManagerLayout>
-      <TemplateManagerContent
-        templates={templates}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onTemplateSelect={handleTemplateSelect}
-        onTemplateUpload={handleTemplateUpload}
-        onTemplateEdit={handleTemplateEdit}
-        onTemplateDelete={handleTemplateDelete}
-        onTemplateDuplicate={handleTemplateDuplicate}
-        onUploadNew={handleUploadNew}
-      />
-    </TemplateManagerLayout>
+    <ErrorBoundary>
+      <TemplateManagerLayout>
+        <TemplateManagerContent
+          templates={templates}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onTemplateSelect={handleTemplateSelect}
+          onTemplateUpload={handleTemplateUpload}
+          onTemplateEdit={handleTemplateEdit}
+          onTemplateDelete={handleTemplateDelete}
+          onTemplateDuplicate={handleTemplateDuplicate}
+          onUploadNew={handleUploadNew}
+        />
+      </TemplateManagerLayout>
+    </ErrorBoundary>
   );
 };
 

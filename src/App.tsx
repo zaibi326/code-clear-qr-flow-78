@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -35,6 +34,8 @@ const Blog = lazy(() => import("./pages/Blog"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+import { TemplateManagerErrorBoundary } from "@/components/template/TemplateManagerErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -159,9 +160,11 @@ const App = () => {
                   <Route 
                     path="/template-manager" 
                     element={
-                      <Suspense fallback={<LoadingFallback message="Loading template manager..." />}>
-                        <TemplateManager />
-                      </Suspense>
+                      <TemplateManagerErrorBoundary>
+                        <Suspense fallback={<LoadingFallback message="Loading template manager..." />}>
+                          <TemplateManager />
+                        </Suspense>
+                      </TemplateManagerErrorBoundary>
                     } 
                   />
                   <Route 
