@@ -254,14 +254,12 @@ export const useCanvaStylePDFEditor = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // CRITICAL FIX: Render page WITHOUT text layer using renderingIntent
+        // CRITICAL FIX: Render page WITHOUT text layer
         await page.render({
           canvasContext: context,
           viewport: viewport,
-          intent: 'display',
-          renderTextLayer: false, // FIXED: Explicitly disable text rendering
-          renderAnnotationLayer: false,
-          renderInteractiveForms: false
+          intent: 'display'
+          // Removed invalid renderTextLayer property
         }).promise;
 
         // Extract text elements for overlay
