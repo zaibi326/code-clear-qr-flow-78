@@ -136,7 +136,6 @@ export const usePDFTextEditor = () => {
         await page.render({
           canvasContext: context,
           viewport: viewport,
-          renderInteractiveForms: false,
           textLayerMode: 0, // Disable text layer rendering
           annotationMode: 0 // Disable annotations
         }).promise;
