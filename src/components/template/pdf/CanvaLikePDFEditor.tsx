@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,14 +20,17 @@ import {
   Move,
   RotateCw,
   Copy,
-  Trash2
+  Trash2,
+  QrCode
 } from 'lucide-react';
 import { usePDFWordEditor } from '@/hooks/canvas/usePDFWordEditor';
 import { EditableWord } from './EditableWord';
 import { EnhancedPDFSidebar } from './components/EnhancedPDFSidebar';
 import { PDFPageNavigation } from './components/PDFPageNavigation';
+import { QRCodeGenerator } from './components/QRCodeGenerator';
 import { toast } from '@/hooks/use-toast';
 import { Template } from '@/types/template';
+import { generateQRCode } from '@/utils/qrCodeGenerator';
 
 interface PDFWord {
   id: string;
@@ -96,6 +98,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
     startPos: { x: number; y: number };
     elementId?: string;
   }>({ isDragging: false, startPos: { x: 0, y: 0 } });
+  const [showQRGenerator, setShowQRGenerator] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -144,9 +147,76 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
   const handleToolSelect = (tool: string) => {
     setSelectedTool(tool);
     setSelectedElement(null);
+    
+    if (tool === 'qr') {
+      setShowQRGenerator(true);
+    }
+  };
+
+  const handleQRCodeGeneration = async (url: string, size: number = 150) => {
+    try {
+      const qrResult = await generateQRCode(url, { size });
+      
+      const elementId = `qr-${Date.now()}`;
+      const newElement: CanvaElement = {
+        id: elementId,
+        type: 'image',
+        x: 100,
+        y: 100,
+        width: size,
+        height: size,
+        pageNumber: currentPage + 1,
+        properties: {
+          src: qrResult.dataURL,
+          qrUrl: url,
+          isQRCode: true,
+          opacity: 1
+        },
+        rotation: 0,
+        visible: true,
+        locked: false
+      };
+
+      setCanvaElements(prev => {
+        const newMap = new Map(prev);
+        newMap.set(elementId, newElement);
+        return newMap;
+      });
+
+      const newLayer: Layer = {
+        id: elementId,
+        name: `QR Code (${url.substring(0, 20)}...)`,
+        type: 'qr',
+        visible: true,
+        locked: false,
+        pageNumber: currentPage + 1
+      };
+
+      setLayers(prev => [...prev, newLayer]);
+      setSelectedElement(elementId);
+      setSelectedTool('select');
+      setShowQRGenerator(false);
+
+      toast({
+        title: 'QR Code Added',
+        description: `QR code for ${url} has been added to the PDF.`,
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: 'QR Code Generation Failed',
+        description: 'Please try again with a valid URL.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const addCanvaElement = (type: string, x: number, y: number) => {
+    if (type === 'qr') {
+      setShowQRGenerator(true);
+      return;
+    }
+
     const elementId = `${type}-${Date.now()}`;
     let properties = {};
     let width = 100;
@@ -328,6 +398,8 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
         }
       };
       imageInput.click();
+    } else if (selectedTool === 'qr') {
+      setShowQRGenerator(true);
     } else {
       addCanvaElement(selectedTool, x, y);
     }
@@ -386,6 +458,45 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
       title: 'Element Deleted',
       description: 'The selected element has been removed.',
     });
+  };
+
+  const regenerateQRCode = async (elementId: string, newUrl: string) => {
+    const element = canvaElements.get(elementId);
+    if (!element || !element.properties.isQRCode) return;
+
+    try {
+      const qrResult = await generateQRCode(newUrl, { size: element.width });
+      
+      setCanvaElements(prev => {
+        const newMap = new Map(prev);
+        const updatedElement = { ...element };
+        updatedElement.properties = {
+          ...updatedElement.properties,
+          src: qrResult.dataURL,
+          qrUrl: newUrl
+        };
+        newMap.set(elementId, updatedElement);
+        return newMap;
+      });
+
+      // Update layer name
+      setLayers(prev => prev.map(layer => 
+        layer.id === elementId 
+          ? { ...layer, name: `QR Code (${newUrl.substring(0, 20)}...)` }
+          : layer
+      ));
+
+      toast({
+        title: 'QR Code Updated',
+        description: `QR code updated with new URL: ${newUrl}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'QR Code Update Failed',
+        description: 'Please try again with a valid URL.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleLayerToggleVisibility = (layerId: string) => {
@@ -460,6 +571,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
     if (!element.visible || element.pageNumber !== currentPage + 1) return null;
 
     const isSelected = selectedElement === element.id;
+    const isQRCode = element.properties.isQRCode;
     const baseStyle = {
       position: 'absolute' as const,
       left: element.x * zoom,
@@ -506,7 +618,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
           >
             <img
               src={element.properties.src}
-              alt="Uploaded"
+              alt={isQRCode ? 'QR Code' : 'Uploaded'}
               style={{
                 width: '100%',
                 height: '100%',
@@ -514,6 +626,11 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                 opacity: element.properties.opacity || 1
               }}
             />
+            {isSelected && isQRCode && (
+              <div className="absolute -top-8 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                QR: {element.properties.qrUrl?.substring(0, 20)}...
+              </div>
+            )}
           </div>
         );
 
@@ -554,6 +671,17 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
         className="hidden"
       />
 
+      {/* QR Code Generator Modal */}
+      {showQRGenerator && (
+        <QRCodeGenerator
+          onGenerate={handleQRCodeGeneration}
+          onClose={() => setShowQRGenerator(false)}
+          selectedElement={selectedElement}
+          onRegenerate={regenerateQRCode}
+          currentQRUrl={selectedElement ? canvaElements.get(selectedElement)?.properties.qrUrl : undefined}
+        />
+      )}
+
       {/* Enhanced Sidebar */}
       <EnhancedPDFSidebar
         selectedFile={selectedFile}
@@ -592,6 +720,16 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
           <div className="flex items-center space-x-2">
             {selectedElement && (
               <>
+                {canvaElements.get(selectedElement)?.properties.isQRCode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQRGenerator(true)}
+                  >
+                    <QrCode className="w-4 h-4 mr-1" />
+                    Edit QR
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -638,7 +776,7 @@ export const CanvaLikePDFEditor: React.FC<CanvaLikePDFEditorProps> = ({
                   Upload a PDF for Canva-Style Editing
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Your PDF will be processed to enable advanced editing with text, images, shapes, and annotations.
+                  Your PDF will be processed to enable advanced editing with text, images, shapes, QR codes, and annotations.
                 </p>
                 <Button
                   onClick={triggerFileUpload}

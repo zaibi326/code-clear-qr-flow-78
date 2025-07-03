@@ -1,24 +1,29 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { 
   FileText, 
-  Type, 
-  Square, 
-  Circle, 
+  Download, 
+  Upload,
+  Type,
+  Image as ImageIcon,
+  Square,
+  Circle as CircleIcon,
   Triangle,
   Star,
-  Image as ImageIcon,
-  QrCode,
-  Layers,
+  ArrowRight,
+  Highlighter,
+  MousePointer,
+  Edit3,
   Eye,
   EyeOff,
   Lock,
-  Unlock
+  Unlock,
+  QrCode,
+  Layers
 } from 'lucide-react';
 
 interface Layer {
@@ -43,7 +48,7 @@ interface EnhancedPDFSidebarProps {
   onLayerToggleVisibility: (layerId: string) => void;
   onLayerToggleLock: (layerId: string) => void;
   onLayerSelect: (layerId: string) => void;
-  selectedLayerId?: string;
+  selectedLayerId: string | null;
 }
 
 export const EnhancedPDFSidebar: React.FC<EnhancedPDFSidebarProps> = ({
@@ -61,121 +66,205 @@ export const EnhancedPDFSidebar: React.FC<EnhancedPDFSidebarProps> = ({
   onLayerSelect,
   selectedLayerId
 }) => {
-  const tools = [
-    { id: 'text', icon: Type, label: 'Add Text', color: 'bg-blue-500' },
-    { id: 'rectangle', icon: Square, label: 'Rectangle', color: 'bg-green-500' },
-    { id: 'circle', icon: Circle, label: 'Circle', color: 'bg-purple-500' },
-    { id: 'triangle', icon: Triangle, label: 'Triangle', color: 'bg-orange-500' },
-    { id: 'star', icon: Star, label: 'Star', color: 'bg-yellow-500' },
-    { id: 'image', icon: ImageIcon, label: 'Upload Image', color: 'bg-pink-500' },
-    { id: 'qrcode', icon: QrCode, label: 'QR Code', color: 'bg-indigo-500' },
-  ];
+  const [activeSection, setActiveSection] = useState<'tools' | 'layers'>('tools');
 
-  const getLayerIcon = (type: string) => {
-    switch (type) {
-      case 'text': return <Type className="w-4 h-4" />;
-      case 'shape': return <Square className="w-4 h-4" />;
-      case 'image': return <ImageIcon className="w-4 h-4" />;
-      case 'qr': return <QrCode className="w-4 h-4" />;
-      default: return <Square className="w-4 h-4" />;
-    }
-  };
+  const tools = [
+    { id: 'select', label: 'Select', icon: MousePointer },
+    { id: 'text', label: 'Text', icon: Type },
+    { id: 'image', label: 'Image', icon: ImageIcon },
+    { id: 'qr', label: 'QR Code', icon: QrCode },
+    { id: 'rectangle', label: 'Rectangle', icon: Square },
+    { id: 'circle', label: 'Circle', icon: CircleIcon },
+    { id: 'triangle', label: 'Triangle', icon: Triangle },
+    { id: 'star', label: 'Star', icon: Star },
+    { id: 'arrow', label: 'Arrow', icon: ArrowRight },
+    { id: 'highlight', label: 'Highlight', icon: Highlighter }
+  ];
 
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
-      <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <CardTitle className="flex items-center gap-2 text-blue-900">
-          <FileText className="w-5 h-5" />
-          Canva-Style PDF Editor
-        </CardTitle>
-        <p className="text-sm text-blue-700">
-          Professional PDF editing with advanced tools
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2 mb-2">
+          <FileText className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-800">Canva PDF Editor</h2>
+        </div>
+        <p className="text-sm text-gray-600">
+          Professional PDF editing with word-level precision
         </p>
-      </CardHeader>
-      
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* File Upload */}
-        <Card className="border-2 border-dashed border-blue-200 bg-blue-50/50">
-          <CardContent className="p-4">
-            <Label className="text-sm font-medium mb-2 block text-blue-900">Upload PDF Document</Label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={onFileUpload}
-              className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-            />
-            {selectedFile && (
-              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                {selectedFile.name} loaded successfully
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      </div>
 
-        {/* Tools */}
-        {pdfPagesLength > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <Label className="text-sm font-medium mb-3 block">Design Tools</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {tools.map((tool) => (
+      {/* File Status */}
+      {selectedFile && (
+        <div className="p-4 bg-blue-50 border-b border-gray-200">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-blue-800">
+              {selectedFile.name.length > 25 
+                ? selectedFile.name.substring(0, 25) + '...' 
+                : selectedFile.name}
+            </span>
+            <span className="text-blue-600">{pdfPagesLength} pages</span>
+          </div>
+          <div className="mt-1 text-xs text-blue-600">
+            {totalEditedBlocks} elements edited
+          </div>
+        </div>
+      )}
+
+      {/* Section Tabs */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveSection('tools')}
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            activeSection === 'tools'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Tools & Elements
+        </button>
+        <button
+          onClick={() => setActiveSection('layers')}
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            activeSection === 'layers'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <Layers className="w-4 h-4 inline mr-1" />
+          Layers ({layers.length})
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {activeSection === 'tools' ? (
+          <div className="p-4 space-y-6">
+            {/* File Upload */}
+            {!selectedFile && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Upload PDF</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={onFileUpload}
+                    className="hidden"
+                    id="pdf-upload"
+                  />
                   <Button
-                    key={tool.id}
-                    variant={selectedTool === tool.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => onToolSelect(tool.id)}
-                    className="flex flex-col items-center justify-center h-16 p-2"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => document.getElementById('pdf-upload')?.click()}
                   >
-                    <div className={`w-8 h-8 rounded-full ${tool.color} flex items-center justify-center mb-1`}>
-                      <tool.icon className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-xs">{tool.label}</span>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Choose PDF File
                   </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Upload a PDF to start editing with Canva-style tools
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Layers Panel */}
-        {layers.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Layers className="w-4 h-4" />
-                  Layers
-                </Label>
-                <Badge variant="secondary" className="text-xs">
-                  {layers.length}
-                </Badge>
-              </div>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {layers.map((layer) => (
+            {/* Tools Grid */}
+            {selectedFile && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Design Tools</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 gap-2">
+                    {tools.map((tool) => {
+                      const IconComponent = tool.icon;
+                      return (
+                        <Button
+                          key={tool.id}
+                          variant={selectedTool === tool.id ? 'default' : 'outline'}
+                          size="sm"
+                          className={`flex flex-col items-center justify-center h-16 p-2 text-xs ${
+                            selectedTool === tool.id 
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => onToolSelect(tool.id)}
+                        >
+                          <IconComponent className="w-5 h-5 mb-1" />
+                          <span>{tool.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedTool !== 'select' && (
+                    <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                      <p className="text-xs text-blue-700">
+                        {selectedTool === 'qr' 
+                          ? 'Click anywhere on the canvas to add a QR code'
+                          : selectedTool === 'image'
+                          ? 'Click anywhere on the canvas to upload an image'
+                          : `Click anywhere on the canvas to add a ${selectedTool}`
+                        }
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Actions */}
+            {selectedFile && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={onExportPDF}
+                    disabled={!pdfDocument}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <div className="p-4">
+            {/* Layers Panel */}
+            <div className="space-y-2">
+              {layers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Layers className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No layers yet</p>
+                  <p className="text-xs">Add text, images, or shapes to create layers</p>
+                </div>
+              ) : (
+                layers.map((layer) => (
                   <div
                     key={layer.id}
-                    className={`flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-gray-50 ${
-                      selectedLayerId === layer.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    className={`flex items-center space-x-2 p-2 rounded-md border transition-colors cursor-pointer ${
+                      selectedLayerId === layer.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
                     }`}
                     onClick={() => onLayerSelect(layer.id)}
                   >
-                    <div className="flex items-center space-x-2 flex-1">
-                      {getLayerIcon(layer.type)}
-                      <span className="text-xs font-medium truncate">{layer.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        P{layer.pageNumber}
-                      </Badge>
-                    </div>
                     <div className="flex items-center space-x-1">
                       <Button
-                        size="sm"
                         variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           onLayerToggleVisibility(layer.id);
                         }}
-                        className="h-6 w-6 p-0"
                       >
                         {layer.visible ? (
                           <Eye className="w-3 h-3" />
@@ -184,56 +273,41 @@ export const EnhancedPDFSidebar: React.FC<EnhancedPDFSidebarProps> = ({
                         )}
                       </Button>
                       <Button
-                        size="sm"
                         variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           onLayerToggleLock(layer.id);
                         }}
-                        className="h-6 w-6 p-0"
                       >
                         {layer.locked ? (
-                          <Lock className="w-3 h-3 text-gray-400" />
+                          <Lock className="w-3 h-3" />
                         ) : (
-                          <Unlock className="w-3 h-3" />
+                          <Unlock className="w-3 h-3 text-gray-400" />
                         )}
                       </Button>
                     </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        {layer.type === 'text' && <Type className="w-3 h-3 text-gray-500 flex-shrink-0" />}
+                        {layer.type === 'image' && <ImageIcon className="w-3 h-3 text-gray-500 flex-shrink-0" />}
+                        {layer.type === 'shape' && <Square className="w-3 h-3 text-gray-500 flex-shrink-0" />}
+                        {layer.type === 'qr' && <QrCode className="w-3 h-3 text-gray-500 flex-shrink-0" />}
+                        <span className="text-sm font-medium truncate">
+                          {layer.name}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Page {layer.pageNumber}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Instructions */}
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="p-4">
-            <h3 className="font-medium text-emerald-900 mb-2 flex items-center gap-2">
-              <Type className="w-4 h-4" />
-              Enhanced Features:
-            </h3>
-            <ul className="text-xs text-emerald-800 space-y-1">
-              <li>• <strong>Advanced Text:</strong> Underline, alignment, opacity</li>
-              <li>• <strong>Shapes:</strong> Rectangles, circles, triangles, stars</li>
-              <li>• <strong>Layers:</strong> Full layer management system</li>
-              <li>• <strong>Styling:</strong> Colors, borders, shadows, rotation</li>
-              <li>• <strong>Professional:</strong> Export to high-quality PDF</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Stats */}
-        {totalEditedBlocks > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <h3 className="font-medium text-orange-900 mb-2">Edit Summary</h3>
-              <div className="space-y-1 text-sm text-orange-800">
-                <p>{totalEditedBlocks} elements modified</p>
-                <p>{layers.length} layers total</p>
-              </div>
-            </CardContent>
-          </Card>
+                ))
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
