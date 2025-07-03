@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,6 +74,14 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     deleteTextBlock,
     exportPDF
   } = usePDFTextEditor();
+
+  // Auto-load PDF from template
+  useEffect(() => {
+    if (template?.file && template.file.type === 'application/pdf') {
+      loadPDF(template.file);
+      setSelectedFile(template.file);
+    }
+  }, [template, loadPDF]);
 
   // Auto-enable text editing mode when PDF is loaded
   useEffect(() => {

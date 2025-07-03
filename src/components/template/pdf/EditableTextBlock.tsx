@@ -1,8 +1,5 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Type } from 'lucide-react';
-import { AdvancedTextToolbar } from './components/AdvancedTextToolbar';
-import { TextBlockEditor } from './components/TextBlockEditor';
 
 interface PDFTextBlock {
   id: string;
@@ -19,13 +16,6 @@ interface PDFTextBlock {
   originalText?: string;
   fontWeight?: 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
-  textDecoration?: 'none' | 'underline';
-  textAlign?: 'left' | 'center' | 'right' | 'justify';
-  rotation?: number;
-  opacity?: number;
-  shadow?: boolean;
-  borderColor?: { r: number; g: number; b: number };
-  borderWidth?: number;
 }
 
 interface EditableTextBlockProps {
@@ -33,76 +23,72 @@ interface EditableTextBlockProps {
   scale: number;
   onUpdate: (blockId: string, updates: Partial<PDFTextBlock>) => void;
   onDelete?: (blockId: string) => void;
-  onDuplicate?: (blockId: string) => void;
 }
 
 export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
   textBlock,
   scale,
   onUpdate,
-  onDelete,
-  onDuplicate
+  onDelete
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localText, setLocalText] = useState(textBlock.text);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [showToolbar, setShowToolbar] = useState(false);
-  const [lastClickTime, setLastClickTime] = useState(0);
-  const textRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setLocalText(textBlock.text);
   }, [textBlock.text]);
 
-  const handleTextChange = (newText: string) => {
-    setLocalText(newText);
-    onUpdate(textBlock.id, { text: newText });
-  };
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    const currentTime = Date.now();
-    const timeDiff = currentTime - lastClickTime;
-    
-    // Double click detection (within 300ms)
-    if (timeDiff < 300 && timeDiff > 0) {
-      console.log('Double click detected, starting edit mode');
-      setIsEditing(true);
-      setShowToolbar(true);
-      setLastClickTime(0); // Reset to prevent triple click
-      return;
-    }
-    
-    setLastClickTime(currentTime);
-    
-    // Start dragging
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - textBlock.x * scale,
-      y: e.clientY - textBlock.y * scale
-    });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    const newX = (e.clientX - dragStart.x) / scale;
-    const newY = (e.clientY - dragStart.y) / scale;
-    
-    onUpdate(textBlock.id, { x: newX, y: newY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
+    setIsEditing(true);
   };
 
   const handleFinishEditing = () => {
-    console.log('Finishing edit mode');
     setIsEditing(false);
-    setShowToolbar(false);
+    if (localText !== textBlock.text && localText.trim() !== '') {
+      onUpdate(textBlock.id, { text: localText.trim() });
+    } else if (localText.trim() === '' && onDelete) {
+      onDelete(textBlock.id);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    e.stopPropagation();
+    
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleFinishEditing();
+    } else if (e.key === 'Escape') {
+      setLocalText(textBlock.text);
+      setIsEditing(false);
+    } else if (e.key === 'Delete' && e.ctrlKey && onDelete) {
+      e.preventDefault();
+      onDelete(textBlock.id);
+    }
+  };
+
+  const getFontFamily = () => {
+    const fontName = textBlock.fontName?.toLowerCase() || '';
+    if (fontName.includes('helvetica') || fontName.includes('arial')) {
+      return 'Arial, "Helvetica Neue", Helvetica, sans-serif';
+    }
+    if (fontName.includes('times')) {
+      return '"Times New Roman", Times, serif';
+    }
+    if (fontName.includes('courier')) {
+      return '"Courier New", Courier, monospace';
+    }
+    return 'Arial, system-ui, sans-serif';
   };
 
   const colorToHex = (color: { r: number; g: number; b: number }) => {
@@ -112,74 +98,74 @@ export const EditableTextBlock: React.FC<EditableTextBlockProps> = ({
     return `#${r}${g}${b}`;
   };
 
-  const getTextStyle = () => {
-    const baseStyle = {
-      fontSize: textBlock.fontSize * scale,
-      color: colorToHex(textBlock.color),
-      fontFamily: textBlock.fontName || 'Arial',
-      fontWeight: textBlock.fontWeight || 'normal',
-      fontStyle: textBlock.fontStyle || 'normal',
-      textDecoration: textBlock.textDecoration || 'none',
-      textAlign: textBlock.textAlign || 'left',
-      opacity: textBlock.opacity || 1,
-      transform: `rotate(${textBlock.rotation || 0}deg)`,
-    };
-
-    if (textBlock.borderColor && textBlock.borderWidth) {
-      return {
-        ...baseStyle,
-        border: `${textBlock.borderWidth}px solid ${colorToHex(textBlock.borderColor)}`,
-        padding: '2px'
-      };
-    }
-
-    return baseStyle;
+  const baseStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: `${textBlock.x * scale}px`,
+    top: `${textBlock.y * scale}px`,
+    width: `${textBlock.width * scale}px`,
+    height: `${textBlock.height * scale}px`,
+    fontSize: `${textBlock.fontSize * scale}px`,
+    fontFamily: getFontFamily(),
+    fontWeight: textBlock.fontWeight === 'bold' ? 'bold' : 'normal',
+    fontStyle: textBlock.fontStyle === 'italic' ? 'italic' : 'normal',
+    color: colorToHex(textBlock.color),
+    margin: 0,
+    padding: '2px',
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    cursor: 'text',
+    whiteSpace: 'pre-wrap',
+    lineHeight: '1.2',
+    zIndex: 10
   };
+
+  const editStyle: React.CSSProperties = {
+    ...baseStyle,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    border: '2px solid #3B82F6',
+    borderRadius: '3px',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+    zIndex: 100,
+    resize: 'none'
+  };
+
+  const hoverStyle: React.CSSProperties = {
+    ...baseStyle,
+    backgroundColor: textBlock.isEdited ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.08)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
+    borderRadius: '2px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+  };
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={inputRef}
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
+        onBlur={handleFinishEditing}
+        onKeyDown={handleKeyDown}
+        style={editStyle}
+        spellCheck="false"
+        autoComplete="off"
+        placeholder="Edit text..."
+      />
+    );
+  }
 
   return (
     <div
-      ref={textRef}
-      className={`absolute cursor-move border-2 transition-all group ${
-        isEditing ? 'border-blue-500 bg-blue-50 shadow-lg z-50' : 'border-transparent hover:border-blue-300 hover:bg-blue-50/50'
-      } ${textBlock.isEdited ? 'bg-yellow-50/80' : ''}`}
-      style={{
-        left: textBlock.x * scale,
-        top: textBlock.y * scale,
-        width: Math.max(textBlock.width * scale, 50),
-        minHeight: textBlock.height * scale,
-        ...getTextStyle(),
+      onDoubleClick={handleDoubleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={isHovered ? hoverStyle : {
+        ...baseStyle,
+        backgroundColor: textBlock.isEdited ? 'rgba(34, 197, 94, 0.05)' : 'transparent'
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseEnter={() => !isEditing && setShowToolbar(true)}
-      onMouseLeave={() => !isEditing && setShowToolbar(false)}
+      title={`Double-click to edit${textBlock.originalText && textBlock.originalText !== textBlock.text ? ` • Original: "${textBlock.originalText}"` : ''}`}
     >
-      <TextBlockEditor
-        textBlock={textBlock}
-        scale={scale}
-        isEditing={isEditing}
-        localText={localText}
-        onTextChange={handleTextChange}
-        onFinishEditing={handleFinishEditing}
-      />
-
-      {/* Enhanced Floating Toolbar */}
-      {showToolbar && !isEditing && (
-        <AdvancedTextToolbar
-          textBlock={textBlock}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          onDuplicate={onDuplicate}
-        />
-      )}
-      
-      {/* Edit indicator */}
-      {textBlock.isEdited && (
-        <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center">
-          <Type className="h-2 w-2 text-white" />
-        </div>
-      )}
+      {textBlock.text}
     </div>
   );
 };

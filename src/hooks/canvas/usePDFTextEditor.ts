@@ -1,9 +1,8 @@
 
-import { useState, useCallback, useRef } from 'react';
-import { PDFDocument } from 'pdf-lib';
+import { useState, useCallback } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
-import { usePDFLoader } from './usePDFLoader';
-import { usePDFTextOperations } from './usePDFTextOperations';
 
 interface PDFTextBlock {
   id: string;
@@ -31,186 +30,291 @@ interface PDFPageData {
 }
 
 export const usePDFTextEditor = () => {
-  const [pdfDocument, setPdfDocument] = useState<PDFDocument | null>(null);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [originalPdfBytes, setOriginalPdfBytes] = useState<Uint8Array | null>(null);
   const [pdfPages, setPdfPages] = useState<PDFPageData[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [editedTextBlocks, setEditedTextBlocks] = useState<Map<string, PDFTextBlock>>(new Map());
-  const [currentFileName, setCurrentFileName] = useState<string>('');
-  const isLoadingRef = useRef(false);
 
-  const { loadPDF: loadPDFFile, isLoading } = usePDFLoader();
-  const { addTextBlock: createTextBlock, exportPDFWithEdits } = usePDFTextOperations();
+  const extractTextBlocks = useCallback(async (page: any, pageNumber: number, viewport: any): Promise<PDFTextBlock[]> => {
+    const textContent = await page.getTextContent();
+    const textBlocks: PDFTextBlock[] = [];
+
+    textContent.items.forEach((item: any, index: number) => {
+      if ('str' in item && item.str && item.str.trim()) {
+        const transform = item.transform;
+        if (!transform || transform.length < 6) return;
+
+        const [scaleX, skewY, skewX, scaleY, translateX, translateY] = transform;
+        const fontSize = Math.abs(scaleY);
+        
+        // Convert PDF coordinates to screen coordinates
+        const x = translateX;
+        const y = viewport.height - translateY;
+        
+        // Calculate text dimensions
+        const textWidth = item.width || item.str.length * fontSize * 0.6;
+        const textHeight = fontSize;
+        
+        // Detect font properties
+        const fontName = item.fontName || 'Helvetica';
+        const isBold = fontName.toLowerCase().includes('bold') || Math.abs(scaleX) > fontSize * 1.2;
+        const isItalic = fontName.toLowerCase().includes('italic') || Math.abs(skewX) > 0.1;
+        
+        // Extract color (default to black if not available)
+        let textColor = { r: 0, g: 0, b: 0 };
+        if (item.color && Array.isArray(item.color)) {
+          textColor = {
+            r: item.color[0] || 0,
+            g: item.color[1] || 0,
+            b: item.color[2] || 0
+          };
+        }
+
+        textBlocks.push({
+          id: `page-${pageNumber}-text-${index}`,
+          text: item.str,
+          originalText: item.str,
+          x: x,
+          y: y,
+          width: textWidth,
+          height: textHeight,
+          fontSize: fontSize,
+          fontName: fontName,
+          fontWeight: isBold ? 'bold' : 'normal',
+          fontStyle: isItalic ? 'italic' : 'normal',
+          color: textColor,
+          pageNumber: pageNumber,
+          isEdited: false
+        });
+      }
+    });
+
+    // Sort text blocks by reading order (top to bottom, left to right)
+    textBlocks.sort((a, b) => {
+      const yDiff = a.y - b.y;
+      if (Math.abs(yDiff) < Math.max(a.fontSize, b.fontSize) * 0.5) {
+        return a.x - b.x; // Same line, sort by x
+      }
+      return yDiff; // Different lines, sort by y
+    });
+
+    return textBlocks;
+  }, []);
 
   const loadPDF = useCallback(async (file: File) => {
-    // Prevent duplicate loading
-    if (isLoadingRef.current || currentFileName === file.name) {
-      console.log('PDF already loading or same file, skipping...');
-      return;
-    }
-
-    isLoadingRef.current = true;
-    
+    setIsLoading(true);
     try {
-      console.log('Loading PDF:', file.name);
-      
-      // Clear previous state
-      setPdfDocument(null);
-      setOriginalPdfBytes(null);
-      setPdfPages([]);
-      setEditedTextBlocks(new Map());
-      setCurrentPage(0);
-      
-      const { pages, originalBytes } = await loadPDFFile(file);
-      
-      // Load PDF with pdf-lib for editing
       const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      
+      const uint8Array = new Uint8Array(arrayBuffer);
+      setOriginalPdfBytes(uint8Array);
+
+      // Load PDF with PDF.js
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdfDoc = await loadingTask.promise;
       setPdfDocument(pdfDoc);
-      setOriginalPdfBytes(originalBytes);
+
+      const pages: PDFPageData[] = [];
+      const scale = 1.5; // High quality rendering
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
+        
+        // Render page to canvas for background
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) continue;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+        // Extract text blocks
+        const textBlocks = await extractTextBlocks(page, pageNum, viewport);
+
+        pages.push({
+          pageNumber: pageNum,
+          width: viewport.width,
+          height: viewport.height,
+          backgroundImage: canvas.toDataURL('image/png', 0.95),
+          textBlocks: textBlocks
+        });
+      }
+
       setPdfPages(pages);
       setCurrentPage(0);
-      setCurrentFileName(file.name);
-      
-      console.log('PDF loaded successfully:', file.name, 'Pages:', pages.length);
-    } catch (error) {
-      console.error('Error in loadPDF:', error);
+      setEditedTextBlocks(new Map());
+
       toast({
-        title: 'Error loading PDF',
-        description: 'Failed to load the PDF file. Please try again.',
+        title: 'PDF Loaded Successfully',
+        description: `Loaded ${pages.length} pages with ${pages.reduce((sum, p) => sum + p.textBlocks.length, 0)} editable text elements.`,
+      });
+
+    } catch (error) {
+      console.error('Error loading PDF:', error);
+      toast({
+        title: 'Error Loading PDF',
+        description: 'Failed to load PDF file. Please try again.',
         variant: 'destructive'
       });
     } finally {
-      isLoadingRef.current = false;
+      setIsLoading(false);
     }
-  }, [loadPDFFile, currentFileName]);
+  }, [extractTextBlocks]);
 
   const updateTextBlock = useCallback((blockId: string, updates: Partial<PDFTextBlock>) => {
     setEditedTextBlocks(prev => {
       const newMap = new Map(prev);
-      const existing = newMap.get(blockId) || findOriginalTextBlock(blockId);
+      const existingBlock = newMap.get(blockId);
       
-      if (existing) {
-        // Mark as edited and preserve original text if this is the first edit
-        const originalText = existing.originalText || existing.text;
+      if (existingBlock) {
+        newMap.set(blockId, { ...existingBlock, ...updates, isEdited: true });
+      } else {
+        // Find original block to get base data
+        const originalBlock = pdfPages
+          .flatMap(page => page.textBlocks)
+          .find(block => block.id === blockId);
         
-        newMap.set(blockId, { 
-          ...existing, 
-          ...updates, 
-          id: blockId,
-          isEdited: true,
-          originalText: originalText
-        } as PDFTextBlock);
+        if (originalBlock) {
+          newMap.set(blockId, { ...originalBlock, ...updates, isEdited: true });
+        }
       }
+      
       return newMap;
     });
-  }, []);
-
-  const findOriginalTextBlock = (blockId: string): PDFTextBlock | undefined => {
-    for (const page of pdfPages) {
-      const block = page.textBlocks.find(b => b.id === blockId);
-      if (block) return block;
-    }
-    return undefined;
-  };
+  }, [pdfPages]);
 
   const addTextBlock = useCallback((pageNumber: number, x: number, y: number, text: string = 'New Text') => {
-    const { newId, newTextBlock } = createTextBlock(pageNumber, x, y, text);
+    const newId = `custom-text-${Date.now()}`;
+    const newTextBlock: PDFTextBlock = {
+      id: newId,
+      text,
+      x,
+      y,
+      width: text.length * 12,
+      height: 16,
+      fontSize: 16,
+      fontName: 'Helvetica',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      color: { r: 0, g: 0, b: 0 },
+      pageNumber,
+      isEdited: true
+    };
     
     setEditedTextBlocks(prev => {
       const newMap = new Map(prev);
       newMap.set(newId, newTextBlock);
       return newMap;
     });
-    
-    return newId;
-  }, [createTextBlock]);
-
-  const deleteTextBlock = useCallback((blockId: string) => {
-    // Check if it's an original text block that should be hidden instead of deleted
-    const originalBlock = findOriginalTextBlock(blockId);
-    
-    if (originalBlock) {
-      // For original blocks, mark them as deleted by setting text to empty
-      // This will hide them from the unified view
-      setEditedTextBlocks(prev => {
-        const newMap = new Map(prev);
-        newMap.set(blockId, {
-          ...originalBlock,
-          text: '',
-          isEdited: true,
-          originalText: originalBlock.text
-        });
-        return newMap;
-      });
-    } else {
-      // For custom added blocks, actually remove them
-      setEditedTextBlocks(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(blockId);
-        return newMap;
-      });
-    }
   }, []);
 
-  const duplicateTextBlock = useCallback((blockId: string) => {
-    const textBlock = editedTextBlocks.get(blockId) || findOriginalTextBlock(blockId);
-    if (textBlock) {
-      const newId = `custom-text-${Date.now()}`;
-      const duplicatedBlock: PDFTextBlock = {
-        ...textBlock,
-        id: newId,
-        x: textBlock.x + 20,
-        y: textBlock.y + 20,
-        isEdited: true
-      };
-
-      setEditedTextBlocks(prev => {
-        const newMap = new Map(prev);
-        newMap.set(newId, duplicatedBlock);
-        return newMap;
-      });
-
-      return newId;
-    }
-  }, [editedTextBlocks, findOriginalTextBlock]);
+  const deleteTextBlock = useCallback((blockId: string) => {
+    setEditedTextBlocks(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(blockId);
+      return newMap;
+    });
+  }, []);
 
   const exportPDF = useCallback(async () => {
-    if (!pdfDocument || !pdfPages.length || !originalPdfBytes) {
+    if (!originalPdfBytes || editedTextBlocks.size === 0) {
       toast({
-        title: 'No PDF to export',
-        description: 'Please load a PDF first.',
+        title: 'No Changes to Export',
+        description: 'Make some text edits before exporting.',
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      // Only export blocks that have actual content (not deleted ones)
-      const blocksToExport = new Map();
-      editedTextBlocks.forEach((block, id) => {
-        if (block.text.trim() !== '') {
-          blocksToExport.set(id, block);
-        }
-      });
-
-      const modifiedPdfBytes = await exportPDFWithEdits(originalPdfBytes, blocksToExport);
+      // Load original PDF with pdf-lib
+      const pdfDoc = await PDFDocument.load(originalPdfBytes);
+      const pages = pdfDoc.getPages();
       
+      // Load fonts
+      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const boldItalicFont = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+      
+      // Group edits by page
+      const editsByPage = new Map<number, PDFTextBlock[]>();
+      editedTextBlocks.forEach((block) => {
+        const pageNum = block.pageNumber;
+        if (!editsByPage.has(pageNum)) {
+          editsByPage.set(pageNum, []);
+        }
+        editsByPage.get(pageNum)!.push(block);
+      });
+      
+      // Apply edits to each page
+      for (const [pageNum, pageEdits] of editsByPage) {
+        const page = pages[pageNum - 1];
+        if (!page) continue;
+        
+        const { height: pageHeight } = page.getSize();
+        
+        pageEdits.forEach((edit) => {
+          if (edit.originalText && edit.originalText !== edit.text) {
+            // Cover original text with white rectangle
+            page.drawRectangle({
+              x: edit.x - 1,
+              y: pageHeight - edit.y - edit.height - 1,
+              width: edit.width + 2,
+              height: edit.height + 2,
+              color: rgb(1, 1, 1),
+              opacity: 1
+            });
+          }
+          
+          if (edit.text.trim()) {
+            // Select appropriate font
+            let font = regularFont;
+            if (edit.fontWeight === 'bold' && edit.fontStyle === 'italic') {
+              font = boldItalicFont;
+            } else if (edit.fontWeight === 'bold') {
+              font = boldFont;
+            } else if (edit.fontStyle === 'italic') {
+              font = italicFont;
+            }
+            
+            // Draw new text
+            page.drawText(edit.text, {
+              x: edit.x,
+              y: pageHeight - edit.y - edit.fontSize * 0.8,
+              size: edit.fontSize,
+              font: font,
+              color: rgb(edit.color.r, edit.color.g, edit.color.b)
+            });
+          }
+        });
+      }
+      
+      // Save and download
+      const modifiedPdfBytes = await pdfDoc.save();
       const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `edited-${currentFileName || 'document.pdf'}`;
+      link.download = 'edited-document.pdf';
+      document.body.appendChild(link);
       link.click();
-      
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
       toast({
         title: 'PDF Exported Successfully',
-        description: 'Your edited PDF has been downloaded with all changes applied.',
+        description: 'Your edited PDF has been downloaded.',
       });
+      
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast({
@@ -219,7 +323,7 @@ export const usePDFTextEditor = () => {
         variant: 'destructive'
       });
     }
-  }, [pdfDocument, pdfPages, editedTextBlocks, originalPdfBytes, exportPDFWithEdits, currentFileName]);
+  }, [originalPdfBytes, editedTextBlocks]);
 
   return {
     pdfDocument,
@@ -232,7 +336,6 @@ export const usePDFTextEditor = () => {
     updateTextBlock,
     addTextBlock,
     deleteTextBlock,
-    duplicateTextBlock,
     exportPDF
   };
 };

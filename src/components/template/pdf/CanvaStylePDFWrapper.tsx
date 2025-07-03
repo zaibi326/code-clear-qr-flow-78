@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FloatingInputPDFEditor } from './FloatingInputPDFEditor';
+import { PDFTextEditor } from './PDFTextEditor';
 import { Template } from '@/types/template';
 
 interface CanvaStylePDFWrapperProps {
@@ -21,10 +21,11 @@ export const CanvaStylePDFWrapper: React.FC<CanvaStylePDFWrapperProps> = ({
 
   return (
     <div className="h-screen">
-      <FloatingInputPDFEditor
+      <PDFTextEditor
         template={template}
         onSave={handleSave}
         onCancel={onCancel}
+        hideFileUpload={true}
       />
     </div>
   );
