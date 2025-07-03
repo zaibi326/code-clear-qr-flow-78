@@ -63,7 +63,7 @@ export const usePDFTextOperations = () => {
     editedTextBlocks: Map<string, PDFTextBlock>
   ) => {
     try {
-      console.log('Starting PDF export with text edits...');
+      console.log('Starting PDF export with enhanced text handling...');
       
       const pdfDoc = await PDFDocument.load(originalPdfBytes);
       const pages = pdfDoc.getPages();
@@ -92,16 +92,16 @@ export const usePDFTextOperations = () => {
         
         const { width: pageWidth, height: pageHeight } = page.getSize();
         
-        // Create white overlay to hide original text
+        // Create precise white overlays to completely hide original text
         pageEdits.forEach((edit) => {
           if (edit.originalText && edit.originalText !== edit.text) {
-            // Calculate precise overlay position
-            const overlayX = edit.x;
-            const overlayY = pageHeight - edit.y - edit.height;
-            const overlayWidth = Math.max(edit.width, edit.originalText.length * edit.fontSize * 0.6);
-            const overlayHeight = edit.height;
+            // Calculate overlay dimensions with padding to ensure complete coverage
+            const overlayX = Math.max(0, edit.x - 2);
+            const overlayY = Math.max(0, pageHeight - edit.y - edit.height - 2);
+            const overlayWidth = Math.min(pageWidth - overlayX, edit.width + 8);
+            const overlayHeight = Math.min(pageHeight - overlayY, edit.height + 6);
             
-            // Draw white rectangle to hide original text
+            // Draw white rectangle with slight padding to completely hide original text
             page.drawRectangle({
               x: overlayX,
               y: overlayY,
@@ -113,7 +113,7 @@ export const usePDFTextOperations = () => {
           }
         });
         
-        // Add new/edited text with proper positioning
+        // Add new/edited text with enhanced positioning and multi-line support
         pageEdits.forEach((edit) => {
           if (edit.text.trim()) {
             // Select appropriate font based on styling
@@ -126,64 +126,73 @@ export const usePDFTextOperations = () => {
               font = italicFont;
             }
             
-            // Calculate precise text position
-            const textX = edit.x;
-            const textY = pageHeight - edit.y - (edit.height * 0.8); // Adjust for baseline
+            // Handle multi-line text
+            const lines = edit.text.split('\n');
+            const lineHeight = edit.fontSize * 1.2;
             
-            // Handle text direction and alignment
-            const textOptions: any = {
-              x: textX,
-              y: textY,
-              size: edit.fontSize,
-              font: font,
-              color: rgb(edit.color.r, edit.color.g, edit.color.b),
-              opacity: edit.opacity || 1
-            };
-            
-            // Add rotation if specified
-            if (edit.rotation) {
-              textOptions.rotate = degrees(edit.rotation);
-            }
-            
-            // Handle text alignment
-            if (edit.textAlign === 'center') {
-              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
-              textOptions.x = textX - (textWidth / 2);
-            } else if (edit.textAlign === 'right') {
-              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
-              textOptions.x = textX - textWidth;
-            }
-            
-            // Draw the text
-            page.drawText(edit.text, textOptions);
-            
-            // Add underline if specified
-            if (edit.textDecoration === 'underline') {
-              const textWidth = font.widthOfTextAtSize(edit.text, edit.fontSize);
-              page.drawLine({
-                start: { x: textOptions.x, y: textY - 2 },
-                end: { x: textOptions.x + textWidth, y: textY - 2 },
-                thickness: 1,
-                color: rgb(edit.color.r, edit.color.g, edit.color.b),
-                opacity: edit.opacity || 1
-              });
-            }
+            lines.forEach((line, lineIndex) => {
+              if (line.trim()) {
+                // Calculate precise text position for each line
+                const textX = edit.x;
+                const textY = pageHeight - edit.y - (edit.fontSize * 0.8) - (lineIndex * lineHeight);
+                
+                // Base text options
+                const textOptions: any = {
+                  x: textX,
+                  y: textY,
+                  size: edit.fontSize,
+                  font: font,
+                  color: rgb(edit.color.r, edit.color.g, edit.color.b),
+                  opacity: edit.opacity || 1
+                };
+                
+                // Add rotation if specified
+                if (edit.rotation) {
+                  textOptions.rotate = degrees(edit.rotation);
+                }
+                
+                // Handle text alignment
+                if (edit.textAlign === 'center') {
+                  const textWidth = font.widthOfTextAtSize(line, edit.fontSize);
+                  textOptions.x = textX - (textWidth / 2);
+                } else if (edit.textAlign === 'right') {
+                  const textWidth = font.widthOfTextAtSize(line, edit.fontSize);
+                  textOptions.x = textX - textWidth;
+                }
+                
+                // Draw the text line
+                page.drawText(line, textOptions);
+                
+                // Add underline if specified
+                if (edit.textDecoration === 'underline') {
+                  const textWidth = font.widthOfTextAtSize(line, edit.fontSize);
+                  page.drawLine({
+                    start: { x: textOptions.x, y: textY - 2 },
+                    end: { x: textOptions.x + textWidth, y: textY - 2 },
+                    thickness: 1,
+                    color: rgb(edit.color.r, edit.color.g, edit.color.b),
+                    opacity: edit.opacity || 1
+                  });
+                }
+              }
+            });
           }
         });
       }
       
-      // Serialize the modified PDF
+      // Serialize the modified PDF with optimized settings
       const modifiedPdfBytes = await pdfDoc.save({
         useObjectStreams: false,
-        addDefaultPage: false
+        addDefaultPage: false,
+        updateFieldAppearances: false
       });
       
-      console.log('PDF export completed successfully');
+      console.log('PDF export completed successfully with enhanced text handling');
       return modifiedPdfBytes;
       
     } catch (error) {
-      console.error('Error exporting PDF with text edits:', error);
-      throw new Error('Failed to export PDF with text modifications');
+      console.error('Error exporting PDF with enhanced text handling:', error);
+      throw new Error('Failed to export PDF with enhanced text modifications');
     }
   }, []);
 
