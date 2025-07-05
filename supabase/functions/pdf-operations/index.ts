@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -255,16 +256,21 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    async: false,
-    url: fileUrl,
-    file: fileData
+    async: false
   };
 
-  // Remove undefined values
-  Object.keys(requestBody).forEach(key => {
-    if (requestBody[key] === undefined) {
-      delete requestBody[key];
-    }
+  // Use fileUrl if available, otherwise use fileData
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  console.log('📋 Text extraction request body:', {
+    hasUrl: !!requestBody.url,
+    hasFile: !!requestBody.file,
+    pages: requestBody.pages,
+    ocrLanguage: requestBody.ocrLanguage
   });
 
   const result = await makeApiRequest(
@@ -341,16 +347,22 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     searchStrings: options.searchStrings,
     replaceStrings: options.replaceStrings,
     caseSensitive: options.caseSensitive || false,
-    async: false,
-    url: fileUrl,
-    file: fileData
+    async: false
   };
 
-  // Remove undefined values
-  Object.keys(requestBody).forEach(key => {
-    if (requestBody[key] === undefined) {
-      delete requestBody[key];
-    }
+  // Use fileUrl if available, otherwise use fileData
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  console.log('📋 Text editing request body:', {
+    hasUrl: !!requestBody.url,
+    hasFile: !!requestBody.file,
+    searchCount: requestBody.searchStrings.length,
+    replaceCount: requestBody.replaceStrings.length,
+    caseSensitive: requestBody.caseSensitive
   });
 
   const result = await makeApiRequest(

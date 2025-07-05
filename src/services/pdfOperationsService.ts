@@ -26,6 +26,34 @@ export interface PDFOperationResult {
 }
 
 export class PDFOperationsService {
+  private async ensureValidUrl(fileUrl?: string, fileData?: string): Promise<string | null> {
+    // If we have a valid HTTP/HTTPS URL, return it
+    if (fileUrl && this.isValidHttpUrl(fileUrl)) {
+      return fileUrl;
+    }
+
+    // If we have fileData, convert it to a public URL
+    if (fileData) {
+      const dataUrl = `data:application/pdf;base64,${fileData}`;
+      const uploadResult = await fileUploadService.uploadDataUrlToStorage(dataUrl, 'document.pdf');
+      
+      if (uploadResult.success && uploadResult.publicUrl) {
+        return uploadResult.publicUrl;
+      }
+    }
+
+    // If we have a data URL as fileUrl, convert it
+    if (fileUrl && fileUrl.startsWith('data:')) {
+      const uploadResult = await fileUploadService.uploadDataUrlToStorage(fileUrl, 'document.pdf');
+      
+      if (uploadResult.success && uploadResult.publicUrl) {
+        return uploadResult.publicUrl;
+      }
+    }
+
+    return null;
+  }
+
   async performOperation(operation: PDFOperation): Promise<PDFOperationResult> {
     try {
       console.log('🔄 Performing PDF operation:', operation.operation);
@@ -47,18 +75,28 @@ export class PDFOperationsService {
         };
       }
 
-      // Enhanced validation and URL conversion before sending to edge function
-      const processedOperation = await this.preprocessOperation(operation);
-      if (!processedOperation.success) {
+      // Ensure we have a valid public URL for PDF.co API
+      const validUrl = await this.ensureValidUrl(operation.fileUrl, operation.fileData);
+      
+      if (!validUrl) {
         return {
           success: false,
-          error: processedOperation.error,
+          error: 'Could not process file URL. Please ensure the PDF is accessible.',
           statusCode: 400
         };
       }
 
+      console.log('✅ Using validated URL for PDF operation:', validUrl.substring(0, 100) + '...');
+
+      // Create the processed operation with the valid URL
+      const processedOperation: PDFOperation = {
+        ...operation,
+        fileUrl: validUrl,
+        fileData: undefined // Remove fileData since we now have a URL
+      };
+
       const { data, error } = await supabase.functions.invoke('pdf-operations', {
-        body: processedOperation.operation
+        body: processedOperation
       });
 
       console.log('📡 Supabase response:', { data, error });
@@ -72,6 +110,8 @@ export class PDFOperationsService {
           errorMessage = 'Authentication failed. Please log in again.';
         } else if (error.message?.includes('timeout')) {
           errorMessage = 'Operation timed out. Please try again with a smaller file.';
+        } else if (error.message?.includes('API key')) {
+          errorMessage = 'PDF.co API key is not configured. Please contact support.';
         }
         
         return {
@@ -284,7 +324,9 @@ export class PDFOperationsService {
     console.log('📝 Editing PDF text:', { 
       searchCount: searchStrings.length, 
       replaceCount: replaceStrings.length,
-      caseSensitive 
+      caseSensitive,
+      searchStrings: searchStrings.map(s => s.substring(0, 50) + '...'),
+      replaceStrings: replaceStrings.map(s => s.substring(0, 50) + '...')
     });
 
     if (!fileUrl) {
@@ -299,10 +341,22 @@ export class PDFOperationsService {
       throw new Error('Number of search strings must match number of replace strings');
     }
 
+    // Filter out empty search strings as they can cause issues
+    const validSearchStrings = searchStrings.filter(s => s && s.trim().length > 0);
+    const validReplaceStrings = replaceStrings.filter((s, index) => searchStrings[index] && searchStrings[index].trim().length > 0);
+
+    if (validSearchStrings.length === 0) {
+      throw new Error('At least one non-empty search string is required');
+    }
+
     return this.performOperation({
       operation: 'edit-text',
       fileUrl,
-      options: { searchStrings, replaceStrings, caseSensitive }
+      options: { 
+        searchStrings: validSearchStrings, 
+        replaceStrings: validReplaceStrings, 
+        caseSensitive 
+      }
     });
   }
 
