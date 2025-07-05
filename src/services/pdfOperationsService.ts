@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fileUploadService } from './fileUploadService';
 
 export interface PDFOperation {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key' | 'extract-text-enhanced' | 'process-page-batch';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -23,6 +23,9 @@ export interface PDFOperationResult {
   debugInfo?: any;
   statusCode?: number;
   responseHeaders?: Record<string, string>;
+  textBlocks?: any[];
+  pageData?: any[];
+  boundingBoxes?: any[];
 }
 
 export class PDFOperationsService {
@@ -199,8 +202,18 @@ export class PDFOperationsService {
     });
   }
 
-  async extractText(fileUrl: string, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
-    console.log('📄 Extracting text from PDF:', { fileUrl: fileUrl.substring(0, 100) + '...', options });
+  async extractTextEnhanced(fileUrl: string, options?: { 
+    pages?: string; 
+    ocrLanguage?: string;
+    preserveFormatting?: boolean;
+    includeBoundingBoxes?: boolean;
+    chunkSize?: number;
+    maxTextLength?: number;
+  }): Promise<PDFOperationResult> {
+    console.log('📄 Enhanced text extraction from PDF:', { 
+      fileUrl: fileUrl.substring(0, 100) + '...', 
+      options 
+    });
     
     // Validate file URL
     if (!fileUrl || typeof fileUrl !== 'string') {
@@ -208,27 +221,88 @@ export class PDFOperationsService {
     }
 
     return this.performOperation({
-      operation: 'extract-text',
+      operation: 'extract-text-enhanced',
       fileUrl,
       options: {
         pages: options?.pages || "1-",
         ocrLanguage: options?.ocrLanguage || "eng",
-        // Force OCR processing for all PDFs
+        preserveFormatting: options?.preserveFormatting !== false,
+        includeBoundingBoxes: options?.includeBoundingBoxes !== false,
+        chunkSize: options?.chunkSize || 1000000, // 1MB chunks
+        maxTextLength: options?.maxTextLength || 10000000, // 10MB max
+        // Enhanced OCR settings for better text recognition
         ocr: true,
-        ocrAccuracy: "balanced",
+        ocrAccuracy: "high",
         ocrWorker: "auto",
         inline: true,
         async: false,
+        // Text extraction enhancements
+        extractTextCoordinates: true,
+        extractTextFont: true,
+        extractTextSize: true,
+        extractTextColor: true,
+        normalizeSpaces: true,
+        preserveLineBreaks: true,
+        preserveParagraphs: true,
+        detectTables: true,
         ...options
       }
     });
   }
 
-  async editText(fileUrl: string, searchStrings: string[], replaceStrings: string[], caseSensitive: boolean = false): Promise<PDFOperationResult> {
-    console.log('📝 Editing PDF text:', { 
+  async extractText(fileUrl: string, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
+    console.log('📄 Extracting text from PDF:', { fileUrl: fileUrl.substring(0, 100) + '...', options });
+    
+    // Use enhanced extraction for better results
+    return this.extractTextEnhanced(fileUrl, {
+      ...options,
+      preserveFormatting: true,
+      includeBoundingBoxes: true
+    });
+  }
+
+  async processPageBatch(fileUrl: string, pageStart: number, pageEnd: number, operation: 'extract' | 'edit', options?: any): Promise<PDFOperationResult> {
+    console.log('📑 Processing page batch:', { 
+      pageStart, 
+      pageEnd, 
+      operation,
+      fileUrl: fileUrl.substring(0, 100) + '...'
+    });
+
+    return this.performOperation({
+      operation: 'process-page-batch',
+      fileUrl,
+      options: {
+        pageStart,
+        pageEnd,
+        batchOperation: operation,
+        preserveFormatting: true,
+        includeBoundingBoxes: true,
+        normalizeSpaces: true,
+        preserveLineBreaks: true,
+        chunkSize: 500000, // 500KB per batch
+        ...options
+      }
+    });
+  }
+
+  async editTextEnhanced(
+    fileUrl: string, 
+    searchStrings: string[], 
+    replaceStrings: string[], 
+    options?: {
+      caseSensitive?: boolean;
+      preserveFormatting?: boolean;
+      maintainLayout?: boolean;
+      boundingBoxMapping?: boolean;
+      normalizeSpaces?: boolean;
+      chunkProcessing?: boolean;
+    }
+  ): Promise<PDFOperationResult> {
+    console.log('📝 Enhanced PDF text editing:', { 
       searchCount: searchStrings.length, 
       replaceCount: replaceStrings.length,
-      caseSensitive,
+      options,
       searchStrings: searchStrings.map(s => s.substring(0, 50) + (s.length > 50 ? '...' : '')),
       replaceStrings: replaceStrings.map(s => s.substring(0, 50) + (s.length > 50 ? '...' : ''))
     });
@@ -245,43 +319,91 @@ export class PDFOperationsService {
       throw new Error('Number of search strings must match number of replace strings');
     }
 
-    // Filter out empty search strings and their corresponding replace strings
-    const validPairs = searchStrings
-      .map((search, index) => ({ search: search.trim(), replace: replaceStrings[index] || '' }))
+    // Enhanced text processing with normalization
+    const processedPairs = searchStrings
+      .map((search, index) => ({ 
+        search: this.normalizeText(search.trim()), 
+        replace: this.normalizeText(replaceStrings[index] || ''),
+        originalSearch: search.trim(),
+        originalReplace: replaceStrings[index] || ''
+      }))
       .filter(pair => pair.search.length > 0);
 
-    if (validPairs.length === 0) {
+    if (processedPairs.length === 0) {
       throw new Error('At least one non-empty search string is required');
     }
 
-    const validSearchStrings = validPairs.map(pair => pair.search);
-    const validReplaceStrings = validPairs.map(pair => pair.replace);
-
-    console.log('✅ Using valid search/replace pairs:', {
-      count: validPairs.length,
-      pairs: validPairs.map(p => ({ search: p.search.substring(0, 30), replace: p.replace.substring(0, 30) }))
+    console.log('✅ Using processed search/replace pairs:', {
+      count: processedPairs.length,
+      pairs: processedPairs.map(p => ({ 
+        search: p.search.substring(0, 30), 
+        replace: p.replace.substring(0, 30) 
+      }))
     });
 
     return this.performOperation({
       operation: 'edit-text',
       fileUrl,
       options: { 
-        searchStrings: validSearchStrings, 
-        replaceStrings: validReplaceStrings, 
-        caseSensitive,
-        // Force exact matching and replacement
-        matchCase: caseSensitive,
+        searchStrings: processedPairs.map(p => p.search), 
+        replaceStrings: processedPairs.map(p => p.replace),
+        originalSearchStrings: processedPairs.map(p => p.originalSearch),
+        originalReplaceStrings: processedPairs.map(p => p.originalReplace),
+        caseSensitive: options?.caseSensitive || false,
+        preserveFormatting: options?.preserveFormatting !== false,
+        maintainLayout: options?.maintainLayout !== false,
+        boundingBoxMapping: options?.boundingBoxMapping !== false,
+        normalizeSpaces: options?.normalizeSpaces !== false,
+        chunkProcessing: options?.chunkProcessing !== false,
+        // Enhanced processing options
+        matchCase: options?.caseSensitive || false,
         wholeWordsOnly: false,
-        replaceAll: true
+        replaceAll: true,
+        useRegex: false,
+        preserveLineBreaks: true,
+        preserveParagraphs: true,
+        maintainFontSize: true,
+        maintainAlignment: true
       }
     });
+  }
+
+  async editText(fileUrl: string, searchStrings: string[], replaceStrings: string[], caseSensitive: boolean = false): Promise<PDFOperationResult> {
+    // Use enhanced editing for better results
+    return this.editTextEnhanced(fileUrl, searchStrings, replaceStrings, {
+      caseSensitive,
+      preserveFormatting: true,
+      maintainLayout: true,
+      boundingBoxMapping: true,
+      normalizeSpaces: true
+    });
+  }
+
+  private normalizeText(text: string): string {
+    if (!text) return '';
+    
+    // Normalize whitespace while preserving intentional formatting
+    return text
+      .replace(/\r\n/g, '\n') // Normalize line endings
+      .replace(/\r/g, '\n')   // Handle old Mac line endings
+      .replace(/\t/g, '    ')  // Convert tabs to spaces
+      .replace(/\u00A0/g, ' ') // Replace non-breaking spaces
+      .replace(/\s+/g, ' ')    // Collapse multiple spaces (but preserve single spaces)
+      .trim();
   }
 
   async extractForEditing(fileUrl: string): Promise<PDFOperationResult> {
     return this.performOperation({
       operation: 'extract-for-editing',
       fileUrl,
-      options: { preserveFormatting: true, includePositions: true }
+      options: { 
+        preserveFormatting: true, 
+        includePositions: true,
+        includeBoundingBoxes: true,
+        extractTextCoordinates: true,
+        normalizeSpaces: true,
+        preserveLineBreaks: true
+      }
     });
   }
 
@@ -295,23 +417,32 @@ export class PDFOperationsService {
     return this.performOperation({
       operation: 'replace-with-edited',
       fileUrl,
-      options: { editedContent }
+      options: { 
+        editedContent,
+        preserveFormatting: true,
+        maintainLayout: true,
+        normalizeSpaces: true
+      }
     });
   }
 
   async extractTextFromFile(file: File, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
     const fileData = await this.fileToBase64(file);
     return this.performOperation({
-      operation: 'extract-text',
+      operation: 'extract-text-enhanced',
       fileData,
       options: {
         pages: options?.pages || "1-",
         ocrLanguage: options?.ocrLanguage || "eng",
+        preserveFormatting: true,
+        includeBoundingBoxes: true,
         ocr: true,
-        ocrAccuracy: "balanced",
+        ocrAccuracy: "high",
         ocrWorker: "auto",
         inline: true,
         async: false,
+        normalizeSpaces: true,
+        preserveLineBreaks: true,
         ...options
       }
     });

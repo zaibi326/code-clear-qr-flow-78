@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface PDFOperationRequest {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key' | 'extract-text-enhanced' | 'process-page-batch';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -63,7 +63,8 @@ const handler = async (req: Request): Promise<Response> => {
         result = await testApiKey(apiKey);
         break;
       case 'extract-text':
-        result = await extractTextFromPDF(apiKey, fileUrl, fileData, options);
+      case 'extract-text-enhanced':
+        result = await extractTextFromPDFEnhanced(apiKey, fileUrl, fileData, options);
         break;
       case 'extract-for-editing':
         result = await extractForRichEditing(apiKey, fileUrl, fileData, options);
@@ -72,7 +73,10 @@ const handler = async (req: Request): Promise<Response> => {
         result = await replaceWithEditedText(apiKey, fileUrl, fileData, options);
         break;
       case 'edit-text':
-        result = await editPDFText(apiKey, fileUrl, fileData, options);
+        result = await editPDFTextEnhanced(apiKey, fileUrl, fileData, options);
+        break;
+      case 'process-page-batch':
+        result = await processPageBatch(apiKey, fileUrl, fileData, options);
         break;
       case 'add-annotations':
         result = await addPDFAnnotations(apiKey, fileUrl, fileData, options);
@@ -279,8 +283,8 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
   }
 }
 
-async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('📄 Extracting text from PDF with enhanced OCR options:', options);
+async function extractTextFromPDFEnhanced(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('📄 Enhanced text extraction from PDF with improved formatting:', options);
   
   if (!fileUrl && !fileData) {
     throw new Error('Either fileUrl or fileData must be provided');
@@ -289,52 +293,83 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    // Force OCR processing for better text extraction
+    // Enhanced OCR processing for better text extraction
     ocr: true,
-    ocrAccuracy: "balanced",
+    ocrAccuracy: options?.ocrAccuracy || "high",
     ocrWorker: "auto",
     inline: true,
-    async: false
+    async: false,
+    
+    // Enhanced text extraction options
+    extractTextCoordinates: options?.extractTextCoordinates !== false,
+    extractTextFont: options?.extractTextFont !== false,
+    extractTextSize: options?.extractTextSize !== false,
+    extractTextColor: options?.extractTextColor !== false,
+    
+    // Formatting preservation options
+    preserveFormatting: options?.preserveFormatting !== false,
+    preserveLineBreaks: options?.preserveLineBreaks !== false,
+    preserveParagraphs: options?.preserveParagraphs !== false,
+    normalizeSpaces: options?.normalizeSpaces !== false,
+    detectTables: options?.detectTables !== false,
+    
+    // Bounding box and layout options
+    includeBoundingBoxes: options?.includeBoundingBoxes !== false,
+    includePositionalInfo: true,
+    includeTextBlocks: true,
+    
+    // Size limits for large documents
+    maxTextLength: options?.maxTextLength || 10000000, // 10MB
+    chunkSize: options?.chunkSize || 1000000, // 1MB chunks
   };
 
   // Use fileUrl if available, otherwise use fileData
   if (fileUrl) {
     requestBody.url = fileUrl;
-    console.log('📋 Using URL for text extraction:', fileUrl.substring(0, 100) + '...');
+    console.log('📋 Using URL for enhanced text extraction:', fileUrl.substring(0, 100) + '...');
   } else if (fileData) {
     requestBody.file = fileData;
-    console.log('📋 Using base64 file data for text extraction, length:', fileData.length);
+    console.log('📋 Using base64 file data for enhanced text extraction, length:', fileData.length);
   }
 
-  console.log('📋 Text extraction request details:', {
+  console.log('📋 Enhanced text extraction request details:', {
     hasUrl: !!requestBody.url,
     hasFile: !!requestBody.file,
     pages: requestBody.pages,
     ocrLanguage: requestBody.ocrLanguage,
     ocrAccuracy: requestBody.ocrAccuracy,
-    ocrWorker: requestBody.ocrWorker,
-    ocr: requestBody.ocr,
-    inline: requestBody.inline
+    preserveFormatting: requestBody.preserveFormatting,
+    extractTextCoordinates: requestBody.extractTextCoordinates,
+    maxTextLength: requestBody.maxTextLength,
+    chunkSize: requestBody.chunkSize
   });
 
   const result = await makeApiRequest(
     'https://api.pdf.co/v1/pdf/convert/to/text',
     apiKey,
     requestBody,
-    'text extraction'
+    'enhanced text extraction'
   );
 
   if (result.success) {
-    console.log('✅ Text extraction successful:', {
+    console.log('✅ Enhanced text extraction successful:', {
       textLength: result.body?.length || 0,
-      pageCount: result.pageCount
+      pageCount: result.pageCount,
+      hasTextBlocks: !!result.textBlocks,
+      hasBoundingBoxes: !!result.boundingBoxes
     });
+    
+    // Process and enhance the extracted text
+    const processedText = processExtractedText(result.body || '', options);
     
     return {
       success: true,
-      text: result.body || '',
+      text: processedText.text,
+      textBlocks: processedText.textBlocks,
+      boundingBoxes: result.boundingBoxes || [],
       pages: result.pageCount || 0,
       url: result.url,
+      extractedContent: result,
       statusCode: result.statusCode,
       debugInfo: result.debugInfo
     };
@@ -343,15 +378,144 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   return result;
 }
 
-async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('✏️ Editing PDF text with enhanced options:', {
+function processExtractedText(rawText: string, options?: any) {
+  console.log('🔄 Processing extracted text with enhanced formatting');
+  
+  if (!rawText) {
+    return { text: '', textBlocks: [] };
+  }
+
+  let processedText = rawText;
+  const textBlocks = [];
+
+  // Normalize line endings
+  processedText = processedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Preserve paragraph structure
+  if (options?.preserveParagraphs !== false) {
+    // Split into paragraphs and process each
+    const paragraphs = processedText.split(/\n\s*\n/);
+    const processedParagraphs = [];
+
+    for (let i = 0; i < paragraphs.length; i++) {
+      let paragraph = paragraphs[i].trim();
+      
+      if (paragraph) {
+        // Normalize spaces within paragraph while preserving line breaks
+        if (options?.normalizeSpaces !== false) {
+          paragraph = paragraph.replace(/[ \t]+/g, ' ');
+        }
+        
+        // Preserve line breaks within paragraphs if requested
+        if (options?.preserveLineBreaks !== false) {
+          paragraph = paragraph.replace(/\n/g, '\n');
+        } else {
+          paragraph = paragraph.replace(/\n/g, ' ');
+        }
+        
+        processedParagraphs.push(paragraph);
+        
+        // Create text block for this paragraph
+        textBlocks.push({
+          id: `paragraph-${i}`,
+          text: paragraph,
+          type: 'paragraph',
+          startIndex: processedParagraphs.join('\n\n').length - paragraph.length,
+          endIndex: processedParagraphs.join('\n\n').length,
+          lineCount: paragraph.split('\n').length
+        });
+      }
+    }
+    
+    processedText = processedParagraphs.join('\n\n');
+  }
+
+  // Detect and preserve table-like structures
+  if (options?.detectTables !== false) {
+    const lines = processedText.split('\n');
+    let inTable = false;
+    let tableLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Simple table detection - lines with multiple spaces or tabs
+      if (line.includes('\t') || line.match(/\s{3,}/)) {
+        if (!inTable) {
+          inTable = true;
+          tableLines = [];
+        }
+        tableLines.push(line);
+      } else if (inTable && line.trim() === '') {
+        // Empty line might be part of table
+        tableLines.push(line);
+      } else if (inTable) {
+        // End of table
+        if (tableLines.length > 1) {
+          textBlocks.push({
+            id: `table-${textBlocks.length}`,
+            text: tableLines.join('\n'),
+            type: 'table',
+            startIndex: 0, // Would need more complex calculation
+            endIndex: 0,
+            lineCount: tableLines.length
+          });
+        }
+        inTable = false;
+        tableLines = [];
+      }
+    }
+  }
+
+  console.log('✅ Text processing complete:', {
+    originalLength: rawText.length,
+    processedLength: processedText.length,
+    textBlocks: textBlocks.length,
+    paragraphs: textBlocks.filter(b => b.type === 'paragraph').length,
+    tables: textBlocks.filter(b => b.type === 'table').length
+  });
+
+  return {
+    text: processedText,
+    textBlocks: textBlocks
+  };
+}
+
+async function processPageBatch(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('📑 Processing page batch with enhanced options:', options);
+  
+  const { pageStart, pageEnd, batchOperation } = options || {};
+  
+  if (!pageStart || !pageEnd) {
+    throw new Error('Page range (pageStart, pageEnd) is required for batch processing');
+  }
+
+  const pageRange = `${pageStart}-${pageEnd}`;
+  
+  if (batchOperation === 'extract') {
+    return await extractTextFromPDFEnhanced(apiKey, fileUrl, fileData, {
+      ...options,
+      pages: pageRange
+    });
+  } else if (batchOperation === 'edit') {
+    return await editPDFTextEnhanced(apiKey, fileUrl, fileData, {
+      ...options,
+      pages: pageRange
+    });
+  } else {
+    throw new Error(`Unsupported batch operation: ${batchOperation}`);
+  }
+}
+
+async function editPDFTextEnhanced(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('✏️ Enhanced PDF text editing with improved layout preservation:', {
     hasSearchStrings: !!options?.searchStrings,
     hasReplaceStrings: !!options?.replaceStrings,
     searchCount: options?.searchStrings?.length || 0,
     replaceCount: options?.replaceStrings?.length || 0,
-    caseSensitive: options?.caseSensitive,
-    matchCase: options?.matchCase,
-    replaceAll: options?.replaceAll
+    preserveFormatting: options?.preserveFormatting,
+    maintainLayout: options?.maintainLayout,
+    boundingBoxMapping: options?.boundingBoxMapping
   });
   
   if (!options?.searchStrings || !options?.replaceStrings) {
@@ -367,11 +531,13 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     throw new Error('Search and replace arrays must have the same length');
   }
 
-  // Filter out empty search strings and validate
+  // Enhanced text processing with normalization
   const validPairs = options.searchStrings
     .map((search: string, index: number) => ({ 
       search: String(search || '').trim(), 
-      replace: String(options.replaceStrings[index] || '') 
+      replace: String(options.replaceStrings[index] || ''),
+      originalSearch: options.originalSearchStrings?.[index] || search,
+      originalReplace: options.originalReplaceStrings?.[index] || options.replaceStrings[index]
     }))
     .filter((pair: any) => pair.search.length > 0);
 
@@ -379,7 +545,7 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     throw new Error('At least one non-empty search string is required');
   }
 
-  console.log('📋 Validated search/replace pairs:', validPairs.map(p => ({
+  console.log('📋 Enhanced search/replace pairs:', validPairs.map(p => ({
     search: p.search.substring(0, 50),
     replace: p.replace.substring(0, 50)
   })));
@@ -388,43 +554,59 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     searchStrings: validPairs.map((pair: any) => pair.search),
     replaceStrings: validPairs.map((pair: any) => pair.replace),
     caseSensitive: options.caseSensitive || false,
-    matchCase: options.matchCase !== false,
+    matchCase: options.caseSensitive || false,
     wholeWordsOnly: false,
     replaceAll: true,
-    async: false
+    async: false,
+    
+    // Enhanced formatting preservation
+    preserveFormatting: options.preserveFormatting !== false,
+    maintainLayout: options.maintainLayout !== false,
+    preserveLineBreaks: options.preserveLineBreaks !== false,
+    preserveParagraphs: options.preserveParagraphs !== false,
+    maintainFontSize: options.maintainFontSize !== false,
+    maintainAlignment: options.maintainAlignment !== false,
+    
+    // Bounding box and positioning
+    boundingBoxMapping: options.boundingBoxMapping !== false,
+    usePositionalReplacement: true,
+    
+    // Text normalization
+    normalizeSpaces: options.normalizeSpaces !== false,
+    normalizeLineEndings: true,
   };
 
   // Use fileUrl if available, otherwise use fileData
   if (fileUrl) {
     requestBody.url = fileUrl;
-    console.log('📋 Using URL for text editing:', fileUrl.substring(0, 100) + '...');
+    console.log('📋 Using URL for enhanced text editing:', fileUrl.substring(0, 100) + '...');
   } else if (fileData) {
     requestBody.file = fileData;
-    console.log('📋 Using base64 file data for text editing, length:', fileData.length);
+    console.log('📋 Using base64 file data for enhanced text editing, length:', fileData.length);
   }
 
-  console.log('📋 Text editing request details:', {
+  console.log('📋 Enhanced text editing request details:', {
     hasUrl: !!requestBody.url,
     hasFile: !!requestBody.file,
     searchCount: requestBody.searchStrings.length,
     replaceCount: requestBody.replaceStrings.length,
-    caseSensitive: requestBody.caseSensitive,
-    matchCase: requestBody.matchCase,
-    wholeWordsOnly: requestBody.wholeWordsOnly,
-    replaceAll: requestBody.replaceAll
+    preserveFormatting: requestBody.preserveFormatting,
+    maintainLayout: requestBody.maintainLayout,
+    boundingBoxMapping: requestBody.boundingBoxMapping
   });
 
   const result = await makeApiRequest(
     'https://api.pdf.co/v1/pdf/edit/replace-text',
     apiKey,
     requestBody,
-    'text editing'
+    'enhanced text editing'
   );
 
   if (result.success) {
-    console.log('✅ Text editing successful:', {
+    console.log('✅ Enhanced text editing successful:', {
       replacements: result.replacements || 0,
-      hasUrl: !!result.url
+      hasUrl: !!result.url,
+      preservedFormatting: options.preserveFormatting
     });
     
     return {
@@ -440,13 +622,17 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
 }
 
 async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('📝 Extracting text for rich editing');
+  console.log('📝 Extracting text for rich editing with enhanced formatting');
   
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    preserveFormatting: true,
+    preserveFormatting: options?.preserveFormatting !== false,
     includeTextFormatting: true,
+    extractTextCoordinates: true,
+    includeBoundingBoxes: options?.includeBoundingBoxes !== false,
+    normalizeSpaces: options?.normalizeSpaces !== false,
+    preserveLineBreaks: options?.preserveLineBreaks !== false,
     async: false,
     url: fileUrl,
     file: fileData
@@ -467,9 +653,12 @@ async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?
   );
 
   if (result.success) {
+    const processedText = processExtractedText(result.body, options);
+    
     return {
       success: true,
-      text: result.body,
+      text: processedText.text,
+      textBlocks: processedText.textBlocks,
       extractedContent: result,
       pages: result.pageCount,
       url: result.url,
@@ -481,8 +670,51 @@ async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?
   return result;
 }
 
+async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('Replacing PDF content with edited text');
+  
+  // For now, we'll use the text replacement API
+  // In a full implementation, this would involve more sophisticated text layout preservation
+  const requestBody: any = {
+    searchStrings: [""], // Replace all content
+    replaceStrings: [options?.editedContent || ""],
+    caseSensitive: false,
+    preserveFormatting: options?.preserveFormatting !== false,
+    maintainLayout: options?.maintainLayout !== false,
+    async: false
+  };
+
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  const response = await fetch('https://api.pdf.co/v1/pdf/edit/replace-text', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const result = await response.json();
+  console.log('Text replacement result:', result);
+
+  if (!result.error) {
+    return {
+      success: true,
+      url: result.url,
+      replacements: result.replacements
+    };
+  } else {
+    throw new Error(result.message || 'Failed to replace text in PDF');
+  }
+}
+
 async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('🎨 Adding PDF annotations with options:', options);
+  console.log('🎨 Adding PDF annotations with enhanced options:', options);
   
   if (!options?.annotations || !Array.isArray(options.annotations)) {
     throw new Error('Annotations array is required');
@@ -564,7 +796,7 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
 }
 
 async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('📱 Adding QR code to PDF with simplified approach:', options);
+  console.log('📱 Adding QR code to PDF with enhanced approach:', options);
   
   if (!options?.qrText) {
     throw new Error('QR code text is required');
@@ -590,7 +822,7 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
     }
   });
 
-  console.log('📋 Simplified QR request for PDF.co:', requestBody);
+  console.log('📋 Enhanced QR request for PDF.co:', requestBody);
 
   try {
     // Try the dedicated QR code endpoint first
@@ -717,47 +949,6 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
         errorStack: error.stack
       }
     };
-  }
-}
-
-async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Replacing PDF content with edited text');
-  
-  // For now, we'll use the text replacement API
-  // In a full implementation, this would involve more sophisticated text layout preservation
-  const requestBody: any = {
-    searchStrings: [""], // Replace all content
-    replaceStrings: [options?.editedContent || ""],
-    caseSensitive: false,
-    async: false
-  };
-
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/edit/replace-text', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const result = await response.json();
-  console.log('Text replacement result:', result);
-
-  if (!result.error) {
-    return {
-      success: true,
-      url: result.url,
-      replacements: result.replacements
-    };
-  } else {
-    throw new Error(result.message || 'Failed to replace text in PDF');
   }
 }
 
