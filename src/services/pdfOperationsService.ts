@@ -1,8 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PDFOperation {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -16,6 +15,7 @@ export interface PDFOperationResult {
   replacements?: number;
   error?: string;
   extractedContent?: any;
+  formFields?: any[];
 }
 
 export class PDFOperationsService {
@@ -123,11 +123,49 @@ export class PDFOperationsService {
     });
   }
 
+  async extractFormFields(fileUrl: string): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'extract-form-fields',
+      fileUrl,
+      options: {}
+    });
+  }
+
   async addQRCode(fileUrl: string, qrText: string, x: number = 100, y: number = 100, size: number = 100, pages: string = "1"): Promise<PDFOperationResult> {
     return this.performOperation({
       operation: 'add-qr-code',
       fileUrl,
       options: { qrText, x, y, size, pages }
+    });
+  }
+
+  async addAdvancedQRCode(
+    fileUrl: string, 
+    qrData: {
+      content: string;
+      type: 'url' | 'text' | 'email' | 'phone' | 'wifi' | 'sms';
+      x: number;
+      y: number;
+      size: number;
+      pages: string;
+      foregroundColor?: string;
+      backgroundColor?: string;
+      logoUrl?: string;
+    }
+  ): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'add-qr-code',
+      fileUrl,
+      options: {
+        qrText: qrData.content,
+        x: qrData.x,
+        y: qrData.y,
+        size: qrData.size,
+        pages: qrData.pages,
+        foregroundColor: qrData.foregroundColor || '#000000',
+        backgroundColor: qrData.backgroundColor || '#FFFFFF',
+        logoUrl: qrData.logoUrl
+      }
     });
   }
 

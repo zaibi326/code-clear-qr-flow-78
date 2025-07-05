@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,7 +6,7 @@ const corsHeaders = {
 };
 
 interface PDFOperationRequest {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -50,6 +49,9 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       case 'fill-form':
         result = await fillPDFForm(apiKey, fileUrl, fileData, options);
+        break;
+      case 'extract-form-fields':
+        result = await extractFormFields(apiKey, fileUrl, fileData, options);
         break;
       case 'add-qr-code':
         result = await addQRCodeToPDF(apiKey, fileUrl, fileData, options);
@@ -330,11 +332,80 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
   }
 }
 
+async function extractFormFields(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('Extracting form fields from PDF');
+  
+  const requestBody: any = {
+    async: false
+  };
+
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  const response = await fetch('https://api.pdf.co/v1/pdf/info', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const result = await response.json();
+  console.log('Form fields extraction result:', result);
+
+  if (!result.error) {
+    // Extract form fields from the PDF info
+    const formFields = result.fields || [];
+    return {
+      success: true,
+      formFields: formFields.map((field: any, index: number) => ({
+        name: field.name || `Field_${index}`,
+        type: getFormFieldType(field.type),
+        required: field.required || false,
+        options: field.options || [],
+        value: field.value || '',
+        x: field.rect ? field.rect[0] : 0,
+        y: field.rect ? field.rect[1] : 0,
+        width: field.rect ? field.rect[2] - field.rect[0] : 100,
+        height: field.rect ? field.rect[3] - field.rect[1] : 30
+      }))
+    };
+  } else {
+    throw new Error(result.message || 'Failed to extract form fields from PDF');
+  }
+}
+
+function getFormFieldType(pdfFieldType: string): string {
+  switch (pdfFieldType) {
+    case 'Tx': return 'text';
+    case 'Btn': return 'checkbox';
+    case 'Ch': return 'select';
+    default: return 'text';
+  }
+}
+
 async function fillPDFForm(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
   console.log('Filling PDF form');
   
+  // Convert form data to PDF.co format
+  const annotations = Object.entries(options?.fields || {}).map(([fieldName, value], index) => ({
+    type: "textbox",
+    text: String(value),
+    x: 100 + (index * 20), // Simple positioning - in real implementation, use actual field positions
+    y: 100 + (index * 30),
+    width: 200,
+    height: 25,
+    pages: "1",
+    fontName: "Helvetica",
+    fontSize: 12
+  }));
+
   const requestBody: any = {
-    fields: options?.fields || {},
+    annotations: annotations,
     async: false
   };
 
@@ -376,7 +447,9 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
       x: options?.x || 100,
       y: options?.y || 100,
       size: options?.size || 100,
-      pages: options?.pages || "1"
+      pages: options?.pages || "1",
+      foregroundColor: options?.foregroundColor || "#000000",
+      backgroundColor: options?.backgroundColor || "#FFFFFF"
     }],
     async: false
   };

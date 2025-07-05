@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,8 @@ import { pdfOperationsService } from '@/services/pdfOperationsService';
 import { FileText, Edit, MessageSquare, FormInput, QrCode, Download, Palette, Square } from 'lucide-react';
 import { RichTextEditor } from './components/RichTextEditor';
 import { PDFAnnotationTool } from './components/PDFAnnotationTool';
+import { QRCodeGenerator } from './components/QRCodeGenerator';
+import { PDFFormFiller } from './components/PDFFormFiller';
 
 interface PDFOperationsPanelProps {
   fileUrl?: string;
@@ -29,10 +30,13 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   const [qrCodeText, setQrCodeText] = useState('');
   const [qrPosition, setQrPosition] = useState({ x: 100, y: 100, size: 100 });
   const [showRichEditor, setShowRichEditor] = useState(false);
+  const [showQRGenerator, setShowQRGenerator] = useState(false);
   const [richEditorPosition, setRichEditorPosition] = useState({ x: 400, y: 300 });
   const [selectedAnnotationTool, setSelectedAnnotationTool] = useState('');
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [shapes, setShapes] = useState<any[]>([]);
+  const [formFields, setFormFields] = useState<any[]>([]);
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   const handleExtractText = async () => {
     if (!fileUrl) {
@@ -152,6 +156,75 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
+  const handleExtractFormFields = async () => {
+    if (!fileUrl) {
+      toast({
+        title: "No PDF file",
+        description: "Please select a PDF file first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await pdfOperationsService.extractFormFields(fileUrl);
+
+      if (result.success && result.formFields) {
+        setFormFields(result.formFields);
+        toast({
+          title: "Form fields extracted successfully",
+          description: `Found ${result.formFields.length} form fields`,
+        });
+        onOperationComplete?.(result);
+      } else {
+        throw new Error(result.error || 'Failed to extract form fields');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Form field extraction failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFillForm = async () => {
+    if (!fileUrl || Object.keys(formData).length === 0) {
+      toast({
+        title: "Missing form data",
+        description: "Please fill out the form fields first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await pdfOperationsService.fillForm(fileUrl, formData);
+
+      if (result.success) {
+        toast({
+          title: "Form filled successfully",
+          description: "The PDF form has been filled with your data",
+        });
+        onOperationComplete?.(result);
+      } else {
+        throw new Error(result.error || 'Failed to fill form');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Form filling failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddAnnotation = (type: string, x: number, y: number) => {
     const newAnnotation = {
       id: `annotation-${Date.now()}`,
@@ -218,11 +291,31 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
+  const handleGenerateQRCode = (content: string, size: number) => {
+    const newQRCode = {
+      id: `qr-${Date.now()}`,
+      content,
+      x: qrPosition.x,
+      y: qrPosition.y,
+      size,
+      pages: "1"
+    };
+    
+    setQrCodeText(content);
+    setQrPosition(prev => ({ ...prev, size }));
+    setShowQRGenerator(false);
+    
+    toast({
+      title: "QR Code generated",
+      description: "QR code is ready to be added to PDF",
+    });
+  };
+
   const handleAddQRCode = async () => {
     if (!fileUrl || !qrCodeText) {
       toast({
         title: "Missing information",
-        description: "Please provide QR code text",
+        description: "Please generate a QR code first",
         variant: "destructive"
       });
       return;
@@ -306,6 +399,13 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         />
       )}
 
+      {showQRGenerator && (
+        <QRCodeGenerator
+          onGenerate={handleGenerateQRCode}
+          onClose={() => setShowQRGenerator(false)}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -313,16 +413,17 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
             PDF Operations
           </CardTitle>
           <CardDescription>
-            Extract text, edit content, add annotations, and manipulate PDF files
+            Extract text, edit content, add annotations, fill forms, and manipulate PDF files
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="extract" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="extract">Extract</TabsTrigger>
               <TabsTrigger value="edit">Edit</TabsTrigger>
               <TabsTrigger value="rich">Rich Edit</TabsTrigger>
               <TabsTrigger value="annotate">Annotate</TabsTrigger>
+              <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="qr">QR Code</TabsTrigger>
               <TabsTrigger value="export">Export</TabsTrigger>
             </TabsList>
@@ -465,6 +566,87 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               </div>
             </TabsContent>
 
+            <TabsContent value="forms" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <FormInput className="w-4 h-4" />
+                  <h3 className="font-medium">PDF Form Management</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Extract, fill, and manage PDF form fields
+                </p>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={handleExtractFormFields} 
+                    disabled={isLoading || !fileUrl}
+                    variant="outline"
+                  >
+                    {isLoading ? 'Extracting...' : 'Extract Form Fields'}
+                  </Button>
+                  <Button 
+                    onClick={handleFillForm} 
+                    disabled={isLoading || !fileUrl || Object.keys(formData).length === 0}
+                    variant="outline"
+                  >
+                    {isLoading ? 'Filling...' : 'Fill Form'}
+                  </Button>
+                </div>
+
+                {formFields.length > 0 && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Form Fields ({formFields.length})</Label>
+                    {formFields.map((field, index) => (
+                      <div key={index} className="space-y-2 p-3 border rounded-lg">
+                        <Label className="text-sm font-medium">{field.name || `Field ${index + 1}`}</Label>
+                        {field.type === 'text' && (
+                          <Input
+                            placeholder={`Enter ${field.name || 'value'}`}
+                            value={formData[field.name] || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                          />
+                        )}
+                        {field.type === 'textarea' && (
+                          <Textarea
+                            placeholder={`Enter ${field.name || 'value'}`}
+                            value={formData[field.name] || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                          />
+                        )}
+                        {field.type === 'select' && field.options && (
+                          <Select
+                            value={formData[field.name] || ''}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, [field.name]: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={`Select ${field.name || 'option'}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.options.map((option: string, optIndex: number) => (
+                                <SelectItem key={optIndex} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {formFields.length === 0 && (
+                  <div className="text-center py-8">
+                    <FormInput className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">No form fields found</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Extract form fields from your PDF first
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
             <TabsContent value="qr" className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -472,52 +654,67 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                   <h3 className="font-medium">QR Code Generation</h3>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Add QR codes to your PDF documents
+                  Generate and add advanced QR codes to your PDF documents
                 </p>
-                <div className="space-y-2">
-                  <Label>QR Code Text/URL:</Label>
-                  <Input
-                    value={qrCodeText}
-                    onChange={(e) => setQrCodeText(e.target.value)}
-                    placeholder="Enter text or URL for QR code"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">X Position:</Label>
-                    <Input
-                      type="number"
-                      value={qrPosition.x}
-                      onChange={(e) => setQrPosition(prev => ({ ...prev, x: parseInt(e.target.value) || 100 }))}
-                      placeholder="100"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Y Position:</Label>
-                    <Input
-                      type="number"
-                      value={qrPosition.y}
-                      onChange={(e) => setQrPosition(prev => ({ ...prev, y: parseInt(e.target.value) || 100 }))}
-                      placeholder="100"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Size:</Label>
-                    <Input
-                      type="number"
-                      value={qrPosition.size}
-                      onChange={(e) => setQrPosition(prev => ({ ...prev, size: parseInt(e.target.value) || 100 }))}
-                      placeholder="100"
-                    />
-                  </div>
-                </div>
+                
                 <Button 
-                  onClick={handleAddQRCode} 
-                  disabled={isLoading || !fileUrl}
+                  onClick={() => setShowQRGenerator(true)}
+                  variant="outline"
                   className="w-full"
                 >
-                  {isLoading ? 'Adding QR Code...' : 'Add QR Code'}
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Open QR Code Generator
                 </Button>
+
+                {qrCodeText && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Generated QR Code</Label>
+                    <div className="p-3 border rounded-lg bg-gray-50">
+                      <p className="text-sm font-medium">Content: {qrCodeText}</p>
+                      <p className="text-xs text-gray-500">
+                        Position: ({qrPosition.x}, {qrPosition.y}) | Size: {qrPosition.size}px
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">X Position:</Label>
+                        <Input
+                          type="number"
+                          value={qrPosition.x}
+                          onChange={(e) => setQrPosition(prev => ({ ...prev, x: parseInt(e.target.value) || 100 }))}
+                          placeholder="100"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Y Position:</Label>
+                        <Input
+                          type="number"
+                          value={qrPosition.y}
+                          onChange={(e) => setQrPosition(prev => ({ ...prev, y: parseInt(e.target.value) || 100 }))}
+                          placeholder="100"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Size:</Label>
+                        <Input
+                          type="number"
+                          value={qrPosition.size}
+                          onChange={(e) => setQrPosition(prev => ({ ...prev, size: parseInt(e.target.value) || 100 }))}
+                          placeholder="100"
+                        />
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={handleAddQRCode} 
+                      disabled={isLoading || !fileUrl}
+                      className="w-full"
+                    >
+                      {isLoading ? 'Adding QR Code...' : 'Add QR Code to PDF'}
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
