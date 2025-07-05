@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PDFOperationRequest {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -35,6 +35,12 @@ const handler = async (req: Request): Promise<Response> => {
     switch (operation) {
       case 'extract-text':
         result = await extractTextFromPDF(apiKey, fileUrl, fileData, options);
+        break;
+      case 'extract-for-editing':
+        result = await extractForRichEditing(apiKey, fileUrl, fileData, options);
+        break;
+      case 'replace-with-edited':
+        result = await replaceWithEditedText(apiKey, fileUrl, fileData, options);
         break;
       case 'edit-text':
         result = await editPDFText(apiKey, fileUrl, fileData, options);
@@ -113,6 +119,90 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   }
 }
 
+async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('Extracting text for rich editing');
+  
+  // Use the same text extraction but with additional formatting preservation
+  const requestBody: any = {
+    pages: options?.pages || "1-",
+    ocrLanguage: options?.ocrLanguage || "eng",
+    preserveFormatting: true,
+    includeTextFormatting: true,
+    async: false
+  };
+
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  const response = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const result = await response.json();
+  console.log('Rich text extraction result:', result);
+
+  if (!result.error) {
+    return {
+      success: true,
+      text: result.body,
+      extractedContent: result,
+      pages: result.pageCount,
+      url: result.url
+    };
+  } else {
+    throw new Error(result.message || 'Failed to extract text for editing');
+  }
+}
+
+async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('Replacing PDF content with edited text');
+  
+  // For now, we'll use the text replacement API
+  // In a full implementation, this would involve more sophisticated text layout preservation
+  const requestBody: any = {
+    searchStrings: [""], // Replace all content
+    replaceStrings: [options?.editedContent || ""],
+    caseSensitive: false,
+    async: false
+  };
+
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
+
+  const response = await fetch('https://api.pdf.co/v1/pdf/edit/replace-text', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const result = await response.json();
+  console.log('Text replacement result:', result);
+
+  if (!result.error) {
+    return {
+      success: true,
+      url: result.url,
+      replacements: result.replacements
+    };
+  } else {
+    throw new Error(result.message || 'Failed to replace text in PDF');
+  }
+}
+
 async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
   console.log('Editing PDF text');
   
@@ -153,10 +243,62 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
 }
 
 async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Adding PDF annotations');
+  console.log('Adding PDF annotations and shapes');
   
+  // Transform annotations and shapes into PDF.co format
+  const annotations = (options?.annotations || []).map((annotation: any) => {
+    if (annotation.type === 'highlight') {
+      return {
+        type: "highlight",
+        x: annotation.x,
+        y: annotation.y,
+        width: annotation.width,
+        height: annotation.height,
+        pages: annotation.pages || "1",
+        color: annotation.color || { r: 1, g: 1, b: 0 }
+      };
+    } else if (annotation.type === 'rectangle') {
+      return {
+        type: "rectangle",
+        x: annotation.x,
+        y: annotation.y,
+        width: annotation.width,
+        height: annotation.height,
+        pages: annotation.pages || "1",
+        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
+        strokeWidth: annotation.strokeWidth || 2
+      };
+    } else if (annotation.type === 'circle') {
+      return {
+        type: "ellipse",
+        x: annotation.x,
+        y: annotation.y,
+        width: annotation.width,
+        height: annotation.height,
+        pages: annotation.pages || "1",
+        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
+        strokeWidth: annotation.strokeWidth || 2
+      };
+    } else {
+      // Default to rectangle for unknown types
+      return {
+        type: "rectangle",
+        x: annotation.x,
+        y: annotation.y,
+        width: annotation.width || 100,
+        height: annotation.height || 100,
+        pages: annotation.pages || "1",
+        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
+        strokeWidth: annotation.strokeWidth || 2
+      };
+    }
+  });
+
   const requestBody: any = {
-    annotations: options?.annotations || [],
+    annotations: annotations,
     async: false
   };
 

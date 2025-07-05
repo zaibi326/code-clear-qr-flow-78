@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PDFOperation {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -15,6 +15,7 @@ export interface PDFOperationResult {
   pages?: number;
   replacements?: number;
   error?: string;
+  extractedContent?: any;
 }
 
 export class PDFOperationsService {
@@ -53,6 +54,22 @@ export class PDFOperationsService {
     });
   }
 
+  async extractForEditing(fileUrl: string): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'extract-for-editing',
+      fileUrl,
+      options: { preserveFormatting: true, includePositions: true }
+    });
+  }
+
+  async replaceWithEditedText(fileUrl: string, editedContent: string): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'replace-with-edited',
+      fileUrl,
+      options: { editedContent }
+    });
+  }
+
   async extractTextFromFile(file: File, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
     const fileData = await this.fileToBase64(file);
     return this.performOperation({
@@ -71,6 +88,26 @@ export class PDFOperationsService {
   }
 
   async addAnnotations(fileUrl: string, annotations: any[]): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'add-annotations',
+      fileUrl,
+      options: { annotations }
+    });
+  }
+
+  async addShapes(fileUrl: string, shapes: any[]): Promise<PDFOperationResult> {
+    const annotations = shapes.map(shape => ({
+      type: shape.type,
+      x: shape.x,
+      y: shape.y,
+      width: shape.width,
+      height: shape.height,
+      pages: shape.pages || "1",
+      color: shape.color || { r: 0, g: 0, b: 1 },
+      fillColor: shape.fillColor || { r: 0.8, g: 0.8, b: 1 },
+      strokeWidth: shape.strokeWidth || 2
+    }));
+
     return this.performOperation({
       operation: 'add-annotations',
       fileUrl,

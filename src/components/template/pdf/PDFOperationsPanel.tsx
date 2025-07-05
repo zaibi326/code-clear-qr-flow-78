@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
-import { FileText, Edit, MessageSquare, FormInput, QrCode, Download } from 'lucide-react';
+import { FileText, Edit, MessageSquare, FormInput, QrCode, Download, Palette, Square } from 'lucide-react';
+import { RichTextEditor } from './components/RichTextEditor';
+import { PDFAnnotationTool } from './components/PDFAnnotationTool';
 
 interface PDFOperationsPanelProps {
   fileUrl?: string;
@@ -26,6 +28,11 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   const [replacementText, setReplacementText] = useState('');
   const [qrCodeText, setQrCodeText] = useState('');
   const [qrPosition, setQrPosition] = useState({ x: 100, y: 100, size: 100 });
+  const [showRichEditor, setShowRichEditor] = useState(false);
+  const [richEditorPosition, setRichEditorPosition] = useState({ x: 400, y: 300 });
+  const [selectedAnnotationTool, setSelectedAnnotationTool] = useState('');
+  const [annotations, setAnnotations] = useState<any[]>([]);
+  const [shapes, setShapes] = useState<any[]>([]);
 
   const handleExtractText = async () => {
     if (!fileUrl) {
@@ -65,6 +72,47 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
+  const handleOpenRichEditor = () => {
+    if (!extractedText) {
+      toast({
+        title: "No text to edit",
+        description: "Please extract text first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShowRichEditor(true);
+  };
+
+  const handleSaveRichText = async (editedText: string, formatting: any) => {
+    if (!fileUrl) return;
+
+    setIsLoading(true);
+    try {
+      const result = await pdfOperationsService.replaceWithEditedText(fileUrl, editedText);
+      
+      if (result.success) {
+        toast({
+          title: "Text updated successfully",
+          description: "The PDF has been updated with your changes",
+        });
+        setExtractedText(editedText);
+        onOperationComplete?.(result);
+      } else {
+        throw new Error(result.error || 'Failed to update text');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Text update failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      setShowRichEditor(false);
+    }
+  };
+
   const handleEditText = async () => {
     if (!fileUrl || !textToReplace || !replacementText) {
       toast({
@@ -96,6 +144,72 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     } catch (error: any) {
       toast({
         title: "Text editing failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddAnnotation = (type: string, x: number, y: number) => {
+    const newAnnotation = {
+      id: `annotation-${Date.now()}`,
+      type,
+      x,
+      y,
+      width: type === 'highlight' ? 200 : 100,
+      height: type === 'highlight' ? 20 : 100,
+      pages: "1"
+    };
+    setAnnotations([...annotations, newAnnotation]);
+  };
+
+  const handleAddShape = (type: string, x: number, y: number) => {
+    const newShape = {
+      id: `shape-${Date.now()}`,
+      type,
+      x,
+      y,
+      width: 100,
+      height: 100,
+      fillColor: { r: 0.8, g: 0.8, b: 1 },
+      strokeColor: { r: 0, g: 0, b: 1 },
+      strokeWidth: 2,
+      opacity: 0.8,
+      rotation: 0,
+      pages: "1"
+    };
+    setShapes([...shapes, newShape]);
+  };
+
+  const handleApplyAnnotations = async () => {
+    if (!fileUrl || (annotations.length === 0 && shapes.length === 0)) {
+      toast({
+        title: "No annotations to apply",
+        description: "Please add some annotations or shapes first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const allAnnotations = [...annotations, ...shapes];
+      const result = await pdfOperationsService.addAnnotations(fileUrl, allAnnotations);
+
+      if (result.success) {
+        toast({
+          title: "Annotations added successfully",
+          description: `Added ${allAnnotations.length} annotations to the PDF`,
+        });
+        onOperationComplete?.(result);
+      } else {
+        throw new Error(result.error || 'Failed to add annotations');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Annotation failed",
         description: error.message,
         variant: "destructive"
       });
@@ -183,6 +297,15 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
 
   return (
     <div className="w-full space-y-4">
+      {showRichEditor && (
+        <RichTextEditor
+          initialText={extractedText}
+          onSave={handleSaveRichText}
+          onCancel={() => setShowRichEditor(false)}
+          position={richEditorPosition}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -195,9 +318,11 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="extract" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="extract">Extract</TabsTrigger>
               <TabsTrigger value="edit">Edit</TabsTrigger>
+              <TabsTrigger value="rich">Rich Edit</TabsTrigger>
+              <TabsTrigger value="annotate">Annotate</TabsTrigger>
               <TabsTrigger value="qr">QR Code</TabsTrigger>
               <TabsTrigger value="export">Export</TabsTrigger>
             </TabsList>
@@ -236,7 +361,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Edit className="w-4 h-4" />
-                  <h3 className="font-medium">Text Editing</h3>
+                  <h3 className="font-medium">Simple Text Editing</h3>
                 </div>
                 <p className="text-sm text-gray-600">
                   Find and replace text in PDF files
@@ -262,7 +387,80 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                   disabled={isLoading || !fileUrl}
                   className="w-full"
                 >
-                  {isLoading ? 'Editing...' : 'Edit Text'}
+                  {isLoading ? 'Editing...' : 'Replace Text'}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="rich" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  <h3 className="font-medium">Rich Text Editor</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Edit text with full formatting control and rich text features
+                </p>
+                <Button 
+                  onClick={handleOpenRichEditor} 
+                  disabled={isLoading || !fileUrl || !extractedText}
+                  className="w-full"
+                >
+                  {isLoading ? 'Loading...' : 'Open Rich Text Editor'}
+                </Button>
+                <p className="text-xs text-gray-500">
+                  First extract text, then use the rich editor for advanced formatting
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="annotate" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Square className="w-4 h-4" />
+                  <h3 className="font-medium">Annotations & Shapes</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Add highlights, shapes, and annotations to your PDF
+                </p>
+                
+                <PDFAnnotationTool
+                  selectedTool={selectedAnnotationTool}
+                  onToolChange={setSelectedAnnotationTool}
+                  onAddAnnotation={handleAddAnnotation}
+                />
+
+                <div className="space-y-2">
+                  <Label>Quick Actions:</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddShape('rectangle', 100, 100)}
+                    >
+                      Add Rectangle
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAddShape('circle', 150, 150)}
+                    >
+                      Add Circle
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  <p>Annotations: {annotations.length}</p>
+                  <p>Shapes: {shapes.length}</p>
+                </div>
+
+                <Button 
+                  onClick={handleApplyAnnotations} 
+                  disabled={isLoading || !fileUrl || (annotations.length === 0 && shapes.length === 0)}
+                  className="w-full"
+                >
+                  {isLoading ? 'Applying...' : 'Apply Annotations'}
                 </Button>
               </div>
             </TabsContent>
