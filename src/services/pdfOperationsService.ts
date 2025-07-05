@@ -19,41 +19,70 @@ export interface PDFOperationResult {
   formFields?: any[];
   fileSize?: number;
   fileName?: string;
+  debugInfo?: any;
 }
 
 export class PDFOperationsService {
   async performOperation(operation: PDFOperation): Promise<PDFOperationResult> {
     try {
-      console.log('Performing PDF operation:', operation.operation);
+      console.log('🔄 Performing PDF operation:', operation.operation);
+      console.log('📋 Operation details:', {
+        hasFileUrl: !!operation.fileUrl,
+        hasFileData: !!operation.fileData,
+        fileUrlLength: operation.fileUrl?.length || 0,
+        fileDataLength: operation.fileData?.length || 0,
+        options: operation.options
+      });
       
       const { data, error } = await supabase.functions.invoke('pdf-operations', {
         body: operation
       });
 
+      console.log('📡 Supabase response:', { data, error });
+
       if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
+        console.error('❌ Supabase function error:', error);
+        throw new Error(`Supabase function error: ${error.message || JSON.stringify(error)}`);
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (data?.error) {
+        console.error('❌ PDF.co API error:', data.error);
+        throw new Error(`PDF.co API error: ${data.error}`);
       }
 
+      console.log('✅ Operation successful:', data);
       return data;
     } catch (error: any) {
-      console.error('PDF operation failed:', error);
+      console.error('💥 PDF operation failed:', error);
       return {
         success: false,
-        error: error.message || 'PDF operation failed'
+        error: error.message || 'PDF operation failed',
+        debugInfo: {
+          operation: operation.operation,
+          hasFileUrl: !!operation.fileUrl,
+          hasFileData: !!operation.fileData,
+          timestamp: new Date().toISOString()
+        }
       };
     }
   }
 
   async extractText(fileUrl: string, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
+    console.log('📄 Extracting text from PDF:', { fileUrl: fileUrl.substring(0, 100) + '...', options });
+    
+    // Validate file URL
+    if (!fileUrl || typeof fileUrl !== 'string') {
+      throw new Error('Invalid file URL provided for text extraction');
+    }
+
     return this.performOperation({
       operation: 'extract-text',
       fileUrl,
-      options
+      options: {
+        pages: options?.pages || "1-",
+        ocrLanguage: options?.ocrLanguage || "eng",
+        ...options
+      }
     });
   }
 
@@ -66,6 +95,12 @@ export class PDFOperationsService {
   }
 
   async replaceWithEditedText(fileUrl: string, editedContent: string): Promise<PDFOperationResult> {
+    console.log('✏️ Replacing PDF text with edited content');
+    
+    if (!fileUrl || !editedContent) {
+      throw new Error('File URL and edited content are required for text replacement');
+    }
+
     return this.performOperation({
       operation: 'replace-with-edited',
       fileUrl,
@@ -83,6 +118,24 @@ export class PDFOperationsService {
   }
 
   async editText(fileUrl: string, searchStrings: string[], replaceStrings: string[], caseSensitive: boolean = false): Promise<PDFOperationResult> {
+    console.log('📝 Editing PDF text:', { 
+      searchCount: searchStrings.length, 
+      replaceCount: replaceStrings.length,
+      caseSensitive 
+    });
+
+    if (!fileUrl) {
+      throw new Error('File URL is required for text editing');
+    }
+
+    if (!searchStrings.length || !replaceStrings.length) {
+      throw new Error('Search and replace strings are required');
+    }
+
+    if (searchStrings.length !== replaceStrings.length) {
+      throw new Error('Number of search strings must match number of replace strings');
+    }
+
     return this.performOperation({
       operation: 'edit-text',
       fileUrl,
@@ -91,10 +144,46 @@ export class PDFOperationsService {
   }
 
   async addAnnotations(fileUrl: string, annotations: any[]): Promise<PDFOperationResult> {
+    console.log('🎨 Adding annotations to PDF:', { 
+      annotationCount: annotations.length,
+      types: annotations.map(a => a.type)
+    });
+
+    if (!fileUrl) {
+      throw new Error('File URL is required for adding annotations');
+    }
+
+    if (!annotations.length) {
+      throw new Error('At least one annotation is required');
+    }
+
+    // Validate annotation structure
+    const validatedAnnotations = annotations.map((annotation, index) => {
+      if (!annotation.type) {
+        throw new Error(`Annotation ${index} is missing type`);
+      }
+      
+      if (typeof annotation.x !== 'number' || typeof annotation.y !== 'number') {
+        throw new Error(`Annotation ${index} has invalid coordinates`);
+      }
+
+      return {
+        type: annotation.type,
+        x: Math.round(annotation.x),
+        y: Math.round(annotation.y),
+        width: Math.round(annotation.width || 100),
+        height: Math.round(annotation.height || 100),
+        pages: annotation.pages || "1",
+        color: annotation.color || { r: 0, g: 0, b: 1 },
+        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+        strokeWidth: annotation.strokeWidth || 2
+      };
+    });
+
     return this.performOperation({
       operation: 'add-annotations',
       fileUrl,
-      options: { annotations }
+      options: { annotations: validatedAnnotations }
     });
   }
 
@@ -135,10 +224,34 @@ export class PDFOperationsService {
   }
 
   async addQRCode(fileUrl: string, qrText: string, x: number = 100, y: number = 100, size: number = 100, pages: string = "1"): Promise<PDFOperationResult> {
+    console.log('📱 Adding QR code to PDF:', { 
+      qrText: qrText.substring(0, 50) + '...', 
+      x, y, size, pages 
+    });
+
+    if (!fileUrl) {
+      throw new Error('File URL is required for QR code insertion');
+    }
+
+    if (!qrText) {
+      throw new Error('QR code text/content is required');
+    }
+
+    // Validate coordinates
+    if (x < 0 || y < 0 || size <= 0) {
+      throw new Error('Invalid QR code position or size');
+    }
+
     return this.performOperation({
       operation: 'add-qr-code',
       fileUrl,
-      options: { qrText, x, y, size, pages }
+      options: { 
+        qrText, 
+        x: Math.round(x), 
+        y: Math.round(y), 
+        size: Math.round(size), 
+        pages 
+      }
     });
   }
 
@@ -156,14 +269,20 @@ export class PDFOperationsService {
       logoUrl?: string;
     }
   ): Promise<PDFOperationResult> {
+    console.log('🚀 Adding advanced QR code to PDF:', qrData);
+
+    if (!qrData.content) {
+      throw new Error('QR code content is required');
+    }
+
     return this.performOperation({
       operation: 'add-qr-code',
       fileUrl,
       options: {
         qrText: qrData.content,
-        x: qrData.x,
-        y: qrData.y,
-        size: qrData.size,
+        x: Math.round(qrData.x),
+        y: Math.round(qrData.y),
+        size: Math.round(qrData.size),
         pages: qrData.pages,
         foregroundColor: qrData.foregroundColor || '#000000',
         backgroundColor: qrData.backgroundColor || '#FFFFFF',

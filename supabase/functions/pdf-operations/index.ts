@@ -13,7 +13,7 @@ interface PDFOperationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('PDF operations function called');
+  console.log('🚀 PDF operations function called');
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -24,11 +24,21 @@ const handler = async (req: Request): Promise<Response> => {
     const { operation, fileUrl, fileData, options }: PDFOperationRequest = await req.json();
     const apiKey = Deno.env.get('PDFCO_API_KEY');
 
+    console.log('📋 Request details:', {
+      operation,
+      hasFileUrl: !!fileUrl,
+      hasFileData: !!fileData,
+      fileUrlLength: fileUrl?.length || 0,
+      fileDataLength: fileData?.length || 0,
+      options
+    });
+
     if (!apiKey) {
-      throw new Error('PDF.co API key not configured');
+      console.error('❌ PDF.co API key not configured');
+      throw new Error('PDF.co API key not configured. Please add PDFCO_API_KEY to your environment variables.');
     }
 
-    console.log(`Processing PDF operation: ${operation}`);
+    console.log(`🔄 Processing PDF operation: ${operation}`);
 
     let result;
     switch (operation) {
@@ -66,6 +76,8 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Unsupported operation: ${operation}`);
     }
 
+    console.log('✅ Operation completed successfully:', { operation, success: result.success });
+
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
@@ -74,9 +86,13 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error('Error in PDF operations function:', error);
+    console.error('💥 Error in PDF operations function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -85,86 +101,271 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+async function makeApiRequest(url: string, apiKey: string, requestBody: any, operation: string) {
+  console.log(`📡 Making ${operation} API request to PDF.co:`, { url, requestBody });
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const responseText = await response.text();
+    console.log(`📥 PDF.co response (${response.status}):`, responseText);
+
+    if (!response.ok) {
+      throw new Error(`PDF.co API returned ${response.status}: ${responseText}`);
+    }
+
+    const result = JSON.parse(responseText);
+    
+    if (result.error) {
+      console.error(`❌ PDF.co API error for ${operation}:`, result);
+      throw new Error(result.message || `PDF.co API error: ${result.error}`);
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error(`💥 ${operation} API request failed:`, error);
+    throw error;
+  }
+}
+
 async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Extracting text from PDF');
+  console.log('📄 Extracting text from PDF with options:', options);
+  
+  if (!fileUrl && !fileData) {
+    throw new Error('Either fileUrl or fileData must be provided');
+  }
   
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    async: false
+    async: false,
+    url: fileUrl,
+    file: fileData
   };
 
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
+  // Remove undefined values
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
   });
 
-  const result = await response.json();
-  console.log('Text extraction result:', result);
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/convert/to/text',
+    apiKey,
+    requestBody,
+    'text extraction'
+  );
 
-  if (!result.error) {
-    return {
-      success: true,
-      text: result.body,
-      pages: result.pageCount,
-      url: result.url
-    };
-  } else {
-    throw new Error(result.message || 'Failed to extract text from PDF');
-  }
+  return {
+    success: true,
+    text: result.body,
+    pages: result.pageCount,
+    url: result.url
+  };
 }
 
 async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Extracting text for rich editing');
+  console.log('📝 Extracting text for rich editing');
   
-  // Use the same text extraction but with additional formatting preservation
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
     preserveFormatting: true,
     includeTextFormatting: true,
-    async: false
+    async: false,
+    url: fileUrl,
+    file: fileData
   };
 
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
+  // Remove undefined values
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
   });
 
-  const result = await response.json();
-  console.log('Rich text extraction result:', result);
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/convert/to/text',
+    apiKey,
+    requestBody,
+    'rich text extraction'
+  );
 
-  if (!result.error) {
-    return {
-      success: true,
-      text: result.body,
-      extractedContent: result,
-      pages: result.pageCount,
-      url: result.url
-    };
-  } else {
-    throw new Error(result.message || 'Failed to extract text for editing');
+  return {
+    success: true,
+    text: result.body,
+    extractedContent: result,
+    pages: result.pageCount,
+    url: result.url
+  };
+}
+
+async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('✏️ Editing PDF text with options:', options);
+  
+  if (!options?.searchStrings || !options?.replaceStrings) {
+    throw new Error('Search and replace strings are required for text editing');
   }
+
+  const requestBody: any = {
+    searchStrings: options.searchStrings,
+    replaceStrings: options.replaceStrings,
+    caseSensitive: options.caseSensitive || false,
+    async: false,
+    url: fileUrl,
+    file: fileData
+  };
+
+  // Remove undefined values
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
+  });
+
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/edit/replace-text',
+    apiKey,
+    requestBody,
+    'text editing'
+  );
+
+  return {
+    success: true,
+    url: result.url,
+    replacements: result.replacements || 0
+  };
+}
+
+async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('🎨 Adding PDF annotations with options:', options);
+  
+  if (!options?.annotations || !Array.isArray(options.annotations)) {
+    throw new Error('Annotations array is required');
+  }
+
+  // Transform annotations to PDF.co format
+  const annotations = options.annotations.map((annotation: any) => {
+    const baseAnnotation = {
+      x: Math.round(annotation.x || 100),
+      y: Math.round(annotation.y || 100),
+      width: Math.round(annotation.width || 100),
+      height: Math.round(annotation.height || 100),
+      pages: annotation.pages || "1"
+    };
+
+    switch (annotation.type) {
+      case 'highlight':
+        return {
+          ...baseAnnotation,
+          type: "highlight",
+          color: annotation.color || { r: 1, g: 1, b: 0 }
+        };
+      case 'rectangle':
+        return {
+          ...baseAnnotation,
+          type: "rectangle",
+          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
+          strokeWidth: annotation.strokeWidth || 2
+        };
+      case 'circle':
+        return {
+          ...baseAnnotation,
+          type: "ellipse",
+          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
+          strokeWidth: annotation.strokeWidth || 2
+        };
+      default:
+        return {
+          ...baseAnnotation,
+          type: "rectangle",
+          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
+          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
+          strokeWidth: annotation.strokeWidth || 2
+        };
+    }
+  });
+
+  const requestBody: any = {
+    annotations: annotations,
+    async: false,
+    url: fileUrl,
+    file: fileData
+  };
+
+  // Remove undefined values
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
+  });
+
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/edit/add',
+    apiKey,
+    requestBody,
+    'annotations'
+  );
+
+  return {
+    success: true,
+    url: result.url
+  };
+}
+
+async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('📱 Adding QR code to PDF with options:', options);
+  
+  if (!options?.qrText) {
+    throw new Error('QR code text is required');
+  }
+
+  const qrAnnotation = {
+    type: "qrcode",
+    text: options.qrText,
+    x: Math.round(options.x || 100),
+    y: Math.round(options.y || 100),
+    size: Math.round(options.size || 100),
+    pages: options.pages || "1",
+    foregroundColor: options.foregroundColor || "#000000",
+    backgroundColor: options.backgroundColor || "#FFFFFF"
+  };
+
+  const requestBody: any = {
+    annotations: [qrAnnotation],
+    async: false,
+    url: fileUrl,
+    file: fileData
+  };
+
+  // Remove undefined values
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
+  });
+
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/edit/add',
+    apiKey,
+    requestBody,
+    'QR code insertion'
+  );
+
+  return {
+    success: true,
+    url: result.url
+  };
 }
 
 async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
@@ -205,133 +406,6 @@ async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?
     };
   } else {
     throw new Error(result.message || 'Failed to replace text in PDF');
-  }
-}
-
-async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Editing PDF text');
-  
-  const requestBody: any = {
-    searchStrings: options?.searchStrings || [],
-    replaceStrings: options?.replaceStrings || [],
-    caseSensitive: options?.caseSensitive || false,
-    async: false
-  };
-
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/edit/replace-text', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const result = await response.json();
-  console.log('Text editing result:', result);
-
-  if (!result.error) {
-    return {
-      success: true,
-      url: result.url,
-      replacements: result.replacements
-    };
-  } else {
-    throw new Error(result.message || 'Failed to edit PDF text');
-  }
-}
-
-async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Adding PDF annotations and shapes');
-  
-  // Transform annotations and shapes into PDF.co format
-  const annotations = (options?.annotations || []).map((annotation: any) => {
-    if (annotation.type === 'highlight') {
-      return {
-        type: "highlight",
-        x: annotation.x,
-        y: annotation.y,
-        width: annotation.width,
-        height: annotation.height,
-        pages: annotation.pages || "1",
-        color: annotation.color || { r: 1, g: 1, b: 0 }
-      };
-    } else if (annotation.type === 'rectangle') {
-      return {
-        type: "rectangle",
-        x: annotation.x,
-        y: annotation.y,
-        width: annotation.width,
-        height: annotation.height,
-        pages: annotation.pages || "1",
-        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
-        strokeWidth: annotation.strokeWidth || 2
-      };
-    } else if (annotation.type === 'circle') {
-      return {
-        type: "ellipse",
-        x: annotation.x,
-        y: annotation.y,
-        width: annotation.width,
-        height: annotation.height,
-        pages: annotation.pages || "1",
-        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
-        strokeWidth: annotation.strokeWidth || 2
-      };
-    } else {
-      // Default to rectangle for unknown types
-      return {
-        type: "rectangle",
-        x: annotation.x,
-        y: annotation.y,
-        width: annotation.width || 100,
-        height: annotation.height || 100,
-        pages: annotation.pages || "1",
-        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-        strokeColor: annotation.strokeColor || { r: 0, g: 0, b: 1 },
-        strokeWidth: annotation.strokeWidth || 2
-      };
-    }
-  });
-
-  const requestBody: any = {
-    annotations: annotations,
-    async: false
-  };
-
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/edit/add', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const result = await response.json();
-  console.log('Annotation result:', result);
-
-  if (!result.error) {
-    return {
-      success: true,
-      url: result.url
-    };
-  } else {
-    throw new Error(result.message || 'Failed to add annotations to PDF');
   }
 }
 
@@ -437,51 +511,6 @@ async function fillPDFForm(apiKey: string, fileUrl?: string, fileData?: string, 
     };
   } else {
     throw new Error(result.message || 'Failed to fill PDF form');
-  }
-}
-
-async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('Adding QR code to PDF');
-  
-  const requestBody: any = {
-    annotations: [{
-      type: "qrcode",
-      text: options?.qrText || "https://example.com",
-      x: options?.x || 100,
-      y: options?.y || 100,
-      size: options?.size || 100,
-      pages: options?.pages || "1",
-      foregroundColor: options?.foregroundColor || "#000000",
-      backgroundColor: options?.backgroundColor || "#FFFFFF"
-    }],
-    async: false
-  };
-
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  const response = await fetch('https://api.pdf.co/v1/pdf/edit/add', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const result = await response.json();
-  console.log('QR code addition result:', result);
-
-  if (!result.error) {
-    return {
-      success: true,
-      url: result.url
-    };
-  } else {
-    throw new Error(result.message || 'Failed to add QR code to PDF');
   }
 }
 

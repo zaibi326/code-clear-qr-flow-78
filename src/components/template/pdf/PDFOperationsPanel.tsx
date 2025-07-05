@@ -14,6 +14,7 @@ import { PDFAnnotationTool } from './components/PDFAnnotationTool';
 import { QRCodeGenerator } from './components/QRCodeGenerator';
 import { PDFFormFiller } from './components/PDFFormFiller';
 import { PDFExportPanel } from './components/PDFExportPanel';
+import { PDFDebugPanel } from './components/PDFDebugPanel';
 
 interface PDFOperationsPanelProps {
   fileUrl?: string;
@@ -441,7 +442,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="extract" className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="extract">Extract</TabsTrigger>
               <TabsTrigger value="edit">Edit</TabsTrigger>
               <TabsTrigger value="rich">Rich Edit</TabsTrigger>
@@ -450,6 +451,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               <TabsTrigger value="qr">QR Code</TabsTrigger>
               <TabsTrigger value="export">Export</TabsTrigger>
               <TabsTrigger value="download">Download</TabsTrigger>
+              <TabsTrigger value="debug">Debug</TabsTrigger>
             </TabsList>
 
             <TabsContent value="extract" className="space-y-4">
@@ -767,6 +769,10 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                 modifications={getAllModifications()}
                 onExportComplete={handleExportComplete}
               />
+            </TabsContent>
+
+            <TabsContent value="debug" className="space-y-4">
+              <PDFDebugPanel fileUrl={fileUrl} />
             </TabsContent>
           </Tabs>
         </CardContent>
