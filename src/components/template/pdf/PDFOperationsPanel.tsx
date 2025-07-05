@@ -73,7 +73,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
           result = await pdfOperationsService.extractTextEnhanced(fileUrl!, {
             preserveFormatting: true,
             includeBoundingBoxes: true,
-            normalizeSpaces: true,
             preserveLineBreaks: true,
             preserveParagraphs: true,
             detectTables: true,

@@ -209,6 +209,10 @@ export class PDFOperationsService {
     includeBoundingBoxes?: boolean;
     chunkSize?: number;
     maxTextLength?: number;
+    normalizeSpaces?: boolean;
+    preserveLineBreaks?: boolean;
+    preserveParagraphs?: boolean;
+    detectTables?: boolean;
   }): Promise<PDFOperationResult> {
     console.log('📄 Enhanced text extraction from PDF:', { 
       fileUrl: fileUrl.substring(0, 100) + '...', 
@@ -230,6 +234,10 @@ export class PDFOperationsService {
         includeBoundingBoxes: options?.includeBoundingBoxes !== false,
         chunkSize: options?.chunkSize || 1000000, // 1MB chunks
         maxTextLength: options?.maxTextLength || 10000000, // 10MB max
+        normalizeSpaces: options?.normalizeSpaces !== false,
+        preserveLineBreaks: options?.preserveLineBreaks !== false,
+        preserveParagraphs: options?.preserveParagraphs !== false,
+        detectTables: options?.detectTables !== false,
         // Enhanced OCR settings for better text recognition
         ocr: true,
         ocrAccuracy: "high",
@@ -241,10 +249,6 @@ export class PDFOperationsService {
         extractTextFont: true,
         extractTextSize: true,
         extractTextColor: true,
-        normalizeSpaces: true,
-        preserveLineBreaks: true,
-        preserveParagraphs: true,
-        detectTables: true,
         ...options
       }
     });
