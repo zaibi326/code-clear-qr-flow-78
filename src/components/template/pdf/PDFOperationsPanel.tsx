@@ -259,7 +259,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                     <Palette className="h-5 w-5" />
                     Add Annotations
                   </CardTitle>
-                </CardContent>
+                </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-gray-600">
                     Add visual annotations like rectangles, highlights, and shapes.
