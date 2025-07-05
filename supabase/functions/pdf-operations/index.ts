@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -489,19 +488,17 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
     throw new Error('Annotations array is required');
   }
 
-  // Transform annotations to proper PDF.co format - use simple structure
+  // Simplified annotation format for PDF.co API
   const annotations = options.annotations.map((annotation: any) => {
-    console.log('Processing annotation:', annotation);
-    
     const baseAnnotation = {
-      x: Math.round(annotation.x || 100),
-      y: Math.round(annotation.y || 100),
-      width: Math.round(annotation.width || 100),
-      height: Math.round(annotation.height || 100),
-      pages: annotation.pages || "1"
+      x: Number(annotation.x || 100),
+      y: Number(annotation.y || 100),
+      width: Number(annotation.width || 100),
+      height: Number(annotation.height || 100),
+      pages: String(annotation.pages || "1")
     };
 
-    // Use simple annotation format that PDF.co expects
+    // Use simple annotation format
     switch (annotation.type) {
       case 'highlight':
         return {
@@ -514,8 +511,7 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
           ...baseAnnotation,
           type: "rectangle",
           fillColor: "lightblue",
-          strokeColor: "blue",
-          strokeWidth: 2
+          strokeColor: "blue"
         };
       case 'circle':
       case 'ellipse':
@@ -523,16 +519,14 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
           ...baseAnnotation,
           type: "ellipse",
           fillColor: "lightgreen",
-          strokeColor: "green", 
-          strokeWidth: 2
+          strokeColor: "green"
         };
       default:
         return {
           ...baseAnnotation,
           type: "rectangle",
           fillColor: "lightgray",
-          strokeColor: "black",
-          strokeWidth: 1
+          strokeColor: "black"
         };
     }
   });
@@ -576,15 +570,14 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
     throw new Error('QR code text is required');
   }
 
-  // Use simple QR code annotation format
+  // Simple QR code annotation format
   const qrAnnotation = {
     type: "qrcode",
-    text: options.qrText.trim(),
-    x: Math.round(options.x || 100),
-    y: Math.round(options.y || 100),
-    size: Math.round(options.size || 100),
-    pages: options.pages || "1"
-    // Remove complex color formatting that might cause issues
+    text: String(options.qrText).trim(),
+    x: Number(options.x || 100),
+    y: Number(options.y || 100),
+    size: Number(options.size || 100),
+    pages: String(options.pages || "1")
   };
 
   console.log('📋 QR annotation for PDF.co:', qrAnnotation);

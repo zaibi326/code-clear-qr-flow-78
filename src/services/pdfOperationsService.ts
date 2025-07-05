@@ -331,7 +331,7 @@ export class PDFOperationsService {
       throw new Error('At least one annotation is required');
     }
 
-    // Validate and format annotations properly for PDF.co API
+    // Simplified annotation format for PDF.co API compatibility
     const validatedAnnotations = annotations.map((annotation, index) => {
       if (!annotation.type) {
         throw new Error(`Annotation ${index} is missing type`);
@@ -341,31 +341,29 @@ export class PDFOperationsService {
         throw new Error(`Annotation ${index} has invalid coordinates`);
       }
 
-      // Format annotation properly for PDF.co API
+      // Use simple annotation structure that PDF.co expects
       const baseAnnotation = {
-        x: Math.round(annotation.x),
-        y: Math.round(annotation.y),
-        width: Math.round(annotation.width || 100),
-        height: Math.round(annotation.height || 100),
+        x: annotation.x,
+        y: annotation.y,
+        width: annotation.width || 100,
+        height: annotation.height || 100,
         pages: annotation.pages || "1"
       };
 
-      // Handle different annotation types with proper API format
+      // Handle different annotation types with simple format
       switch (annotation.type.toLowerCase()) {
         case 'highlight':
           return {
             ...baseAnnotation,
             type: "highlight",
-            color: "yellow", // Use simple color string
-            opacity: 0.5
+            color: "yellow"
           };
         case 'rectangle':
           return {
             ...baseAnnotation,
             type: "rectangle",
-            fillColor: "lightblue", // Use simple color string
-            strokeColor: "blue",
-            strokeWidth: 2
+            fillColor: "lightblue",
+            strokeColor: "blue"
           };
         case 'circle':
         case 'ellipse':
@@ -373,16 +371,14 @@ export class PDFOperationsService {
             ...baseAnnotation,
             type: "ellipse",
             fillColor: "lightgreen",
-            strokeColor: "green",
-            strokeWidth: 2
+            strokeColor: "green"
           };
         default:
           return {
             ...baseAnnotation,
             type: "rectangle",
             fillColor: "lightgray",
-            strokeColor: "black",
-            strokeWidth: 1
+            strokeColor: "black"
           };
       }
     });
@@ -391,42 +387,6 @@ export class PDFOperationsService {
       operation: 'add-annotations',
       fileUrl,
       options: { annotations: validatedAnnotations }
-    });
-  }
-
-  async addShapes(fileUrl: string, shapes: any[]): Promise<PDFOperationResult> {
-    const annotations = shapes.map(shape => ({
-      type: shape.type,
-      x: shape.x,
-      y: shape.y,
-      width: shape.width,
-      height: shape.height,
-      pages: shape.pages || "1",
-      color: shape.color || { r: 0, g: 0, b: 1 },
-      fillColor: shape.fillColor || { r: 0.8, g: 0.8, b: 1 },
-      strokeWidth: shape.strokeWidth || 2
-    }));
-
-    return this.performOperation({
-      operation: 'add-annotations',
-      fileUrl,
-      options: { annotations }
-    });
-  }
-
-  async fillForm(fileUrl: string, fields: Record<string, any>): Promise<PDFOperationResult> {
-    return this.performOperation({
-      operation: 'fill-form',
-      fileUrl,
-      options: { fields }
-    });
-  }
-
-  async extractFormFields(fileUrl: string): Promise<PDFOperationResult> {
-    return this.performOperation({
-      operation: 'extract-form-fields',
-      fileUrl,
-      options: {}
     });
   }
 
@@ -454,13 +414,10 @@ export class PDFOperationsService {
       fileUrl,
       options: { 
         qrText: qrText.trim(),
-        x: Math.round(x), 
-        y: Math.round(y), 
-        size: Math.round(size), 
-        pages: pages || "1",
-        // Use simple format for PDF.co API
-        foregroundColor: "#000000",
-        backgroundColor: "#FFFFFF"
+        x: x, 
+        y: y, 
+        size: size, 
+        pages: pages || "1"
       }
     });
   }
