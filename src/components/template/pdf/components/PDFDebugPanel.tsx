@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +28,75 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
   const [debugResults, setDebugResults] = useState<any[]>([]);
   const [testUrl, setTestUrl] = useState('');
   const [isTestingApi, setIsTestingApi] = useState(false);
+  const [urlValidation, setUrlValidation] = useState<{
+    isValid: boolean;
+    error?: string;
+    correctedUrl?: string;
+  } | null>(null);
+
+  const validatePDFUrl = (url: string | null | undefined): { 
+    isValid: boolean; 
+    error?: string; 
+    url?: string;
+  } => {
+    if (!url) {
+      return { isValid: false, error: 'No URL provided' };
+    }
+
+    if (typeof url !== 'string') {
+      return { isValid: false, error: 'URL must be a string' };
+    }
+
+    if (url.startsWith('data:')) {
+      return { 
+        isValid: false, 
+        error: 'Data URLs are not supported by PDF.co API. Please upload to a public HTTP/HTTPS URL.' 
+      };
+    }
+
+    if (url.startsWith('blob:')) {
+      return { 
+        isValid: false, 
+        error: 'Blob URLs are not supported by PDF.co API. Please upload to a public HTTP/HTTPS URL.' 
+      };
+    }
+
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+        return { 
+          isValid: false, 
+          error: 'URL must be a valid HTTP or HTTPS URL' 
+        };
+      }
+    } catch {
+      return { 
+        isValid: false, 
+        error: 'URL must be a valid HTTP or HTTPS URL' 
+      };
+    }
+
+    if (url.includes(' ')) {
+      const encodedUrl = encodeURI(url);
+      return { 
+        isValid: true, 
+        url: encodedUrl,
+        error: 'URL contained spaces and was automatically encoded' 
+      };
+    }
+
+    return { isValid: true, url };
+  };
+
+  useEffect(() => {
+    const urlToValidate = testUrl || fileUrl;
+    if (urlToValidate) {
+      const validation = validatePDFUrl(urlToValidate);
+      setUrlValidation(validation);
+    } else {
+      setUrlValidation(null);
+    }
+  }, [testUrl, fileUrl]);
 
   const testApiConnection = async () => {
     setIsTestingApi(true);
@@ -71,31 +139,68 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
     }
 
     const urlToTest = testUrl || fileUrl;
+    
+    const validation = validatePDFUrl(urlToTest);
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid URL Format",
+        description: validation.error,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const finalUrl = validation.url || urlToTest;
     setIsDebugging(true);
     setDebugResults([]);
 
     const tests = [
       {
-        name: 'URL Validation',
+        name: 'URL Format Validation',
         test: async () => {
-          if (!urlToTest) throw new Error('No URL provided');
-          if (!urlToTest.startsWith('http')) throw new Error('Invalid URL format');
-          return { message: 'URL format is valid' };
+          const validation = validatePDFUrl(finalUrl);
+          if (!validation.isValid) {
+            throw new Error(validation.error || 'Invalid URL format');
+          }
+          return { 
+            message: 'URL format is valid',
+            details: {
+              originalUrl: urlToTest,
+              finalUrl: validation.url || urlToTest,
+              protocol: new URL(finalUrl).protocol,
+              hostname: new URL(finalUrl).hostname
+            }
+          };
         }
       },
       {
-        name: 'URL Accessibility',
+        name: 'URL Accessibility Test',
         test: async () => {
-          const response = await fetch(urlToTest, { method: 'HEAD' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          return { 
-            message: 'URL is accessible',
-            details: {
-              status: response.status,
-              contentType: response.headers.get('content-type'),
-              contentLength: response.headers.get('content-length')
-            }
-          };
+          try {
+            const response = await fetch(finalUrl, { 
+              method: 'HEAD',
+              mode: 'no-cors' // Try no-cors first for cross-origin requests
+            });
+            
+            const getResponse = await fetch(finalUrl, {
+              method: 'GET',
+              headers: {
+                'Range': 'bytes=0-1023' // Only fetch first 1KB to test accessibility
+              }
+            }).catch(() => null);
+
+            return { 
+              message: 'URL is accessible',
+              details: {
+                accessible: true,
+                corsStatus: getResponse ? 'CORS-enabled' : 'CORS-restricted (but accessible)',
+                contentType: getResponse?.headers.get('content-type') || 'Unknown',
+                contentLength: getResponse?.headers.get('content-length') || 'Unknown'
+              }
+            };
+          } catch (error: any) {
+            throw new Error(`URL accessibility test failed: ${error.message}`);
+          }
         }
       },
       {
@@ -112,7 +217,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
       {
         name: 'Text Extraction Test',
         test: async () => {
-          const result = await pdfOperationsService.extractText(urlToTest, { pages: "1" });
+          const result = await pdfOperationsService.extractText(finalUrl, { pages: "1" });
           if (!result.success) throw new Error(result.error || 'Text extraction failed');
           return { 
             message: 'Text extraction successful',
@@ -136,7 +241,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
             height: 50,
             pages: "1"
           }];
-          const result = await pdfOperationsService.addAnnotations(urlToTest, testAnnotation);
+          const result = await pdfOperationsService.addAnnotations(finalUrl, testAnnotation);
           if (!result.success) throw new Error(result.error || 'Annotation test failed');
           return { 
             message: 'Annotation test successful',
@@ -150,7 +255,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
       {
         name: 'QR Code Test',
         test: async () => {
-          const result = await pdfOperationsService.addQRCode(urlToTest, 'https://test.com', 50, 50, 50, "1");
+          const result = await pdfOperationsService.addQRCode(finalUrl, 'https://test.com', 50, 50, 50, "1");
           if (!result.success) throw new Error(result.error || 'QR code test failed');
           return { 
             message: 'QR code test successful',
@@ -249,12 +354,43 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           <Input
             value={testUrl}
             onChange={(e) => setTestUrl(e.target.value)}
-            placeholder="Enter PDF URL to test..."
+            placeholder="Enter PDF URL to test (must be HTTP/HTTPS)..."
             className="h-8"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Leave empty to use current file URL: {fileUrl ? '✓ Available' : '✗ Not available'}
+            Current file URL: {fileUrl ? '✓ Available' : '✗ Not available'}
           </p>
+          
+          {urlValidation && (
+            <div className={`mt-2 p-2 rounded text-xs ${
+              urlValidation.isValid 
+                ? 'bg-green-50 text-green-700 border border-green-200' 
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {urlValidation.isValid ? (
+                <div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    <span className="font-medium">URL Valid</span>
+                  </div>
+                  {urlValidation.url && urlValidation.url !== (testUrl || fileUrl) && (
+                    <div className="mt-1">
+                      <span className="font-medium">Corrected URL:</span>
+                      <div className="break-all">{urlValidation.url}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-1">
+                    <XCircle className="w-3 h-3" />
+                    <span className="font-medium">URL Invalid</span>
+                  </div>
+                  <div className="mt-1">{urlValidation.error}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -271,7 +407,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           
           <Button
             onClick={runDiagnostics}
-            disabled={isDebugging || (!fileUrl && !testUrl)}
+            disabled={isDebugging || (!fileUrl && !testUrl) || (urlValidation && !urlValidation.isValid)}
             size="sm"
             className="flex-1"
           >
@@ -345,22 +481,21 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            <strong>Common Issues & Solutions:</strong>
+            <strong>URL Format Requirements:</strong>
             <ul className="mt-1 space-y-1 list-disc list-inside">
-              <li><strong>500 Error:</strong> PDF.co API key not configured in Supabase secrets</li>
-              <li><strong>400 Error:</strong> Invalid request parameters or malformed data</li>
-              <li><strong>403 Error:</strong> Invalid or expired API key</li>
-              <li><strong>404 Error:</strong> PDF URL not accessible or doesn't exist</li>
-              <li><strong>Network Error:</strong> CORS issues or connectivity problems</li>
-              <li><strong>Invalid coordinates:</strong> Annotation/QR code positions out of bounds</li>
+              <li><strong>Must be HTTP/HTTPS:</strong> URLs must start with http:// or https://</li>
+              <li><strong>No Data URLs:</strong> data:application/pdf... URLs are not supported</li>
+              <li><strong>No Blob URLs:</strong> blob:... URLs are not supported</li>
+              <li><strong>Must be publicly accessible:</strong> PDF.co API needs to fetch the file</li>
+              <li><strong>Encode special characters:</strong> Spaces and special chars should be URL-encoded</li>
             </ul>
             <div className="mt-2">
-              <strong>Next Steps:</strong>
+              <strong>Solutions:</strong>
               <ol className="mt-1 space-y-1 list-decimal list-inside">
-                <li>Test API key connection first</li>
-                <li>Verify PDF URL is publicly accessible</li>
-                <li>Check Supabase Edge Function logs for detailed errors</li>
-                <li>Use smaller coordinate values for annotations/QR codes</li>
+                <li>Upload PDF to Supabase Storage and make bucket public</li>
+                <li>Use cloud storage like AWS S3 with public read access</li>
+                <li>Ensure the URL is directly accessible (test in browser)</li>
+                <li>Check CORS settings if using custom domain</li>
               </ol>
             </div>
           </AlertDescription>

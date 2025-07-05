@@ -36,7 +36,7 @@ export class PDFOperationsService {
         options: operation.options
       });
 
-      // Validate inputs before sending to edge function
+      // Enhanced validation before sending to edge function
       const validationResult = this.validateOperation(operation);
       if (!validationResult.isValid) {
         throw new Error(`Validation failed: ${validationResult.error}`);
@@ -97,17 +97,40 @@ export class PDFOperationsService {
       return { isValid: false, error: 'Either fileUrl or fileData must be provided' };
     }
 
-    // Validate fileUrl format if provided
+    // Enhanced fileUrl validation
     if (operation.fileUrl) {
-      try {
-        new URL(operation.fileUrl);
-      } catch {
-        return { isValid: false, error: 'Invalid fileUrl format' };
+      // Check for data URLs
+      if (operation.fileUrl.startsWith('data:')) {
+        return { 
+          isValid: false, 
+          error: 'Data URLs are not supported by PDF.co API. Please upload file to a public HTTP/HTTPS URL.' 
+        };
       }
 
-      // Check if URL is accessible (basic check)
-      if (!operation.fileUrl.startsWith('http')) {
+      // Check for blob URLs
+      if (operation.fileUrl.startsWith('blob:')) {
+        return { 
+          isValid: false, 
+          error: 'Blob URLs are not supported by PDF.co API. Please upload file to a public HTTP/HTTPS URL.' 
+        };
+      }
+
+      // Validate URL format
+      try {
+        const url = new URL(operation.fileUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          return { isValid: false, error: 'fileUrl must be a valid HTTP/HTTPS URL' };
+        }
+      } catch {
         return { isValid: false, error: 'fileUrl must be a valid HTTP/HTTPS URL' };
+      }
+
+      // Check for common issues
+      if (operation.fileUrl.includes(' ')) {
+        return { 
+          isValid: false, 
+          error: 'fileUrl contains spaces. Please encode the URL properly or remove spaces.' 
+        };
       }
     }
 
