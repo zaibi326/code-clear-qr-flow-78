@@ -181,7 +181,7 @@ export class PDFOperationsService {
     }
   }
 
-  private preprocessOperation(operation: PDFOperation): Promise<{
+  private async preprocessOperation(operation: PDFOperation): Promise<{
     success: boolean;
     operation?: PDFOperation;
     error?: string;
