@@ -16,28 +16,16 @@ export const EnhancedPDFEditor: React.FC<EnhancedPDFEditorProps> = ({
   onSave,
   onCancel
 }) => {
-  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
+  const [currentTemplate, setCurrentTemplate] = useState<Template>(template);
 
-  const handleOperationComplete = (result: any) => {
-    console.log('PDF operation completed:', result);
-    
-    if (result.success && result.url) {
-      setProcessedUrl(result.url);
-      
-      // Update the template with the processed PDF URL
-      const updatedTemplate: Template = {
-        ...template,
-        template_url: result.url,
-        preview: result.url,
-        updatedAt: new Date()
-      };
-      
-      onSave(updatedTemplate);
-    }
+  const handleTemplateUpdate = (updatedTemplate: Template) => {
+    console.log('Template updated:', updatedTemplate);
+    setCurrentTemplate(updatedTemplate);
+    onSave(updatedTemplate);
   };
 
   const getPDFUrl = () => {
-    return processedUrl || template.template_url || template.preview;
+    return currentTemplate.template_url || currentTemplate.preview;
   };
 
   return (
@@ -52,7 +40,7 @@ export const EnhancedPDFEditor: React.FC<EnhancedPDFEditorProps> = ({
             </Button>
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              <h1 className="text-lg font-semibold">PDF Operations - {template.name}</h1>
+              <h1 className="text-lg font-semibold">PDF Operations - {currentTemplate.name}</h1>
             </div>
           </div>
         </div>
@@ -61,10 +49,10 @@ export const EnhancedPDFEditor: React.FC<EnhancedPDFEditorProps> = ({
       {/* Main Content */}
       <div className="flex h-[calc(100vh-80px)]">
         {/* Operations Panel */}
-        <div className="w-96 bg-white border-r border-gray-200 p-6 overflow-y-auto">
+        <div className="w-96 bg-white border-r border-gray-200 overflow-y-auto">
           <PDFOperationsPanel
-            fileUrl={getPDFUrl()}
-            onOperationComplete={handleOperationComplete}
+            template={currentTemplate}
+            onTemplateUpdate={handleTemplateUpdate}
           />
         </div>
 

@@ -76,7 +76,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
             onTemplateUpdate({
               ...template,
               template_url: result.url,
-              updated_at: new Date().toISOString()
+              updatedAt: new Date()
             });
           }
           break;
@@ -100,7 +100,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
             onTemplateUpdate({
               ...template,
               template_url: result.url,
-              updated_at: new Date().toISOString()
+              updatedAt: new Date()
             });
           }
           break;
