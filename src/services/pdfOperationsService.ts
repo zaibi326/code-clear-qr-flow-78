@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PDFOperation {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -11,11 +11,14 @@ export interface PDFOperationResult {
   success: boolean;
   text?: string;
   url?: string;
+  downloadUrl?: string;
   pages?: number;
   replacements?: number;
   error?: string;
   extractedContent?: any;
   formFields?: any[];
+  fileSize?: number;
+  fileName?: string;
 }
 
 export class PDFOperationsService {
@@ -169,12 +172,48 @@ export class PDFOperationsService {
     });
   }
 
-  async exportPDF(fileUrl: string, format: string = 'pdf'): Promise<PDFOperationResult> {
+  async finalizePDF(fileUrl: string, modifications: {
+    textChanges?: any[];
+    annotations?: any[];
+    qrCodes?: any[];
+    formData?: Record<string, any>;
+  }): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'finalize-pdf',
+      fileUrl,
+      options: modifications
+    });
+  }
+
+  async exportPDF(fileUrl: string, format: string = 'pdf', options?: {
+    fileName?: string;
+    quality?: number;
+    compression?: boolean;
+  }): Promise<PDFOperationResult> {
     return this.performOperation({
       operation: 'export-pdf',
       fileUrl,
-      options: { format }
+      options: { format, ...options }
     });
+  }
+
+  async downloadPDF(url: string, fileName: string = 'edited-document.pdf'): Promise<void> {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      throw new Error('Failed to download PDF');
+    }
   }
 
   private async fileToBase64(file: File): Promise<string> {

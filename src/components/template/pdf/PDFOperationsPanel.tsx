@@ -13,6 +13,7 @@ import { RichTextEditor } from './components/RichTextEditor';
 import { PDFAnnotationTool } from './components/PDFAnnotationTool';
 import { QRCodeGenerator } from './components/QRCodeGenerator';
 import { PDFFormFiller } from './components/PDFFormFiller';
+import { PDFExportPanel } from './components/PDFExportPanel';
 
 interface PDFOperationsPanelProps {
   fileUrl?: string;
@@ -37,6 +38,8 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   const [shapes, setShapes] = useState<any[]>([]);
   const [formFields, setFormFields] = useState<any[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [textChanges, setTextChanges] = useState<any[]>([]);
+  const [qrCodes, setQrCodes] = useState<any[]>([]);
 
   const handleExtractText = async () => {
     if (!fileUrl) {
@@ -388,12 +391,29 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
+  const handleExportComplete = (result: any) => {
+    console.log('Export completed:', result);
+    onOperationComplete?.(result);
+  };
+
+  const getAllModifications = () => {
+    return {
+      textChanges,
+      annotations: [...annotations, ...shapes],
+      qrCodes,
+      formData: Object.keys(formData).length > 0 ? formData : undefined
+    };
+  };
+
   return (
     <div className="w-full space-y-4">
       {showRichEditor && (
         <RichTextEditor
           initialText={extractedText}
-          onSave={handleSaveRichText}
+          onSave={(editedText, formatting) => {
+            handleSaveRichText(editedText, formatting);
+            setTextChanges(prev => [...prev, { type: 'rich-edit', content: editedText, formatting }]);
+          }}
           onCancel={() => setShowRichEditor(false)}
           position={richEditorPosition}
         />
@@ -401,7 +421,10 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
 
       {showQRGenerator && (
         <QRCodeGenerator
-          onGenerate={handleGenerateQRCode}
+          onGenerate={(content, size) => {
+            handleGenerateQRCode(content, size);
+            setQrCodes(prev => [...prev, { content, x: qrPosition.x, y: qrPosition.y, size }]);
+          }}
           onClose={() => setShowQRGenerator(false)}
         />
       )}
@@ -418,7 +441,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="extract" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="extract">Extract</TabsTrigger>
               <TabsTrigger value="edit">Edit</TabsTrigger>
               <TabsTrigger value="rich">Rich Edit</TabsTrigger>
@@ -426,6 +449,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="qr">QR Code</TabsTrigger>
               <TabsTrigger value="export">Export</TabsTrigger>
+              <TabsTrigger value="download">Download</TabsTrigger>
             </TabsList>
 
             <TabsContent value="extract" className="space-y-4">
@@ -735,6 +759,14 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                   {isLoading ? 'Exporting...' : 'Export PDF'}
                 </Button>
               </div>
+            </TabsContent>
+
+            <TabsContent value="download" className="space-y-4">
+              <PDFExportPanel
+                fileUrl={fileUrl}
+                modifications={getAllModifications()}
+                onExportComplete={handleExportComplete}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
