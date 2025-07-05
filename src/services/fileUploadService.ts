@@ -21,29 +21,51 @@ export class FileUploadService {
     try {
       console.log('🔄 Converting data URL to public URL for PDF.co API');
       
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ User not authenticated for file upload');
+        return {
+          success: false,
+          error: 'User must be authenticated to upload files'
+        };
+      }
+      
       // Convert data URL to blob
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       
-      // Generate unique filename
+      // Generate unique filename with user prefix to avoid conflicts
       const timestamp = Date.now();
-      const uniqueFileName = `${timestamp}-${fileName}`;
+      const uniqueFileName = `${user.id}/${timestamp}-${fileName}`;
       
       console.log('📁 Uploading file to Supabase Storage:', uniqueFileName);
       
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with explicit content type
       const { data, error } = await supabase.storage
         .from('templates')
         .upload(uniqueFileName, blob, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: blob.type || 'application/pdf'
         });
 
       if (error) {
         console.error('❌ Upload failed:', error);
+        
+        // Provide specific error messages for common issues
+        let errorMessage = `Upload failed: ${error.message}`;
+        if (error.message.includes('row-level security')) {
+          errorMessage = 'Upload permission denied. Please ensure you are logged in and have proper access rights.';
+        } else if (error.message.includes('duplicate')) {
+          errorMessage = 'File already exists. Please try again or use a different filename.';
+        } else if (error.message.includes('size')) {
+          errorMessage = 'File is too large. Please use a smaller file.';
+        }
+        
         return {
           success: false,
-          error: `Upload failed: ${error.message}`
+          error: errorMessage
         };
       }
 

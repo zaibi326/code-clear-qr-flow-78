@@ -37,6 +37,16 @@ export class PDFOperationsService {
         options: operation.options
       });
 
+      // Check authentication first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          error: 'Authentication required. Please log in to use PDF operations.',
+          statusCode: 401
+        };
+      }
+
       // Enhanced validation and URL conversion before sending to edge function
       const processedOperation = await this.preprocessOperation(operation);
       if (!processedOperation.success) {
@@ -55,9 +65,18 @@ export class PDFOperationsService {
 
       if (error) {
         console.error('❌ Supabase function error:', error);
+        
+        // Provide user-friendly error messages
+        let errorMessage = `PDF operation failed: ${error.message || JSON.stringify(error)}`;
+        if (error.message?.includes('unauthorized') || error.status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (error.message?.includes('timeout')) {
+          errorMessage = 'Operation timed out. Please try again with a smaller file.';
+        }
+        
         return {
           success: false,
-          error: `Supabase function error: ${error.message || JSON.stringify(error)}`,
+          error: errorMessage,
           statusCode: error.status || 500,
           debugInfo: {
             operation: operation.operation,
@@ -71,7 +90,7 @@ export class PDFOperationsService {
         console.error('❌ PDF.co API error:', data.error);
         return {
           success: false,
-          error: `PDF.co API error: ${data.error}`,
+          error: `PDF processing failed: ${data.error}`,
           statusCode: data.statusCode || 500,
           debugInfo: data.debugInfo || {}
         };
@@ -81,9 +100,19 @@ export class PDFOperationsService {
       return data;
     } catch (error: any) {
       console.error('💥 PDF operation failed:', error);
+      
+      let errorMessage = 'PDF operation failed';
+      if (error.message?.includes('storage')) {
+        errorMessage = 'File storage error. Please check your permissions and try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.message || 'PDF operation failed',
+        error: errorMessage,
         statusCode: 500,
         debugInfo: {
           operation: operation.operation,
@@ -106,27 +135,30 @@ export class PDFOperationsService {
       if (operation.fileUrl) {
         console.log('🔍 Processing fileUrl:', operation.fileUrl.substring(0, 50) + '...');
         
-        const urlResult = await fileUploadService.ensurePublicUrl(
-          operation.fileUrl,
-          'document.pdf'
-        );
+        // Only try to convert if it's not already a valid HTTP URL
+        if (!this.isValidHttpUrl(operation.fileUrl)) {
+          const urlResult = await fileUploadService.ensurePublicUrl(
+            operation.fileUrl,
+            'document.pdf'
+          );
 
-        if (!urlResult.success) {
+          if (!urlResult.success) {
+            return {
+              success: false,
+              error: `URL processing failed: ${urlResult.error}`
+            };
+          }
+
+          // Update the operation with the public URL
           return {
-            success: false,
-            error: `URL processing failed: ${urlResult.error}`
+            success: true,
+            operation: {
+              ...operation,
+              fileUrl: urlResult.publicUrl,
+              fileData: undefined // Remove fileData if we have a valid URL
+            }
           };
         }
-
-        // Update the operation with the public URL
-        return {
-          success: true,
-          operation: {
-            ...operation,
-            fileUrl: urlResult.publicUrl,
-            fileData: undefined // Remove fileData if we have a valid URL
-          }
-        };
       }
 
       // If we have fileData but no fileUrl, convert fileData to public URL
@@ -180,64 +212,13 @@ export class PDFOperationsService {
     }
   }
 
-  private validateOperation(operation: PDFOperation): { isValid: boolean; error?: string } {
-    // Check if we have either fileUrl or fileData
-    if (!operation.fileUrl && !operation.fileData) {
-      return { isValid: false, error: 'Either fileUrl or fileData must be provided' };
+  private isValidHttpUrl(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
     }
-
-    // Enhanced fileUrl validation
-    if (operation.fileUrl) {
-      // Check for data URLs
-      if (operation.fileUrl.startsWith('data:')) {
-        return { 
-          isValid: false, 
-          error: 'Data URLs are not supported by PDF.co API. Please upload file to a public HTTP/HTTPS URL.' 
-        };
-      }
-
-      // Check for blob URLs
-      if (operation.fileUrl.startsWith('blob:')) {
-        return { 
-          isValid: false, 
-          error: 'Blob URLs are not supported by PDF.co API. Please upload file to a public HTTP/HTTPS URL.' 
-        };
-      }
-
-      // Validate URL format
-      try {
-        const url = new URL(operation.fileUrl);
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-          return { isValid: false, error: 'fileUrl must be a valid HTTP/HTTPS URL' };
-        }
-      } catch {
-        return { isValid: false, error: 'fileUrl must be a valid HTTP/HTTPS URL' };
-      }
-
-      // Check for common issues
-      if (operation.fileUrl.includes(' ')) {
-        return { 
-          isValid: false, 
-          error: 'fileUrl contains spaces. Please encode the URL properly or remove spaces.' 
-        };
-      }
-    }
-
-    // Validate fileData if provided
-    if (operation.fileData) {
-      if (typeof operation.fileData !== 'string') {
-        return { isValid: false, error: 'fileData must be a base64 string' };
-      }
-      
-      // Basic base64 validation
-      try {
-        atob(operation.fileData);
-      } catch {
-        return { isValid: false, error: 'fileData must be valid base64 encoded data' };
-      }
-    }
-
-    return { isValid: true };
   }
 
   async testApiConnection(): Promise<PDFOperationResult> {
