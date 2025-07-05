@@ -175,7 +175,12 @@ async function testApiKey(apiKey: string) {
 }
 
 async function makeApiRequest(url: string, apiKey: string, requestBody: any, operation: string) {
-  console.log(`📡 Making ${operation} API request to PDF.co:`, { url, requestBody });
+  console.log(`📡 Making ${operation} API request to PDF.co:`, { 
+    url, 
+    hasUrl: !!requestBody.url,
+    hasFile: !!requestBody.file,
+    bodySize: JSON.stringify(requestBody).length 
+  });
   
   try {
     const response = await fetch(url, {
@@ -188,7 +193,11 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
     });
 
     const responseText = await response.text();
-    console.log(`📥 PDF.co response (${response.status}):`, responseText);
+    console.log(`📥 PDF.co response (${response.status}) for ${operation}:`, {
+      status: response.status,
+      responseLength: responseText.length,
+      responsePreview: responseText.substring(0, 200)
+    });
 
     if (!response.ok) {
       return {
@@ -196,8 +205,9 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
         error: `PDF.co API returned ${response.status}: ${responseText}`,
         statusCode: response.status,
         debugInfo: {
+          operation,
           url,
-          requestBody,
+          requestBodyKeys: Object.keys(requestBody),
           responseBody: responseText,
           responseHeaders: Object.fromEntries(response.headers.entries())
         }
@@ -214,8 +224,9 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
         statusCode: response.status,
         debugInfo: {
           pdfcoError: result,
+          operation,
           url,
-          requestBody
+          requestBodyKeys: Object.keys(requestBody)
         }
       };
     }
@@ -226,7 +237,7 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
       statusCode: response.status,
       debugInfo: {
         operation,
-        requestBody,
+        requestBodyKeys: Object.keys(requestBody),
         responseStatus: response.status
       }
     };
@@ -234,12 +245,12 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
     console.error(`💥 ${operation} API request failed:`, error);
     return {
       success: false,
-      error: `Network error: ${error.message}`,
+      error: `Network error during ${operation}: ${error.message}`,
       statusCode: 500,
       debugInfo: {
         operation,
         url,
-        requestBody,
+        requestBodyKeys: Object.keys(requestBody || {}),
         errorStack: error.stack
       }
     };
@@ -266,11 +277,12 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
     requestBody.file = fileData;
   }
 
-  console.log('📋 Text extraction request body:', {
+  console.log('📋 Text extraction request details:', {
     hasUrl: !!requestBody.url,
     hasFile: !!requestBody.file,
     pages: requestBody.pages,
-    ocrLanguage: requestBody.ocrLanguage
+    ocrLanguage: requestBody.ocrLanguage,
+    urlPreview: requestBody.url ? requestBody.url.substring(0, 100) + '...' : 'none'
   });
 
   const result = await makeApiRequest(
@@ -337,15 +349,42 @@ async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?
 }
 
 async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('✏️ Editing PDF text with options:', options);
+  console.log('✏️ Editing PDF text with options:', {
+    hasSearchStrings: !!options?.searchStrings,
+    hasReplaceStrings: !!options?.replaceStrings,
+    searchCount: options?.searchStrings?.length || 0,
+    replaceCount: options?.replaceStrings?.length || 0,
+    caseSensitive: options?.caseSensitive
+  });
   
   if (!options?.searchStrings || !options?.replaceStrings) {
     throw new Error('Search and replace strings are required for text editing');
   }
 
+  // Validate search/replace arrays
+  if (!Array.isArray(options.searchStrings) || !Array.isArray(options.replaceStrings)) {
+    throw new Error('Search and replace strings must be arrays');
+  }
+
+  if (options.searchStrings.length !== options.replaceStrings.length) {
+    throw new Error('Search and replace arrays must have the same length');
+  }
+
+  // Filter out empty search strings
+  const validPairs = options.searchStrings
+    .map((search: string, index: number) => ({ 
+      search: String(search || ''), 
+      replace: String(options.replaceStrings[index] || '') 
+    }))
+    .filter((pair: any) => pair.search.trim().length > 0);
+
+  if (validPairs.length === 0) {
+    throw new Error('At least one non-empty search string is required');
+  }
+
   const requestBody: any = {
-    searchStrings: options.searchStrings,
-    replaceStrings: options.replaceStrings,
+    searchStrings: validPairs.map((pair: any) => pair.search),
+    replaceStrings: validPairs.map((pair: any) => pair.replace),
     caseSensitive: options.caseSensitive || false,
     async: false
   };
@@ -357,12 +396,14 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     requestBody.file = fileData;
   }
 
-  console.log('📋 Text editing request body:', {
+  console.log('📋 Text editing request details:', {
     hasUrl: !!requestBody.url,
     hasFile: !!requestBody.file,
     searchCount: requestBody.searchStrings.length,
     replaceCount: requestBody.replaceStrings.length,
-    caseSensitive: requestBody.caseSensitive
+    caseSensitive: requestBody.caseSensitive,
+    validPairsCount: validPairs.length,
+    urlPreview: requestBody.url ? requestBody.url.substring(0, 100) + '...' : 'none'
   });
 
   const result = await makeApiRequest(

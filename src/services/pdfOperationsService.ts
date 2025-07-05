@@ -27,30 +27,46 @@ export interface PDFOperationResult {
 
 export class PDFOperationsService {
   private async ensureValidUrl(fileUrl?: string, fileData?: string): Promise<string | null> {
+    console.log('🔍 Ensuring valid URL for PDF operation:', {
+      hasFileUrl: !!fileUrl,
+      hasFileData: !!fileData,
+      fileUrlType: fileUrl ? (fileUrl.startsWith('data:') ? 'data-url' : fileUrl.startsWith('http') ? 'http-url' : 'other') : 'none'
+    });
+
     // If we have a valid HTTP/HTTPS URL, return it
     if (fileUrl && this.isValidHttpUrl(fileUrl)) {
+      console.log('✅ Using existing HTTP URL');
       return fileUrl;
+    }
+
+    // Convert data URL to public URL if needed
+    if (fileUrl && fileUrl.startsWith('data:')) {
+      console.log('🔄 Converting data URL to public URL');
+      const uploadResult = await fileUploadService.uploadDataUrlToStorage(fileUrl, 'document.pdf');
+      
+      if (uploadResult.success && uploadResult.publicUrl) {
+        console.log('✅ Successfully converted data URL to public URL');
+        return uploadResult.publicUrl;
+      } else {
+        console.error('❌ Failed to convert data URL:', uploadResult.error);
+      }
     }
 
     // If we have fileData, convert it to a public URL
     if (fileData) {
+      console.log('🔄 Converting base64 fileData to public URL');
       const dataUrl = `data:application/pdf;base64,${fileData}`;
       const uploadResult = await fileUploadService.uploadDataUrlToStorage(dataUrl, 'document.pdf');
       
       if (uploadResult.success && uploadResult.publicUrl) {
+        console.log('✅ Successfully converted fileData to public URL');
         return uploadResult.publicUrl;
+      } else {
+        console.error('❌ Failed to convert fileData:', uploadResult.error);
       }
     }
 
-    // If we have a data URL as fileUrl, convert it
-    if (fileUrl && fileUrl.startsWith('data:')) {
-      const uploadResult = await fileUploadService.uploadDataUrlToStorage(fileUrl, 'document.pdf');
-      
-      if (uploadResult.success && uploadResult.publicUrl) {
-        return uploadResult.publicUrl;
-      }
-    }
-
+    console.error('❌ No valid URL could be created');
     return null;
   }
 
@@ -81,7 +97,7 @@ export class PDFOperationsService {
       if (!validUrl) {
         return {
           success: false,
-          error: 'Could not process file URL. Please ensure the PDF is accessible.',
+          error: 'Could not process file URL. Please ensure the PDF is accessible and try again.',
           statusCode: 400
         };
       }
@@ -165,7 +181,7 @@ export class PDFOperationsService {
     }
   }
 
-  private async preprocessOperation(operation: PDFOperation): Promise<{
+  private preprocessOperation(operation: PDFOperation): Promise<{
     success: boolean;
     operation?: PDFOperation;
     error?: string;
@@ -325,8 +341,8 @@ export class PDFOperationsService {
       searchCount: searchStrings.length, 
       replaceCount: replaceStrings.length,
       caseSensitive,
-      searchStrings: searchStrings.map(s => s.substring(0, 50) + '...'),
-      replaceStrings: replaceStrings.map(s => s.substring(0, 50) + '...')
+      searchStrings: searchStrings.map(s => s.substring(0, 50) + (s.length > 50 ? '...' : '')),
+      replaceStrings: replaceStrings.map(s => s.substring(0, 50) + (s.length > 50 ? '...' : ''))
     });
 
     if (!fileUrl) {
@@ -341,13 +357,22 @@ export class PDFOperationsService {
       throw new Error('Number of search strings must match number of replace strings');
     }
 
-    // Filter out empty search strings as they can cause issues
-    const validSearchStrings = searchStrings.filter(s => s && s.trim().length > 0);
-    const validReplaceStrings = replaceStrings.filter((s, index) => searchStrings[index] && searchStrings[index].trim().length > 0);
+    // Filter out empty search strings and their corresponding replace strings
+    const validPairs = searchStrings
+      .map((search, index) => ({ search, replace: replaceStrings[index] }))
+      .filter(pair => pair.search && pair.search.trim().length > 0);
 
-    if (validSearchStrings.length === 0) {
+    if (validPairs.length === 0) {
       throw new Error('At least one non-empty search string is required');
     }
+
+    const validSearchStrings = validPairs.map(pair => pair.search);
+    const validReplaceStrings = validPairs.map(pair => pair.replace);
+
+    console.log('✅ Using valid search/replace pairs:', {
+      count: validPairs.length,
+      pairs: validPairs.map(p => ({ search: p.search.substring(0, 30), replace: p.replace.substring(0, 30) }))
+    });
 
     return this.performOperation({
       operation: 'edit-text',
