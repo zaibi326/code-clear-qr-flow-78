@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +38,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
   const validatePDFUrl = (url: string | null | undefined): { 
     isValid: boolean; 
     error?: string; 
-    url?: string;
+    correctedUrl?: string;
   } => {
     if (!url) {
       return { isValid: false, error: 'No URL provided' };
@@ -80,12 +81,12 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
       const encodedUrl = encodeURI(url);
       return { 
         isValid: true, 
-        url: encodedUrl,
+        correctedUrl: encodedUrl,
         error: 'URL contained spaces and was automatically encoded' 
       };
     }
 
-    return { isValid: true, url };
+    return { isValid: true, correctedUrl: url };
   };
 
   useEffect(() => {
@@ -150,7 +151,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
       return;
     }
 
-    const finalUrl = validation.url || urlToTest;
+    const finalUrl = validation.correctedUrl || urlToTest;
     setIsDebugging(true);
     setDebugResults([]);
 
@@ -166,7 +167,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
             message: 'URL format is valid',
             details: {
               originalUrl: urlToTest,
-              finalUrl: validation.url || urlToTest,
+              finalUrl: validation.correctedUrl || urlToTest,
               protocol: new URL(finalUrl).protocol,
               hostname: new URL(finalUrl).hostname
             }
@@ -373,10 +374,10 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
                     <CheckCircle className="w-3 h-3" />
                     <span className="font-medium">URL Valid</span>
                   </div>
-                  {urlValidation.url && urlValidation.url !== (testUrl || fileUrl) && (
+                  {urlValidation.correctedUrl && urlValidation.correctedUrl !== (testUrl || fileUrl) && (
                     <div className="mt-1">
                       <span className="font-medium">Corrected URL:</span>
-                      <div className="break-all">{urlValidation.url}</div>
+                      <div className="break-all">{urlValidation.correctedUrl}</div>
                     </div>
                   )}
                 </div>
