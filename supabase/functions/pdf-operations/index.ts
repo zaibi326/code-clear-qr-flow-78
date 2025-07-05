@@ -564,52 +564,160 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
 }
 
 async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('📱 Adding QR code to PDF with options:', options);
+  console.log('📱 Adding QR code to PDF with simplified approach:', options);
   
   if (!options?.qrText) {
     throw new Error('QR code text is required');
   }
 
-  // Simple QR code annotation format
-  const qrAnnotation = {
-    type: "qrcode",
-    text: String(options.qrText).trim(),
-    x: Number(options.x || 100),
-    y: Number(options.y || 100),
-    size: Number(options.size || 100),
+  // Use a much simpler approach for QR code insertion
+  const requestBody: any = {
+    url: fileUrl,
+    file: fileData,
+    async: false,
+    // Simplified QR code parameters that are more likely to work
+    qrCodeText: String(options.qrText).trim(),
+    qrCodeX: Number(options.x || 100),
+    qrCodeY: Number(options.y || 100),
+    qrCodeSize: Number(options.size || 100),
     pages: String(options.pages || "1")
   };
 
-  console.log('📋 QR annotation for PDF.co:', qrAnnotation);
+  // Remove undefined values to avoid API issues
+  Object.keys(requestBody).forEach(key => {
+    if (requestBody[key] === undefined) {
+      delete requestBody[key];
+    }
+  });
 
-  const requestBody: any = {
-    annotations: [qrAnnotation],
-    async: false
-  };
+  console.log('📋 Simplified QR request for PDF.co:', requestBody);
 
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
+  try {
+    // Try the dedicated QR code endpoint first
+    let response = await fetch('https://api.pdf.co/v1/pdf/edit/add-qr-code', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-  const result = await makeApiRequest(
-    'https://api.pdf.co/v1/pdf/edit/add',
-    apiKey,
-    requestBody,
-    'QR code insertion'
-  );
+    let responseText = await response.text();
+    console.log(`📥 QR code endpoint response (${response.status}):`, responseText);
 
-  if (result.success) {
+    // If the dedicated endpoint doesn't exist, fall back to the general add endpoint
+    if (response.status === 404 || responseText.includes('not found')) {
+      console.log('🔄 Falling back to general add endpoint');
+      
+      const fallbackBody = {
+        url: fileUrl,
+        file: fileData,
+        async: false,
+        annotations: [{
+          type: "qrcode",
+          text: String(options.qrText).trim(),
+          x: Number(options.x || 100),
+          y: Number(options.y || 100),
+          size: Number(options.size || 100),
+          pages: String(options.pages || "1")
+        }]
+      };
+
+      // Remove undefined values
+      Object.keys(fallbackBody).forEach(key => {
+        if (fallbackBody[key] === undefined) {
+          delete fallbackBody[key];
+        }
+      });
+
+      response = await fetch('https://api.pdf.co/v1/pdf/edit/add', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fallbackBody),
+      });
+
+      responseText = await response.text();
+      console.log(`📥 Fallback response (${response.status}):`, responseText);
+    }
+
+    if (!response.ok) {
+      console.error(`❌ HTTP error ${response.status} for QR code:`, responseText);
+      return {
+        success: false,
+        error: `PDF.co API returned ${response.status}: ${responseText}`,
+        statusCode: response.status,
+        debugInfo: {
+          operation: 'QR code insertion',
+          requestBodyKeys: Object.keys(requestBody),
+          responseBody: responseText,
+          responseHeaders: Object.fromEntries(response.headers.entries())
+        }
+      };
+    }
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`❌ Failed to parse JSON response for QR code:`, parseError);
+      return {
+        success: false,
+        error: `Invalid JSON response from PDF.co API: ${responseText.substring(0, 200)}`,
+        statusCode: response.status,
+        debugInfo: {
+          operation: 'QR code insertion',
+          parseError: parseError.message,
+          responseText: responseText.substring(0, 500)
+        }
+      };
+    }
+    
+    if (result.error) {
+      console.error(`❌ PDF.co API error for QR code:`, result);
+      return {
+        success: false,
+        error: result.message || `PDF.co API error: ${result.error}`,
+        statusCode: response.status,
+        debugInfo: {
+          pdfcoError: result,
+          operation: 'QR code insertion',
+          requestBodyKeys: Object.keys(requestBody)
+        }
+      };
+    }
+
+    console.log(`✅ QR code insertion completed successfully:`, {
+      hasUrl: !!result.url,
+      hasBody: !!result.body
+    });
+
     return {
       success: true,
       url: result.url,
-      statusCode: result.statusCode,
-      debugInfo: result.debugInfo
+      statusCode: response.status,
+      debugInfo: {
+        operation: 'QR code insertion',
+        requestBodyKeys: Object.keys(requestBody),
+        responseStatus: response.status
+      }
+    };
+  } catch (error: any) {
+    console.error(`💥 QR code insertion API request failed:`, error);
+    return {
+      success: false,
+      error: `Network error during QR code insertion: ${error.message}`,
+      statusCode: 500,
+      debugInfo: {
+        operation: 'QR code insertion',
+        requestBodyKeys: Object.keys(requestBody || {}),
+        errorStack: error.stack
+      }
     };
   }
-
-  return result;
 }
 
 async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
