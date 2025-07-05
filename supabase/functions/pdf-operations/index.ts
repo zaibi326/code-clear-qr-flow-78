@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -179,7 +178,8 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
     url, 
     hasUrl: !!requestBody.url,
     hasFile: !!requestBody.file,
-    bodySize: JSON.stringify(requestBody).length 
+    bodySize: JSON.stringify(requestBody).length,
+    requestBody: { ...requestBody, file: requestBody.file ? '[base64 data]' : undefined }
   });
   
   try {
@@ -196,10 +196,11 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
     console.log(`📥 PDF.co response (${response.status}) for ${operation}:`, {
       status: response.status,
       responseLength: responseText.length,
-      responsePreview: responseText.substring(0, 200)
+      responsePreview: responseText.substring(0, 500)
     });
 
     if (!response.ok) {
+      console.error(`❌ HTTP error ${response.status} for ${operation}:`, responseText);
       return {
         success: false,
         error: `PDF.co API returned ${response.status}: ${responseText}`,
@@ -214,7 +215,22 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
       };
     }
 
-    const result = JSON.parse(responseText);
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`❌ Failed to parse JSON response for ${operation}:`, parseError);
+      return {
+        success: false,
+        error: `Invalid JSON response from PDF.co API: ${responseText.substring(0, 200)}`,
+        statusCode: response.status,
+        debugInfo: {
+          operation,
+          parseError: parseError.message,
+          responseText: responseText.substring(0, 500)
+        }
+      };
+    }
     
     if (result.error) {
       console.error(`❌ PDF.co API error for ${operation}:`, result);
@@ -230,6 +246,12 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
         }
       };
     }
+
+    console.log(`✅ ${operation} completed successfully:`, {
+      hasUrl: !!result.url,
+      hasBody: !!result.body,
+      pageCount: result.pageCount
+    });
 
     return {
       success: true,
@@ -258,7 +280,7 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
 }
 
 async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('📄 Extracting text from PDF with options:', options);
+  console.log('📄 Extracting text from PDF with enhanced OCR options:', options);
   
   if (!fileUrl && !fileData) {
     throw new Error('Either fileUrl or fileData must be provided');
@@ -267,14 +289,20 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    async: false
+    // Enhanced OCR settings for better text extraction from scanned PDFs
+    ocrAccuracy: options?.ocrAccuracy || "balanced", // balanced, fast, accurate
+    ocrWorker: options?.ocrWorker || "auto", // Use best available OCR worker
+    inline: false, // Process images inline for better OCR results
+    async: false // Keep synchronous for immediate response
   };
 
   // Use fileUrl if available, otherwise use fileData
   if (fileUrl) {
     requestBody.url = fileUrl;
+    console.log('📋 Using URL for text extraction:', fileUrl.substring(0, 100) + '...');
   } else if (fileData) {
     requestBody.file = fileData;
+    console.log('📋 Using base64 file data for text extraction, length:', fileData.length);
   }
 
   console.log('📋 Text extraction request details:', {
@@ -282,7 +310,8 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
     hasFile: !!requestBody.file,
     pages: requestBody.pages,
     ocrLanguage: requestBody.ocrLanguage,
-    urlPreview: requestBody.url ? requestBody.url.substring(0, 100) + '...' : 'none'
+    ocrAccuracy: requestBody.ocrAccuracy,
+    ocrWorker: requestBody.ocrWorker
   });
 
   const result = await makeApiRequest(
@@ -293,11 +322,113 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   );
 
   if (result.success) {
+    console.log('✅ Text extraction successful:', {
+      textLength: result.body?.length || 0,
+      pageCount: result.pageCount
+    });
+    
     return {
       success: true,
-      text: result.body,
-      pages: result.pageCount,
+      text: result.body || '',
+      pages: result.pageCount || 0,
       url: result.url,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
+}
+
+async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
+  console.log('✏️ Editing PDF text with enhanced options:', {
+    hasSearchStrings: !!options?.searchStrings,
+    hasReplaceStrings: !!options?.replaceStrings,
+    searchCount: options?.searchStrings?.length || 0,
+    replaceCount: options?.replaceStrings?.length || 0,
+    caseSensitive: options?.caseSensitive,
+    wholeWordsOnly: options?.wholeWordsOnly,
+    useRegex: options?.useRegex
+  });
+  
+  if (!options?.searchStrings || !options?.replaceStrings) {
+    throw new Error('Search and replace strings are required for text editing');
+  }
+
+  // Validate search/replace arrays
+  if (!Array.isArray(options.searchStrings) || !Array.isArray(options.replaceStrings)) {
+    throw new Error('Search and replace strings must be arrays');
+  }
+
+  if (options.searchStrings.length !== options.replaceStrings.length) {
+    throw new Error('Search and replace arrays must have the same length');
+  }
+
+  // Filter out empty search strings and validate
+  const validPairs = options.searchStrings
+    .map((search: string, index: number) => ({ 
+      search: String(search || '').trim(), 
+      replace: String(options.replaceStrings[index] || '') 
+    }))
+    .filter((pair: any) => pair.search.length > 0);
+
+  if (validPairs.length === 0) {
+    throw new Error('At least one non-empty search string is required');
+  }
+
+  console.log('📋 Validated search/replace pairs:', validPairs.map(p => ({
+    search: p.search.substring(0, 50),
+    replace: p.replace.substring(0, 50)
+  })));
+
+  const requestBody: any = {
+    searchStrings: validPairs.map((pair: any) => pair.search),
+    replaceStrings: validPairs.map((pair: any) => pair.replace),
+    caseSensitive: options.caseSensitive || false,
+    // Enhanced text replacement options
+    wholeWordsOnly: options.wholeWordsOnly || false,
+    useRegex: options.useRegex || false,
+    replaceAll: options.replaceAll !== false, // Default to true
+    async: false
+  };
+
+  // Use fileUrl if available, otherwise use fileData
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+    console.log('📋 Using URL for text editing:', fileUrl.substring(0, 100) + '...');
+  } else if (fileData) {
+    requestBody.file = fileData;
+    console.log('📋 Using base64 file data for text editing, length:', fileData.length);
+  }
+
+  console.log('📋 Text editing request details:', {
+    hasUrl: !!requestBody.url,
+    hasFile: !!requestBody.file,
+    searchCount: requestBody.searchStrings.length,
+    replaceCount: requestBody.replaceStrings.length,
+    caseSensitive: requestBody.caseSensitive,
+    wholeWordsOnly: requestBody.wholeWordsOnly,
+    useRegex: requestBody.useRegex,
+    replaceAll: requestBody.replaceAll
+  });
+
+  const result = await makeApiRequest(
+    'https://api.pdf.co/v1/pdf/edit/replace-text',
+    apiKey,
+    requestBody,
+    'text editing'
+  );
+
+  if (result.success) {
+    console.log('✅ Text editing successful:', {
+      replacements: result.replacements || 0,
+      hasUrl: !!result.url
+    });
+    
+    return {
+      success: true,
+      url: result.url,
+      replacements: result.replacements || 0,
       statusCode: result.statusCode,
       debugInfo: result.debugInfo
     };
@@ -340,84 +471,6 @@ async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?
       extractedContent: result,
       pages: result.pageCount,
       url: result.url,
-      statusCode: result.statusCode,
-      debugInfo: result.debugInfo
-    };
-  }
-
-  return result;
-}
-
-async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
-  console.log('✏️ Editing PDF text with options:', {
-    hasSearchStrings: !!options?.searchStrings,
-    hasReplaceStrings: !!options?.replaceStrings,
-    searchCount: options?.searchStrings?.length || 0,
-    replaceCount: options?.replaceStrings?.length || 0,
-    caseSensitive: options?.caseSensitive
-  });
-  
-  if (!options?.searchStrings || !options?.replaceStrings) {
-    throw new Error('Search and replace strings are required for text editing');
-  }
-
-  // Validate search/replace arrays
-  if (!Array.isArray(options.searchStrings) || !Array.isArray(options.replaceStrings)) {
-    throw new Error('Search and replace strings must be arrays');
-  }
-
-  if (options.searchStrings.length !== options.replaceStrings.length) {
-    throw new Error('Search and replace arrays must have the same length');
-  }
-
-  // Filter out empty search strings
-  const validPairs = options.searchStrings
-    .map((search: string, index: number) => ({ 
-      search: String(search || ''), 
-      replace: String(options.replaceStrings[index] || '') 
-    }))
-    .filter((pair: any) => pair.search.trim().length > 0);
-
-  if (validPairs.length === 0) {
-    throw new Error('At least one non-empty search string is required');
-  }
-
-  const requestBody: any = {
-    searchStrings: validPairs.map((pair: any) => pair.search),
-    replaceStrings: validPairs.map((pair: any) => pair.replace),
-    caseSensitive: options.caseSensitive || false,
-    async: false
-  };
-
-  // Use fileUrl if available, otherwise use fileData
-  if (fileUrl) {
-    requestBody.url = fileUrl;
-  } else if (fileData) {
-    requestBody.file = fileData;
-  }
-
-  console.log('📋 Text editing request details:', {
-    hasUrl: !!requestBody.url,
-    hasFile: !!requestBody.file,
-    searchCount: requestBody.searchStrings.length,
-    replaceCount: requestBody.replaceStrings.length,
-    caseSensitive: requestBody.caseSensitive,
-    validPairsCount: validPairs.length,
-    urlPreview: requestBody.url ? requestBody.url.substring(0, 100) + '...' : 'none'
-  });
-
-  const result = await makeApiRequest(
-    'https://api.pdf.co/v1/pdf/edit/replace-text',
-    apiKey,
-    requestBody,
-    'text editing'
-  );
-
-  if (result.success) {
-    return {
-      success: true,
-      url: result.url,
-      replacements: result.replacements || 0,
       statusCode: result.statusCode,
       debugInfo: result.debugInfo
     };

@@ -181,93 +181,6 @@ export class PDFOperationsService {
     }
   }
 
-  private async preprocessOperation(operation: PDFOperation): Promise<{
-    success: boolean;
-    operation?: PDFOperation;
-    error?: string;
-  }> {
-    try {
-      // If we have a fileUrl, ensure it's a public HTTP/HTTPS URL
-      if (operation.fileUrl) {
-        console.log('🔍 Processing fileUrl:', operation.fileUrl.substring(0, 50) + '...');
-        
-        // Only try to convert if it's not already a valid HTTP URL
-        if (!this.isValidHttpUrl(operation.fileUrl)) {
-          const urlResult = await fileUploadService.ensurePublicUrl(
-            operation.fileUrl,
-            'document.pdf'
-          );
-
-          if (!urlResult.success) {
-            return {
-              success: false,
-              error: `URL processing failed: ${urlResult.error}`
-            };
-          }
-
-          // Update the operation with the public URL
-          return {
-            success: true,
-            operation: {
-              ...operation,
-              fileUrl: urlResult.publicUrl,
-              fileData: undefined // Remove fileData if we have a valid URL
-            }
-          };
-        }
-      }
-
-      // If we have fileData but no fileUrl, convert fileData to public URL
-      if (operation.fileData && !operation.fileUrl) {
-        console.log('🔍 Converting base64 fileData to public URL');
-        
-        // Convert base64 to data URL
-        const dataUrl = `data:application/pdf;base64,${operation.fileData}`;
-        
-        const uploadResult = await fileUploadService.uploadDataUrlToStorage(
-          dataUrl,
-          'document.pdf'
-        );
-
-        if (!uploadResult.success) {
-          return {
-            success: false,
-            error: `File upload failed: ${uploadResult.error}`
-          };
-        }
-
-        // Update the operation with the public URL
-        return {
-          success: true,
-          operation: {
-            ...operation,
-            fileUrl: uploadResult.publicUrl,
-            fileData: undefined // Remove fileData since we now have a URL
-          }
-        };
-      }
-
-      // Validate that we have either fileUrl or fileData
-      if (!operation.fileUrl && !operation.fileData) {
-        return {
-          success: false,
-          error: 'Either fileUrl or fileData must be provided'
-        };
-      }
-
-      return {
-        success: true,
-        operation
-      };
-    } catch (error: any) {
-      console.error('💥 Operation preprocessing failed:', error);
-      return {
-        success: false,
-        error: `Preprocessing failed: ${error.message}`
-      };
-    }
-  }
-
   private isValidHttpUrl(url: string): boolean {
     try {
       const urlObj = new URL(url);
@@ -300,6 +213,11 @@ export class PDFOperationsService {
       options: {
         pages: options?.pages || "1-",
         ocrLanguage: options?.ocrLanguage || "eng",
+        // Enhanced OCR settings for scanned PDFs
+        ocrAccuracy: "balanced", // balanced, fast, or accurate
+        ocrWorker: "auto", // Use automatic OCR worker selection
+        inline: false, // Process asynchronously for better results
+        async: false, // Keep synchronous for immediate response
         ...options
       }
     });
@@ -332,7 +250,16 @@ export class PDFOperationsService {
     return this.performOperation({
       operation: 'extract-text',
       fileData,
-      options
+      options: {
+        pages: options?.pages || "1-",
+        ocrLanguage: options?.ocrLanguage || "eng",
+        // Enhanced OCR settings for scanned PDFs
+        ocrAccuracy: "balanced",
+        ocrWorker: "auto",
+        inline: false,
+        async: false,
+        ...options
+      }
     });
   }
 
@@ -359,8 +286,8 @@ export class PDFOperationsService {
 
     // Filter out empty search strings and their corresponding replace strings
     const validPairs = searchStrings
-      .map((search, index) => ({ search, replace: replaceStrings[index] }))
-      .filter(pair => pair.search && pair.search.trim().length > 0);
+      .map((search, index) => ({ search: search.trim(), replace: replaceStrings[index] || '' }))
+      .filter(pair => pair.search.length > 0);
 
     if (validPairs.length === 0) {
       throw new Error('At least one non-empty search string is required');
@@ -380,7 +307,12 @@ export class PDFOperationsService {
       options: { 
         searchStrings: validSearchStrings, 
         replaceStrings: validReplaceStrings, 
-        caseSensitive 
+        caseSensitive,
+        // Enhanced text replacement options
+        wholeWordsOnly: false, // Allow partial word matches
+        useRegex: false, // Use literal string matching
+        matchCase: caseSensitive,
+        replaceAll: true // Replace all occurrences
       }
     });
   }
