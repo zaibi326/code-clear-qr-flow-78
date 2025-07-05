@@ -249,18 +249,46 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
       }
 
       if (result && !result.success) {
-        toast({
-          title: "Operation Failed",
-          description: result.error || "An error occurred during processing",
-          variant: "destructive"
-        });
+        let errorMessage = result.error || "An error occurred during processing";
+        
+        // Handle specific error cases
+        if (errorMessage.includes('expired') || errorMessage.includes('Access Forbidden') || errorMessage.includes('403')) {
+          errorMessage = "PDF file has expired. Please refresh the page and try again, or re-upload the PDF file.";
+          
+          toast({
+            title: "PDF File Expired",
+            description: errorMessage,
+            variant: "destructive",
+            action: (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            )
+          });
+        } else {
+          toast({
+            title: "Operation Failed",
+            description: errorMessage,
+            variant: "destructive"
+          });
+        }
       }
 
     } catch (error: any) {
       console.error('PDF operation failed:', error);
+      
+      let errorMessage = error.message || "An unexpected error occurred";
+      if (errorMessage.includes('expired') || errorMessage.includes('403')) {
+        errorMessage = "PDF file has expired. Please refresh the page and try again.";
+      }
+      
       toast({
         title: "Operation Failed",
-        description: error.message || "An unexpected error occurred",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

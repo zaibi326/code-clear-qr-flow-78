@@ -36,10 +36,25 @@ export class PDFOperationsService {
       fileUrlType: fileUrl ? (fileUrl.startsWith('data:') ? 'data-url' : fileUrl.startsWith('http') ? 'http-url' : 'other') : 'none'
     });
 
-    // If we have a valid HTTP/HTTPS URL, return it
+    // If we have a valid HTTP/HTTPS URL, check if it's accessible
     if (fileUrl && this.isValidHttpUrl(fileUrl)) {
-      console.log('✅ Using existing HTTP URL');
-      return fileUrl;
+      console.log('✅ Testing HTTP URL accessibility');
+      
+      // Test if the URL is still accessible
+      try {
+        const testResponse = await fetch(fileUrl, { method: 'HEAD' });
+        if (testResponse.ok) {
+          console.log('✅ URL is accessible, using existing HTTP URL');
+          return fileUrl;
+        } else {
+          console.log('⚠️ URL returned error:', testResponse.status, testResponse.statusText);
+        }
+      } catch (error) {
+        console.log('⚠️ URL is not accessible:', error);
+      }
+      
+      // If URL is not accessible, we'll try to regenerate or convert
+      console.log('🔄 URL expired or inaccessible, attempting regeneration');
     }
 
     // Convert data URL to public URL if needed
@@ -100,7 +115,7 @@ export class PDFOperationsService {
       if (!validUrl) {
         return {
           success: false,
-          error: 'Could not process file URL. Please ensure the PDF is accessible and try again.',
+          error: 'Could not process file URL. The PDF may have expired or is no longer accessible. Please re-upload the PDF and try again.',
           statusCode: 400
         };
       }
@@ -131,6 +146,8 @@ export class PDFOperationsService {
           errorMessage = 'Operation timed out. Please try again with a smaller file.';
         } else if (error.message?.includes('API key')) {
           errorMessage = 'PDF.co API key is not configured. Please contact support.';
+        } else if (error.message?.includes('403') || error.message?.includes('Access Forbidden')) {
+          errorMessage = 'PDF file has expired or is no longer accessible. Please re-upload the PDF and try again.';
         }
         
         return {
@@ -147,9 +164,18 @@ export class PDFOperationsService {
 
       if (data?.error) {
         console.error('❌ PDF.co API error:', data.error);
+        
+        // Handle specific PDF.co API errors
+        let errorMessage = `PDF processing failed: ${data.error}`;
+        if (data.error.includes('403') || data.error.includes('Access Forbidden')) {
+          errorMessage = 'PDF file has expired or is no longer accessible. Please re-upload the PDF and try again.';
+        } else if (data.error.includes('Can\'t download file')) {
+          errorMessage = 'Unable to access the PDF file. The file may have expired. Please re-upload the PDF and try again.';
+        }
+        
         return {
           success: false,
-          error: `PDF processing failed: ${data.error}`,
+          error: errorMessage,
           statusCode: data.statusCode || 500,
           debugInfo: data.debugInfo || {}
         };
@@ -165,6 +191,8 @@ export class PDFOperationsService {
         errorMessage = 'File storage error. Please check your permissions and try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('403') || error.message?.includes('expired')) {
+        errorMessage = 'PDF file has expired. Please re-upload the PDF and try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }
