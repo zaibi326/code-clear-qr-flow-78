@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface PDFOperationRequest {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -30,18 +30,38 @@ const handler = async (req: Request): Promise<Response> => {
       hasFileData: !!fileData,
       fileUrlLength: fileUrl?.length || 0,
       fileDataLength: fileData?.length || 0,
-      options
+      options,
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0
     });
 
     if (!apiKey) {
       console.error('❌ PDF.co API key not configured');
-      throw new Error('PDF.co API key not configured. Please add PDFCO_API_KEY to your environment variables.');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'PDF.co API key not configured. Please add PDFCO_API_KEY to your environment variables.',
+          statusCode: 500,
+          debugInfo: {
+            operation,
+            timestamp: new Date().toISOString(),
+            issue: 'Missing API key'
+          }
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     console.log(`🔄 Processing PDF operation: ${operation}`);
 
     let result;
     switch (operation) {
+      case 'test-api-key':
+        result = await testApiKey(apiKey);
+        break;
       case 'extract-text':
         result = await extractTextFromPDF(apiKey, fileUrl, fileData, options);
         break;
@@ -91,7 +111,12 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: false,
         error: error.message,
-        timestamp: new Date().toISOString()
+        statusCode: 500,
+        debugInfo: {
+          timestamp: new Date().toISOString(),
+          errorStack: error.stack,
+          errorName: error.name
+        }
       }),
       {
         status: 500,
@@ -100,6 +125,53 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+async function testApiKey(apiKey: string) {
+  console.log('🧪 Testing PDF.co API key');
+  
+  try {
+    const response = await fetch('https://api.pdf.co/v1/info', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const responseText = await response.text();
+    console.log(`📥 API key test response (${response.status}):`, responseText);
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `API key test failed: ${response.status} ${response.statusText}`,
+        statusCode: response.status,
+        debugInfo: {
+          responseBody: responseText,
+          headers: Object.fromEntries(response.headers.entries())
+        }
+      };
+    }
+
+    const result = JSON.parse(responseText);
+    return {
+      success: true,
+      message: 'PDF.co API key is valid',
+      debugInfo: {
+        apiInfo: result,
+        statusCode: response.status
+      }
+    };
+  } catch (error: any) {
+    console.error('💥 API key test failed:', error);
+    return {
+      success: false,
+      error: `API key test error: ${error.message}`,
+      statusCode: 500,
+      debugInfo: { errorStack: error.stack }
+    };
+  }
+}
 
 async function makeApiRequest(url: string, apiKey: string, requestBody: any, operation: string) {
   console.log(`📡 Making ${operation} API request to PDF.co:`, { url, requestBody });
@@ -118,20 +190,58 @@ async function makeApiRequest(url: string, apiKey: string, requestBody: any, ope
     console.log(`📥 PDF.co response (${response.status}):`, responseText);
 
     if (!response.ok) {
-      throw new Error(`PDF.co API returned ${response.status}: ${responseText}`);
+      return {
+        success: false,
+        error: `PDF.co API returned ${response.status}: ${responseText}`,
+        statusCode: response.status,
+        debugInfo: {
+          url,
+          requestBody,
+          responseBody: responseText,
+          responseHeaders: Object.fromEntries(response.headers.entries())
+        }
+      };
     }
 
     const result = JSON.parse(responseText);
     
     if (result.error) {
       console.error(`❌ PDF.co API error for ${operation}:`, result);
-      throw new Error(result.message || `PDF.co API error: ${result.error}`);
+      return {
+        success: false,
+        error: result.message || `PDF.co API error: ${result.error}`,
+        statusCode: response.status,
+        debugInfo: {
+          pdfcoError: result,
+          url,
+          requestBody
+        }
+      };
     }
 
-    return result;
+    return {
+      success: true,
+      ...result,
+      statusCode: response.status,
+      debugInfo: {
+        operation,
+        requestBody,
+        responseStatus: response.status
+      }
+    };
   } catch (error: any) {
     console.error(`💥 ${operation} API request failed:`, error);
-    throw error;
+    return {
+      success: false,
+      error: `Network error: ${error.message}`,
+      statusCode: 500,
+      debugInfo: {
+        operation,
+        url,
+        requestBody,
+        errorStack: error.stack
+      }
+    };
   }
 }
 
@@ -164,12 +274,18 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
     'text extraction'
   );
 
-  return {
-    success: true,
-    text: result.body,
-    pages: result.pageCount,
-    url: result.url
-  };
+  if (result.success) {
+    return {
+      success: true,
+      text: result.body,
+      pages: result.pageCount,
+      url: result.url,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
 }
 
 async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
@@ -199,13 +315,19 @@ async function extractForRichEditing(apiKey: string, fileUrl?: string, fileData?
     'rich text extraction'
   );
 
-  return {
-    success: true,
-    text: result.body,
-    extractedContent: result,
-    pages: result.pageCount,
-    url: result.url
-  };
+  if (result.success) {
+    return {
+      success: true,
+      text: result.body,
+      extractedContent: result,
+      pages: result.pageCount,
+      url: result.url,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
 }
 
 async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
@@ -238,11 +360,17 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     'text editing'
   );
 
-  return {
-    success: true,
-    url: result.url,
-    replacements: result.replacements || 0
-  };
+  if (result.success) {
+    return {
+      success: true,
+      url: result.url,
+      replacements: result.replacements || 0,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
 }
 
 async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
@@ -317,10 +445,16 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
     'annotations'
   );
 
-  return {
-    success: true,
-    url: result.url
-  };
+  if (result.success) {
+    return {
+      success: true,
+      url: result.url,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
 }
 
 async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {
@@ -362,10 +496,16 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
     'QR code insertion'
   );
 
-  return {
-    success: true,
-    url: result.url
-  };
+  if (result.success) {
+    return {
+      success: true,
+      url: result.url,
+      statusCode: result.statusCode,
+      debugInfo: result.debugInfo
+    };
+  }
+
+  return result;
 }
 
 async function replaceWithEditedText(apiKey: string, fileUrl?: string, fileData?: string, options?: any) {

@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PDFOperation {
-  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf';
+  operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key';
   fileUrl?: string;
   fileData?: string;
   options?: Record<string, any>;
@@ -20,6 +20,8 @@ export interface PDFOperationResult {
   fileSize?: number;
   fileName?: string;
   debugInfo?: any;
+  statusCode?: number;
+  responseHeaders?: Record<string, string>;
 }
 
 export class PDFOperationsService {
@@ -33,6 +35,12 @@ export class PDFOperationsService {
         fileDataLength: operation.fileData?.length || 0,
         options: operation.options
       });
+
+      // Validate inputs before sending to edge function
+      const validationResult = this.validateOperation(operation);
+      if (!validationResult.isValid) {
+        throw new Error(`Validation failed: ${validationResult.error}`);
+      }
       
       const { data, error } = await supabase.functions.invoke('pdf-operations', {
         body: operation
@@ -42,12 +50,26 @@ export class PDFOperationsService {
 
       if (error) {
         console.error('❌ Supabase function error:', error);
-        throw new Error(`Supabase function error: ${error.message || JSON.stringify(error)}`);
+        return {
+          success: false,
+          error: `Supabase function error: ${error.message || JSON.stringify(error)}`,
+          statusCode: error.status || 500,
+          debugInfo: {
+            operation: operation.operation,
+            supabaseError: error,
+            timestamp: new Date().toISOString()
+          }
+        };
       }
 
       if (data?.error) {
         console.error('❌ PDF.co API error:', data.error);
-        throw new Error(`PDF.co API error: ${data.error}`);
+        return {
+          success: false,
+          error: `PDF.co API error: ${data.error}`,
+          statusCode: data.statusCode || 500,
+          debugInfo: data.debugInfo || {}
+        };
       }
 
       console.log('✅ Operation successful:', data);
@@ -57,14 +79,62 @@ export class PDFOperationsService {
       return {
         success: false,
         error: error.message || 'PDF operation failed',
+        statusCode: 500,
         debugInfo: {
           operation: operation.operation,
           hasFileUrl: !!operation.fileUrl,
           hasFileData: !!operation.fileData,
+          errorStack: error.stack,
           timestamp: new Date().toISOString()
         }
       };
     }
+  }
+
+  private validateOperation(operation: PDFOperation): { isValid: boolean; error?: string } {
+    // Check if we have either fileUrl or fileData
+    if (!operation.fileUrl && !operation.fileData) {
+      return { isValid: false, error: 'Either fileUrl or fileData must be provided' };
+    }
+
+    // Validate fileUrl format if provided
+    if (operation.fileUrl) {
+      try {
+        new URL(operation.fileUrl);
+      } catch {
+        return { isValid: false, error: 'Invalid fileUrl format' };
+      }
+
+      // Check if URL is accessible (basic check)
+      if (!operation.fileUrl.startsWith('http')) {
+        return { isValid: false, error: 'fileUrl must be a valid HTTP/HTTPS URL' };
+      }
+    }
+
+    // Validate fileData if provided
+    if (operation.fileData) {
+      if (typeof operation.fileData !== 'string') {
+        return { isValid: false, error: 'fileData must be a base64 string' };
+      }
+      
+      // Basic base64 validation
+      try {
+        atob(operation.fileData);
+      } catch {
+        return { isValid: false, error: 'fileData must be valid base64 encoded data' };
+      }
+    }
+
+    return { isValid: true };
+  }
+
+  async testApiConnection(): Promise<PDFOperationResult> {
+    console.log('🧪 Testing PDF.co API connection');
+    
+    return this.performOperation({
+      operation: 'test-api-key',
+      options: { test: true }
+    });
   }
 
   async extractText(fileUrl: string, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {

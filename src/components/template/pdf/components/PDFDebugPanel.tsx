@@ -13,7 +13,9 @@ import {
   XCircle, 
   Clock,
   AlertTriangle,
-  Copy
+  Copy,
+  Play,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
@@ -26,6 +28,37 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
   const [isDebugging, setIsDebugging] = useState(false);
   const [debugResults, setDebugResults] = useState<any[]>([]);
   const [testUrl, setTestUrl] = useState('');
+  const [isTestingApi, setIsTestingApi] = useState(false);
+
+  const testApiConnection = async () => {
+    setIsTestingApi(true);
+    try {
+      const result = await pdfOperationsService.testApiConnection();
+      
+      if (result.success) {
+        toast({
+          title: "API Connection Test Successful",
+          description: "PDF.co API key is valid and working",
+        });
+      } else {
+        toast({
+          title: "API Connection Test Failed",
+          description: result.error || "Failed to connect to PDF.co API",
+          variant: "destructive"
+        });
+      }
+      
+      console.log('API Connection Test Result:', result);
+    } catch (error: any) {
+      toast({
+        title: "API Connection Test Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsTestingApi(false);
+    }
+  };
 
   const runDiagnostics = async () => {
     if (!fileUrl && !testUrl) {
@@ -66,6 +99,17 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
         }
       },
       {
+        name: 'PDF.co API Connection',
+        test: async () => {
+          const result = await pdfOperationsService.testApiConnection();
+          if (!result.success) throw new Error(result.error || 'API connection failed');
+          return { 
+            message: 'PDF.co API connection successful',
+            details: result.debugInfo
+          };
+        }
+      },
+      {
         name: 'Text Extraction Test',
         test: async () => {
           const result = await pdfOperationsService.extractText(urlToTest, { pages: "1" });
@@ -75,7 +119,8 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
             details: {
               textLength: result.text?.length || 0,
               pages: result.pages,
-              preview: result.text?.substring(0, 100) + '...'
+              preview: result.text?.substring(0, 100) + '...',
+              statusCode: result.statusCode
             }
           };
         }
@@ -95,7 +140,10 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           if (!result.success) throw new Error(result.error || 'Annotation test failed');
           return { 
             message: 'Annotation test successful',
-            details: { processedUrl: result.url }
+            details: { 
+              processedUrl: result.url,
+              statusCode: result.statusCode
+            }
           };
         }
       },
@@ -106,7 +154,10 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           if (!result.success) throw new Error(result.error || 'QR code test failed');
           return { 
             message: 'QR code test successful',
-            details: { processedUrl: result.url }
+            details: { 
+              processedUrl: result.url,
+              statusCode: result.statusCode
+            }
           };
         }
       }
@@ -143,7 +194,11 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
     const debugInfo = {
       timestamp: new Date().toISOString(),
       fileUrl: fileUrl || testUrl,
-      results: debugResults
+      results: debugResults,
+      environment: {
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      }
     };
     
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2));
@@ -151,6 +206,10 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
       title: "Debug info copied",
       description: "Debug information has been copied to clipboard"
     });
+  };
+
+  const clearResults = () => {
+    setDebugResults([]);
   };
 
   const getStatusIcon = (status: string) => {
@@ -198,28 +257,52 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           </p>
         </div>
 
-        <Button
-          onClick={runDiagnostics}
-          disabled={isDebugging || (!fileUrl && !testUrl)}
-          className="w-full"
-          size="sm"
-        >
-          {isDebugging ? 'Running Diagnostics...' : 'Run PDF.co API Diagnostics'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={testApiConnection}
+            disabled={isTestingApi}
+            size="sm"
+            variant="outline"
+            className="flex-1"
+          >
+            <Play className="w-3 h-3 mr-1" />
+            {isTestingApi ? 'Testing...' : 'Test API Key'}
+          </Button>
+          
+          <Button
+            onClick={runDiagnostics}
+            disabled={isDebugging || (!fileUrl && !testUrl)}
+            size="sm"
+            className="flex-1"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            {isDebugging ? 'Running...' : 'Run Full Diagnostics'}
+          </Button>
+        </div>
 
         {debugResults.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-medium">Diagnostic Results</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={copyDebugInfo}
-                className="h-6 px-2"
-              >
-                <Copy className="w-3 h-3 mr-1" />
-                Copy
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyDebugInfo}
+                  className="h-6 px-2"
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearResults}
+                  className="h-6 px-2"
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
             
             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -237,7 +320,7 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
                     <div className="text-green-700 bg-green-50 p-1 rounded">
                       <div>{result.result.message}</div>
                       {result.result.details && (
-                        <pre className="mt-1 text-xs overflow-x-auto">
+                        <pre className="mt-1 text-xs overflow-x-auto whitespace-pre-wrap">
                           {JSON.stringify(result.result.details, null, 2)}
                         </pre>
                       )}
@@ -262,14 +345,24 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            <strong>Common Issues:</strong>
+            <strong>Common Issues & Solutions:</strong>
             <ul className="mt-1 space-y-1 list-disc list-inside">
-              <li>PDF.co API key not configured in Supabase secrets</li>
-              <li>PDF URL not publicly accessible</li>
-              <li>CORS issues with file hosting</li>
-              <li>Invalid coordinates for annotations/QR codes</li>
-              <li>File format not supported by PDF.co</li>
+              <li><strong>500 Error:</strong> PDF.co API key not configured in Supabase secrets</li>
+              <li><strong>400 Error:</strong> Invalid request parameters or malformed data</li>
+              <li><strong>403 Error:</strong> Invalid or expired API key</li>
+              <li><strong>404 Error:</strong> PDF URL not accessible or doesn't exist</li>
+              <li><strong>Network Error:</strong> CORS issues or connectivity problems</li>
+              <li><strong>Invalid coordinates:</strong> Annotation/QR code positions out of bounds</li>
             </ul>
+            <div className="mt-2">
+              <strong>Next Steps:</strong>
+              <ol className="mt-1 space-y-1 list-decimal list-inside">
+                <li>Test API key connection first</li>
+                <li>Verify PDF URL is publicly accessible</li>
+                <li>Check Supabase Edge Function logs for detailed errors</li>
+                <li>Use smaller coordinate values for annotations/QR codes</li>
+              </ol>
+            </div>
           </AlertDescription>
         </Alert>
       </CardContent>
