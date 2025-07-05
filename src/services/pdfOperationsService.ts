@@ -213,50 +213,11 @@ export class PDFOperationsService {
       options: {
         pages: options?.pages || "1-",
         ocrLanguage: options?.ocrLanguage || "eng",
-        // Enhanced OCR settings for scanned PDFs
-        ocrAccuracy: "balanced", // balanced, fast, or accurate
-        ocrWorker: "auto", // Use automatic OCR worker selection
-        inline: false, // Process asynchronously for better results
-        async: false, // Keep synchronous for immediate response
-        ...options
-      }
-    });
-  }
-
-  async extractForEditing(fileUrl: string): Promise<PDFOperationResult> {
-    return this.performOperation({
-      operation: 'extract-for-editing',
-      fileUrl,
-      options: { preserveFormatting: true, includePositions: true }
-    });
-  }
-
-  async replaceWithEditedText(fileUrl: string, editedContent: string): Promise<PDFOperationResult> {
-    console.log('✏️ Replacing PDF text with edited content');
-    
-    if (!fileUrl || !editedContent) {
-      throw new Error('File URL and edited content are required for text replacement');
-    }
-
-    return this.performOperation({
-      operation: 'replace-with-edited',
-      fileUrl,
-      options: { editedContent }
-    });
-  }
-
-  async extractTextFromFile(file: File, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
-    const fileData = await this.fileToBase64(file);
-    return this.performOperation({
-      operation: 'extract-text',
-      fileData,
-      options: {
-        pages: options?.pages || "1-",
-        ocrLanguage: options?.ocrLanguage || "eng",
-        // Enhanced OCR settings for scanned PDFs
+        // Force OCR processing for all PDFs
+        ocr: true,
         ocrAccuracy: "balanced",
         ocrWorker: "auto",
-        inline: false,
+        inline: true,
         async: false,
         ...options
       }
@@ -308,11 +269,50 @@ export class PDFOperationsService {
         searchStrings: validSearchStrings, 
         replaceStrings: validReplaceStrings, 
         caseSensitive,
-        // Enhanced text replacement options
-        wholeWordsOnly: false, // Allow partial word matches
-        useRegex: false, // Use literal string matching
+        // Force exact matching and replacement
         matchCase: caseSensitive,
-        replaceAll: true // Replace all occurrences
+        wholeWordsOnly: false,
+        replaceAll: true
+      }
+    });
+  }
+
+  async extractForEditing(fileUrl: string): Promise<PDFOperationResult> {
+    return this.performOperation({
+      operation: 'extract-for-editing',
+      fileUrl,
+      options: { preserveFormatting: true, includePositions: true }
+    });
+  }
+
+  async replaceWithEditedText(fileUrl: string, editedContent: string): Promise<PDFOperationResult> {
+    console.log('✏️ Replacing PDF text with edited content');
+    
+    if (!fileUrl || !editedContent) {
+      throw new Error('File URL and edited content are required for text replacement');
+    }
+
+    return this.performOperation({
+      operation: 'replace-with-edited',
+      fileUrl,
+      options: { editedContent }
+    });
+  }
+
+  async extractTextFromFile(file: File, options?: { pages?: string; ocrLanguage?: string }): Promise<PDFOperationResult> {
+    const fileData = await this.fileToBase64(file);
+    return this.performOperation({
+      operation: 'extract-text',
+      fileData,
+      options: {
+        pages: options?.pages || "1-",
+        ocrLanguage: options?.ocrLanguage || "eng",
+        ocr: true,
+        ocrAccuracy: "balanced",
+        ocrWorker: "auto",
+        inline: true,
+        async: false,
+        ...options
       }
     });
   }

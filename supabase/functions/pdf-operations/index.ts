@@ -289,11 +289,12 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
   const requestBody: any = {
     pages: options?.pages || "1-",
     ocrLanguage: options?.ocrLanguage || "eng",
-    // Enhanced OCR settings for better text extraction from scanned PDFs
-    ocrAccuracy: options?.ocrAccuracy || "balanced", // balanced, fast, accurate
-    ocrWorker: options?.ocrWorker || "auto", // Use best available OCR worker
-    inline: false, // Process images inline for better OCR results
-    async: false // Keep synchronous for immediate response
+    // Force OCR processing for better text extraction
+    ocr: true,
+    ocrAccuracy: "balanced",
+    ocrWorker: "auto",
+    inline: true,
+    async: false
   };
 
   // Use fileUrl if available, otherwise use fileData
@@ -311,7 +312,9 @@ async function extractTextFromPDF(apiKey: string, fileUrl?: string, fileData?: s
     pages: requestBody.pages,
     ocrLanguage: requestBody.ocrLanguage,
     ocrAccuracy: requestBody.ocrAccuracy,
-    ocrWorker: requestBody.ocrWorker
+    ocrWorker: requestBody.ocrWorker,
+    ocr: requestBody.ocr,
+    inline: requestBody.inline
   });
 
   const result = await makeApiRequest(
@@ -347,8 +350,8 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     searchCount: options?.searchStrings?.length || 0,
     replaceCount: options?.replaceStrings?.length || 0,
     caseSensitive: options?.caseSensitive,
-    wholeWordsOnly: options?.wholeWordsOnly,
-    useRegex: options?.useRegex
+    matchCase: options?.matchCase,
+    replaceAll: options?.replaceAll
   });
   
   if (!options?.searchStrings || !options?.replaceStrings) {
@@ -385,10 +388,9 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     searchStrings: validPairs.map((pair: any) => pair.search),
     replaceStrings: validPairs.map((pair: any) => pair.replace),
     caseSensitive: options.caseSensitive || false,
-    // Enhanced text replacement options
-    wholeWordsOnly: options.wholeWordsOnly || false,
-    useRegex: options.useRegex || false,
-    replaceAll: options.replaceAll !== false, // Default to true
+    matchCase: options.matchCase !== false,
+    wholeWordsOnly: false,
+    replaceAll: true,
     async: false
   };
 
@@ -407,8 +409,8 @@ async function editPDFText(apiKey: string, fileUrl?: string, fileData?: string, 
     searchCount: requestBody.searchStrings.length,
     replaceCount: requestBody.replaceStrings.length,
     caseSensitive: requestBody.caseSensitive,
+    matchCase: requestBody.matchCase,
     wholeWordsOnly: requestBody.wholeWordsOnly,
-    useRegex: requestBody.useRegex,
     replaceAll: requestBody.replaceAll
   });
 
