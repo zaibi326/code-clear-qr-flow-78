@@ -15,7 +15,7 @@ export const useBackgroundLoader = () => {
     console.log('Loading background template:', template.name);
     
     try {
-      const imageUrl = resolveTemplateImageUrl(template);
+      const imageUrl = await resolveTemplateImageUrl(template);
 
       if (!imageUrl) {
         console.warn('No valid image source found, using white background');
