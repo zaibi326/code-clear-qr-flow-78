@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fileUploadService } from './fileUploadService';
 
 export interface PDFOperation {
   operation: 'extract-text' | 'edit-text' | 'add-annotations' | 'fill-form' | 'add-qr-code' | 'export-pdf' | 'extract-for-editing' | 'replace-with-edited' | 'extract-form-fields' | 'finalize-pdf' | 'test-api-key';
@@ -36,14 +37,18 @@ export class PDFOperationsService {
         options: operation.options
       });
 
-      // Enhanced validation before sending to edge function
-      const validationResult = this.validateOperation(operation);
-      if (!validationResult.isValid) {
-        throw new Error(`Validation failed: ${validationResult.error}`);
+      // Enhanced validation and URL conversion before sending to edge function
+      const processedOperation = await this.preprocessOperation(operation);
+      if (!processedOperation.success) {
+        return {
+          success: false,
+          error: processedOperation.error,
+          statusCode: 400
+        };
       }
-      
+
       const { data, error } = await supabase.functions.invoke('pdf-operations', {
-        body: operation
+        body: processedOperation.operation
       });
 
       console.log('📡 Supabase response:', { data, error });
@@ -87,6 +92,90 @@ export class PDFOperationsService {
           errorStack: error.stack,
           timestamp: new Date().toISOString()
         }
+      };
+    }
+  }
+
+  private async preprocessOperation(operation: PDFOperation): Promise<{
+    success: boolean;
+    operation?: PDFOperation;
+    error?: string;
+  }> {
+    try {
+      // If we have a fileUrl, ensure it's a public HTTP/HTTPS URL
+      if (operation.fileUrl) {
+        console.log('🔍 Processing fileUrl:', operation.fileUrl.substring(0, 50) + '...');
+        
+        const urlResult = await fileUploadService.ensurePublicUrl(
+          operation.fileUrl,
+          'document.pdf'
+        );
+
+        if (!urlResult.success) {
+          return {
+            success: false,
+            error: `URL processing failed: ${urlResult.error}`
+          };
+        }
+
+        // Update the operation with the public URL
+        return {
+          success: true,
+          operation: {
+            ...operation,
+            fileUrl: urlResult.publicUrl,
+            fileData: undefined // Remove fileData if we have a valid URL
+          }
+        };
+      }
+
+      // If we have fileData but no fileUrl, convert fileData to public URL
+      if (operation.fileData && !operation.fileUrl) {
+        console.log('🔍 Converting base64 fileData to public URL');
+        
+        // Convert base64 to data URL
+        const dataUrl = `data:application/pdf;base64,${operation.fileData}`;
+        
+        const uploadResult = await fileUploadService.uploadDataUrlToStorage(
+          dataUrl,
+          'document.pdf'
+        );
+
+        if (!uploadResult.success) {
+          return {
+            success: false,
+            error: `File upload failed: ${uploadResult.error}`
+          };
+        }
+
+        // Update the operation with the public URL
+        return {
+          success: true,
+          operation: {
+            ...operation,
+            fileUrl: uploadResult.publicUrl,
+            fileData: undefined // Remove fileData since we now have a URL
+          }
+        };
+      }
+
+      // Validate that we have either fileUrl or fileData
+      if (!operation.fileUrl && !operation.fileData) {
+        return {
+          success: false,
+          error: 'Either fileUrl or fileData must be provided'
+        };
+      }
+
+      return {
+        success: true,
+        operation
+      };
+    } catch (error: any) {
+      console.error('💥 Operation preprocessing failed:', error);
+      return {
+        success: false,
+        error: `Preprocessing failed: ${error.message}`
       };
     }
   }

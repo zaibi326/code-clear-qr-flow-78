@@ -1,7 +1,8 @@
 
 import { Template } from '@/types/template';
+import { fileUploadService } from '@/services/fileUploadService';
 
-export const resolveTemplateImageUrl = (template: Template): string | null => {
+export const resolveTemplateImageUrl = async (template: Template): Promise<string | null> => {
   console.log('Template file info:', {
     hasFile: !!template.file,
     fileType: template.file?.type,
@@ -26,16 +27,28 @@ export const resolveTemplateImageUrl = (template: Template): string | null => {
     }
   }
 
-  // If no HTTP URLs found, check for data URLs as fallback
-  if (template.preview && template.preview.startsWith('data:')) {
-    console.log('Using preview data URL for background (not suitable for PDF.co API)');
-    return template.preview;
-  } else if (template.template_url && template.template_url.startsWith('data:')) {
-    console.log('Using template_url data URL for background (not suitable for PDF.co API)');
-    return template.template_url;
+  // If no HTTP URLs found, try to convert data URLs to public URLs
+  for (const url of urls) {
+    if (url && url.startsWith('data:')) {
+      console.log('Converting data URL to public URL for PDF.co compatibility');
+      
+      try {
+        const uploadResult = await fileUploadService.uploadDataUrlToStorage(
+          url,
+          `${template.name || 'template'}.pdf`
+        );
+        
+        if (uploadResult.success && uploadResult.publicUrl) {
+          console.log('Successfully converted data URL to public URL:', uploadResult.publicUrl);
+          return uploadResult.publicUrl;
+        }
+      } catch (error) {
+        console.error('Failed to convert data URL to public URL:', error);
+      }
+    }
   }
 
-  console.warn('No valid image source found');
+  console.warn('No valid image source found and could not convert data URLs');
   return null;
 };
 
@@ -50,11 +63,11 @@ export const isValidHttpUrl = (url: string | null | undefined): boolean => {
   }
 };
 
-export const validatePDFUrl = (url: string | null | undefined): { 
+export const validatePDFUrl = async (url: string | null | undefined): Promise<{ 
   isValid: boolean; 
   error?: string; 
-  url?: string;
-} => {
+  correctedUrl?: string;
+}> => {
   if (!url) {
     return { isValid: false, error: 'No URL provided' };
   }
@@ -63,15 +76,46 @@ export const validatePDFUrl = (url: string | null | undefined): {
     return { isValid: false, error: 'URL must be a string' };
   }
 
-  // Check if it's a data URL
-  if (url.startsWith('data:')) {
-    return { 
-      isValid: false, 
-      error: 'Data URLs are not supported by PDF.co API. Please upload to a public HTTP/HTTPS URL.' 
-    };
+  // If it's already a valid HTTP/HTTPS URL, return it
+  if (isValidHttpUrl(url)) {
+    if (url.includes(' ')) {
+      const encodedUrl = encodeURI(url);
+      return { 
+        isValid: true, 
+        correctedUrl: encodedUrl,
+        error: 'URL contained spaces and was automatically encoded' 
+      };
+    }
+    return { isValid: true, correctedUrl: url };
   }
 
-  // Check if it's a blob URL
+  // If it's a data URL, try to convert it to a public URL
+  if (url.startsWith('data:')) {
+    try {
+      console.log('Attempting to convert data URL to public URL');
+      const uploadResult = await fileUploadService.uploadDataUrlToStorage(url, 'document.pdf');
+      
+      if (uploadResult.success && uploadResult.publicUrl) {
+        return {
+          isValid: true,
+          correctedUrl: uploadResult.publicUrl,
+          error: 'Data URL was converted to public HTTP/HTTPS URL'
+        };
+      } else {
+        return {
+          isValid: false,
+          error: `Failed to convert data URL to public URL: ${uploadResult.error}`
+        };
+      }
+    } catch (error: any) {
+      return {
+        isValid: false,
+        error: `Failed to convert data URL: ${error.message}`
+      };
+    }
+  }
+
+  // Check for blob URLs
   if (url.startsWith('blob:')) {
     return { 
       isValid: false, 
@@ -79,29 +123,31 @@ export const validatePDFUrl = (url: string | null | undefined): {
     };
   }
 
-  // Validate HTTP/HTTPS URL format
-  if (!isValidHttpUrl(url)) {
-    return { 
-      isValid: false, 
-      error: 'URL must be a valid HTTP or HTTPS URL' 
-    };
-  }
-
-  // Check for common URL issues
-  if (url.includes(' ')) {
-    const encodedUrl = encodeURI(url);
-    return { 
-      isValid: true, 
-      url: encodedUrl,
-      error: 'URL contained spaces and was automatically encoded' 
-    };
-  }
-
-  return { isValid: true, url };
+  return { 
+    isValid: false, 
+    error: 'URL must be a valid HTTP or HTTPS URL, or a data URL that can be converted' 
+  };
 };
 
 export const generatePublicUrl = async (file: File): Promise<string> => {
-  // This would integrate with your storage service
-  // For now, we'll return a placeholder that shows the proper format
-  throw new Error('File upload to public storage not implemented. Please upload your file to a public HTTP/HTTPS URL manually.');
+  try {
+    // Convert file to data URL first
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Upload to get public URL
+    const uploadResult = await fileUploadService.uploadDataUrlToStorage(dataUrl, file.name);
+    
+    if (uploadResult.success && uploadResult.publicUrl) {
+      return uploadResult.publicUrl;
+    } else {
+      throw new Error(uploadResult.error || 'Failed to generate public URL');
+    }
+  } catch (error: any) {
+    throw new Error(`File upload failed: ${error.message}`);
+  }
 };
