@@ -331,7 +331,7 @@ export class PDFOperationsService {
       throw new Error('At least one annotation is required');
     }
 
-    // Validate annotation structure
+    // Validate and format annotations properly for PDF.co API
     const validatedAnnotations = annotations.map((annotation, index) => {
       if (!annotation.type) {
         throw new Error(`Annotation ${index} is missing type`);
@@ -341,17 +341,50 @@ export class PDFOperationsService {
         throw new Error(`Annotation ${index} has invalid coordinates`);
       }
 
-      return {
-        type: annotation.type,
+      // Format annotation properly for PDF.co API
+      const baseAnnotation = {
         x: Math.round(annotation.x),
         y: Math.round(annotation.y),
         width: Math.round(annotation.width || 100),
         height: Math.round(annotation.height || 100),
-        pages: annotation.pages || "1",
-        color: annotation.color || { r: 0, g: 0, b: 1 },
-        fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-        strokeWidth: annotation.strokeWidth || 2
+        pages: annotation.pages || "1"
       };
+
+      // Handle different annotation types with proper API format
+      switch (annotation.type.toLowerCase()) {
+        case 'highlight':
+          return {
+            ...baseAnnotation,
+            type: "highlight",
+            color: "yellow", // Use simple color string
+            opacity: 0.5
+          };
+        case 'rectangle':
+          return {
+            ...baseAnnotation,
+            type: "rectangle",
+            fillColor: "lightblue", // Use simple color string
+            strokeColor: "blue",
+            strokeWidth: 2
+          };
+        case 'circle':
+        case 'ellipse':
+          return {
+            ...baseAnnotation,
+            type: "ellipse",
+            fillColor: "lightgreen",
+            strokeColor: "green",
+            strokeWidth: 2
+          };
+        default:
+          return {
+            ...baseAnnotation,
+            type: "rectangle",
+            fillColor: "lightgray",
+            strokeColor: "black",
+            strokeWidth: 1
+          };
+      }
     });
 
     return this.performOperation({
@@ -420,11 +453,14 @@ export class PDFOperationsService {
       operation: 'add-qr-code',
       fileUrl,
       options: { 
-        qrText, 
+        qrText: qrText.trim(),
         x: Math.round(x), 
         y: Math.round(y), 
         size: Math.round(size), 
-        pages 
+        pages: pages || "1",
+        // Use simple format for PDF.co API
+        foregroundColor: "#000000",
+        backgroundColor: "#FFFFFF"
       }
     });
   }

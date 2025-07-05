@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -488,8 +489,10 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
     throw new Error('Annotations array is required');
   }
 
-  // Transform annotations to PDF.co format
+  // Transform annotations to proper PDF.co format - use simple structure
   const annotations = options.annotations.map((annotation: any) => {
+    console.log('Processing annotation:', annotation);
+    
     const baseAnnotation = {
       x: Math.round(annotation.x || 100),
       y: Math.round(annotation.y || 100),
@@ -498,53 +501,54 @@ async function addPDFAnnotations(apiKey: string, fileUrl?: string, fileData?: st
       pages: annotation.pages || "1"
     };
 
+    // Use simple annotation format that PDF.co expects
     switch (annotation.type) {
       case 'highlight':
         return {
           ...baseAnnotation,
           type: "highlight",
-          color: annotation.color || { r: 1, g: 1, b: 0 }
+          color: "yellow"
         };
       case 'rectangle':
         return {
           ...baseAnnotation,
           type: "rectangle",
-          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
-          strokeWidth: annotation.strokeWidth || 2
+          fillColor: "lightblue",
+          strokeColor: "blue",
+          strokeWidth: 2
         };
       case 'circle':
+      case 'ellipse':
         return {
           ...baseAnnotation,
           type: "ellipse",
-          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
-          strokeWidth: annotation.strokeWidth || 2
+          fillColor: "lightgreen",
+          strokeColor: "green", 
+          strokeWidth: 2
         };
       default:
         return {
           ...baseAnnotation,
           type: "rectangle",
-          fillColor: annotation.fillColor || { r: 0.8, g: 0.8, b: 1 },
-          strokeColor: annotation.strokeColor || annotation.color || { r: 0, g: 0, b: 1 },
-          strokeWidth: annotation.strokeWidth || 2
+          fillColor: "lightgray",
+          strokeColor: "black",
+          strokeWidth: 1
         };
     }
   });
 
+  console.log('📋 Formatted annotations for PDF.co:', annotations);
+
   const requestBody: any = {
     annotations: annotations,
-    async: false,
-    url: fileUrl,
-    file: fileData
+    async: false
   };
 
-  // Remove undefined values
-  Object.keys(requestBody).forEach(key => {
-    if (requestBody[key] === undefined) {
-      delete requestBody[key];
-    }
-  });
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
 
   const result = await makeApiRequest(
     'https://api.pdf.co/v1/pdf/edit/add',
@@ -572,30 +576,29 @@ async function addQRCodeToPDF(apiKey: string, fileUrl?: string, fileData?: strin
     throw new Error('QR code text is required');
   }
 
+  // Use simple QR code annotation format
   const qrAnnotation = {
     type: "qrcode",
-    text: options.qrText,
+    text: options.qrText.trim(),
     x: Math.round(options.x || 100),
     y: Math.round(options.y || 100),
     size: Math.round(options.size || 100),
-    pages: options.pages || "1",
-    foregroundColor: options.foregroundColor || "#000000",
-    backgroundColor: options.backgroundColor || "#FFFFFF"
+    pages: options.pages || "1"
+    // Remove complex color formatting that might cause issues
   };
+
+  console.log('📋 QR annotation for PDF.co:', qrAnnotation);
 
   const requestBody: any = {
     annotations: [qrAnnotation],
-    async: false,
-    url: fileUrl,
-    file: fileData
+    async: false
   };
 
-  // Remove undefined values
-  Object.keys(requestBody).forEach(key => {
-    if (requestBody[key] === undefined) {
-      delete requestBody[key];
-    }
-  });
+  if (fileUrl) {
+    requestBody.url = fileUrl;
+  } else if (fileData) {
+    requestBody.file = fileData;
+  }
 
   const result = await makeApiRequest(
     'https://api.pdf.co/v1/pdf/edit/add',
