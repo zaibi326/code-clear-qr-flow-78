@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, RefreshCw } from 'lucide-react';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,6 +35,7 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [apiConnected, setApiConnected] = useState<boolean | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -50,46 +51,80 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
     try {
       console.log('🔄 Loading PDF preview for:', fileName);
 
-      // First, try to extract text with enhanced formatting to get page count
-      const textResult = await pdfOperationsService.extractTextEnhanced(fileUrl, {
-        preserveFormatting: true,
-        includeBoundingBoxes: true,
-        detectTables: true
-      });
-
-      if (!textResult.success) {
-        throw new Error(textResult.error || 'Failed to load PDF');
+      // First test API connection
+      const connectionTest = await pdfOperationsService.testApiConnection();
+      if (!connectionTest.success) {
+        setApiConnected(false);
+        setError(connectionTest.error || 'API connection failed');
+        return;
       }
 
-      // For now, create mock page data since pdf.co doesn't have direct PNG conversion
-      // In a real implementation, you'd use pdf.co's convert-to-png endpoint
-      const pageCount = textResult.pages || 1;
-      const mockPages: PDFPageData[] = [];
+      setApiConnected(true);
 
-      for (let i = 1; i <= Math.min(pageCount, 20); i++) {
-        mockPages.push({
-          pageNumber: i,
-          imageUrl: fileUrl, // Use PDF URL as placeholder
-          width: 595, // Standard A4 width in points
-          height: 842, // Standard A4 height in points
-          textBlocks: textResult.textBlocks || []
+      // Try to convert PDF to images for better preview
+      const conversionResult = await pdfOperationsService.convertPDFToImages(fileUrl);
+      
+      if (conversionResult.success && conversionResult.url) {
+        // Create page data from converted images
+        const pageCount = conversionResult.pages || 1;
+        const mockPages: PDFPageData[] = [];
+
+        for (let i = 1; i <= Math.min(pageCount, 20); i++) {
+          mockPages.push({
+            pageNumber: i,
+            imageUrl: conversionResult.url, // In real implementation, this would be individual page URLs
+            width: 595, // Standard A4 width in points
+            height: 842, // Standard A4 height in points
+            textBlocks: []
+          });
+        }
+
+        setPages(mockPages);
+        console.log('✅ PDF preview loaded with images:', mockPages.length, 'pages');
+      } else {
+        // Fallback: Extract text to get page information
+        const textResult = await pdfOperationsService.extractTextEnhanced(fileUrl, {
+          preserveFormatting: true,
+          includeBoundingBoxes: true,
+          detectTables: true
         });
-      }
 
-      setPages(mockPages);
-      console.log('✅ PDF preview loaded:', mockPages.length, 'pages');
+        if (textResult.success) {
+          const pageCount = textResult.pages || 1;
+          const mockPages: PDFPageData[] = [];
+
+          for (let i = 1; i <= Math.min(pageCount, 20); i++) {
+            mockPages.push({
+              pageNumber: i,
+              imageUrl: fileUrl, // Use original PDF URL as fallback
+              width: 595,
+              height: 842,
+              textBlocks: textResult.textBlocks || []
+            });
+          }
+
+          setPages(mockPages);
+          console.log('✅ PDF preview loaded with text extraction:', mockPages.length, 'pages');
+        } else {
+          throw new Error(textResult.error || 'Failed to process PDF');
+        }
+      }
 
     } catch (error: any) {
       console.error('❌ Failed to load PDF preview:', error);
       setError(error.message || 'Failed to load PDF preview');
       toast({
         title: 'Preview Error',
-        description: 'Failed to load PDF preview. The file might be corrupted or expired.',
+        description: 'Failed to load PDF preview. Please check the file and try again.',
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = async () => {
+    await loadPDFPreview();
   };
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
@@ -111,22 +146,29 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading PDF preview...</p>
+            <p className="text-sm text-gray-500 mt-2">Converting PDF pages to images...</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (error) {
+  if (error || apiConnected === false) {
     return (
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-96">
           <div className="text-center max-w-md">
             <p className="text-red-600 font-medium mb-2">Preview Error</p>
             <p className="text-gray-600 text-sm mb-4">{error}</p>
-            <Button onClick={loadPDFPreview} variant="outline">
-              Try Again
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={handleRetry} variant="outline" className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Retry Loading
+              </Button>
+              <p className="text-xs text-gray-500">
+                Check your PDF file and API connection
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -140,6 +182,11 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
         <div className="flex items-center gap-2">
           <Badge variant="outline">{pages.length} pages</Badge>
           <span className="text-sm text-gray-600">{fileName}</span>
+          {apiConnected && (
+            <Badge variant="default" className="bg-green-100 text-green-800">
+              API Connected
+            </Badge>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -157,6 +204,11 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
           {/* Rotate */}
           <Button size="sm" variant="outline" onClick={handleRotate}>
             <RotateCw className="w-4 h-4" />
+          </Button>
+
+          {/* Refresh */}
+          <Button size="sm" variant="outline" onClick={handleRetry}>
+            <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -211,7 +263,10 @@ export const PDFPreviewCanvas: React.FC<PDFPreviewCanvasProps> = ({
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  <p>Page {currentPage}</p>
+                  <div className="text-center">
+                    <p className="text-lg font-medium mb-2">Page {currentPage}</p>
+                    <p className="text-sm">Preview not available</p>
+                  </div>
                 </div>
               )}
             </div>

@@ -26,6 +26,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isApiConnected, setIsApiConnected] = useState<boolean | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Test PDF.co API connection on component mount
   useEffect(() => {
@@ -35,21 +36,42 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const testApiConnection = async () => {
     try {
       console.log('🧪 Testing PDF.co API connection...');
+      setIsRetrying(true);
+      
       const result = await pdfOperationsService.testApiConnection();
       
       if (result.success) {
         setIsApiConnected(true);
         setApiError(null);
         console.log('✅ PDF.co API connection successful');
+        
+        toast({
+          title: "API Connected",
+          description: "PDF.co service is ready for PDF operations",
+        });
       } else {
         setIsApiConnected(false);
         setApiError(result.error || 'API connection failed');
         console.error('❌ PDF.co API connection failed:', result.error);
+        
+        toast({
+          title: "API Connection Failed",
+          description: result.error || 'Unable to connect to PDF.co service',
+          variant: "destructive"
+        });
       }
     } catch (error: any) {
       setIsApiConnected(false);
       setApiError(error.message || 'Failed to test API connection');
       console.error('💥 API connection test failed:', error);
+      
+      toast({
+        title: "Connection Error",
+        description: "Network error while connecting to PDF.co",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRetrying(false);
     }
   };
 
@@ -106,19 +128,37 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="mt-2">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="font-medium">PDF.co API Connection Failed</p>
                   <p className="text-sm">{apiError}</p>
-                  <p className="text-sm">
-                    Please check your API configuration or contact support.
-                  </p>
+                  <div className="bg-red-50/50 p-3 rounded border">
+                    <p className="text-sm font-medium mb-1">Possible causes:</p>
+                    <ul className="text-xs space-y-1">
+                      <li>• Invalid or expired API key</li>
+                      <li>• Network connectivity issues</li>
+                      <li>• API service temporarily unavailable</li>
+                      <li>• File URL not accessible by PDF.co</li>
+                    </ul>
+                  </div>
                 </div>
               </AlertDescription>
             </Alert>
             
             <div className="mt-4 flex gap-2">
-              <Button onClick={testApiConnection} variant="outline" size="sm">
-                Test Connection Again
+              <Button 
+                onClick={testApiConnection} 
+                variant="outline" 
+                size="sm"
+                disabled={isRetrying}
+              >
+                {isRetrying ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                    Testing...
+                  </>
+                ) : (
+                  'Test Connection Again'
+                )}
               </Button>
               <Button onClick={onCancel} variant="outline" size="sm">
                 Go Back
@@ -153,6 +193,12 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle className="w-4 h-4" />
                 <span>PDF.co API Connected</span>
+              </div>
+            )}
+            {isApiConnected === null && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                <span>Connecting to API...</span>
               </div>
             )}
           </div>
@@ -194,6 +240,17 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                 <CheckCircle className="w-4 h-4" />
                 <span>PDF.co Connected</span>
               </div>
+            )}
+            {isApiConnected === false && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={testApiConnection}
+                className="text-red-600 border-red-200"
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Reconnect API
+              </Button>
             )}
             
             <Button
