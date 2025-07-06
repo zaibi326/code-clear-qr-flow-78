@@ -6,6 +6,10 @@ export interface PDFOperationResult {
   error?: string;
   url?: string;
   replacements?: number;
+  text?: string;
+  pages?: number;
+  statusCode?: number;
+  downloadUrl?: string;
 }
 
 export interface TextReplaceOptions {
@@ -80,6 +84,136 @@ class PDFOperationsService {
       return {
         success: false,
         error: error.message || 'Text replacement failed'
+      };
+    }
+  }
+
+  async extractTextEnhanced(pdfUrl: string, options: { pages?: string } = {}): Promise<PDFOperationResult> {
+    try {
+      console.log('📄 Extracting text from PDF:', { pdfUrl, options });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mock text extraction result
+      const mockText = "This is extracted text from the PDF document. " +
+                      "It contains sample content that would normally be " +
+                      "extracted from the actual PDF file using PDF.co API.";
+      
+      return {
+        success: true,
+        text: mockText,
+        pages: options.pages ? parseInt(options.pages) : 1,
+        statusCode: 200
+      };
+    } catch (error: any) {
+      console.error('❌ Text extraction failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Text extraction failed'
+      };
+    }
+  }
+
+  async addAnnotations(pdfUrl: string, annotations: any[]): Promise<PDFOperationResult> {
+    try {
+      console.log('📝 Adding annotations to PDF:', { annotations });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const resultUrl = pdfUrl + '?annotations=' + Date.now();
+      
+      return {
+        success: true,
+        url: resultUrl,
+        statusCode: 200
+      };
+    } catch (error: any) {
+      console.error('❌ Add annotations failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to add annotations'
+      };
+    }
+  }
+
+  async addQRCode(
+    pdfUrl: string, 
+    content: string, 
+    x: number, 
+    y: number, 
+    size: number, 
+    pages: string
+  ): Promise<PDFOperationResult> {
+    try {
+      console.log('🔲 Adding QR code to PDF:', { content, x, y, size, pages });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const resultUrl = pdfUrl + '?qr=' + Date.now();
+      
+      return {
+        success: true,
+        url: resultUrl,
+        statusCode: 200
+      };
+    } catch (error: any) {
+      console.error('❌ Add QR code failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to add QR code'
+      };
+    }
+  }
+
+  async finalizePDF(pdfUrl: string, modifications: any): Promise<PDFOperationResult> {
+    try {
+      console.log('🎯 Finalizing PDF with modifications:', modifications);
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const finalUrl = pdfUrl + '?finalized=' + Date.now();
+      
+      return {
+        success: true,
+        url: finalUrl,
+        statusCode: 200
+      };
+    } catch (error: any) {
+      console.error('❌ PDF finalization failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to finalize PDF'
+      };
+    }
+  }
+
+  async exportPDF(
+    pdfUrl: string, 
+    format: string, 
+    options: any = {}
+  ): Promise<PDFOperationResult> {
+    try {
+      console.log('💾 Exporting PDF:', { format, options });
+      
+      // Simulate export delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const exportUrl = pdfUrl + '?export=' + format + '&time=' + Date.now();
+      
+      return {
+        success: true,
+        downloadUrl: exportUrl,
+        statusCode: 200
+      };
+    } catch (error: any) {
+      console.error('❌ PDF export failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to export PDF'
       };
     }
   }
