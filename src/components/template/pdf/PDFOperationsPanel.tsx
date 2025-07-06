@@ -3,11 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Type, 
   Edit3, 
@@ -15,11 +13,10 @@ import {
   FileText, 
   QrCode, 
   Download,
-  AlertCircle,
-  Info,
   Plus,
   Save,
-  Upload
+  Search,
+  Replace
 } from 'lucide-react';
 import { Template } from '@/types/template';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
@@ -39,9 +36,10 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   const [activeOperation, setActiveOperation] = useState<string | null>(null);
   const [showQRGenerator, setShowQRGenerator] = useState(false);
   
-  // Enhanced edit text state
+  // Enhanced search and replace state
   const [searchText, setSearchText] = useState('');
   const [replaceText, setReplaceText] = useState('');
+  const [searchReplaceList, setSearchReplaceList] = useState<Array<{search: string, replace: string}>>([]);
   const [extractedText, setExtractedText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [preserveFormatting, setPreserveFormatting] = useState(true);
@@ -69,15 +67,15 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
       let result;
 
       switch (operation) {
-        case 'extract-text':
+        case 'extract-text-enhanced':
           result = await pdfOperationsService.extractTextEnhanced(fileUrl!, {
             preserveFormatting: true,
             includeBoundingBoxes: true,
             preserveLineBreaks: true,
             preserveParagraphs: true,
             detectTables: true,
-            maxTextLength: 10000000, // 10MB
-            chunkSize: 1000000 // 1MB chunks
+            maxTextLength: 10000000,
+            chunkSize: 1000000
           });
           if (result.success) {
             setExtractedText(result.text || '');
@@ -89,7 +87,47 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
           }
           break;
 
-        case 'edit-text':
+        case 'search-replace-multiple':
+          if (searchReplaceList.length === 0) {
+            toast({
+              title: "Error",
+              description: "Please add at least one search and replace pair",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          const searchStrings = searchReplaceList.map(item => item.search);
+          const replaceStrings = searchReplaceList.map(item => item.replace);
+          
+          result = await pdfOperationsService.editTextEnhanced(
+            fileUrl!,
+            searchStrings,
+            replaceStrings,
+            {
+              caseSensitive: false,
+              preserveFormatting: preserveFormatting,
+              maintainLayout: maintainLayout,
+              boundingBoxMapping: true,
+              normalizeSpaces: true,
+              chunkProcessing: true
+            }
+          );
+          if (result.success) {
+            toast({
+              title: "Multiple Text Replacements Complete",
+              description: `Made ${result.replacements || 0} replacement(s) across all search terms`,
+              duration: 4000
+            });
+            onTemplateUpdate({
+              ...template,
+              template_url: result.url,
+              updatedAt: new Date()
+            });
+          }
+          break;
+
+        case 'single-search-replace':
           if (!searchText.trim()) {
             toast({
               title: "Error",
@@ -107,14 +145,13 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               preserveFormatting: preserveFormatting,
               maintainLayout: maintainLayout,
               boundingBoxMapping: true,
-              normalizeSpaces: true,
-              chunkProcessing: true
+              normalizeSpaces: true
             }
           );
           if (result.success) {
             toast({
-              title: "Text Edited with Enhanced Formatting",
-              description: `Made ${result.replacements || 0} replacement(s) while preserving layout`,
+              title: "Text Replaced Successfully",
+              description: `Made ${result.replacements || 0} replacement(s)`,
               duration: 3000
             });
             onTemplateUpdate({
@@ -125,47 +162,10 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
           }
           break;
 
-        case 'batch-extract':
-          // Process large PDFs in batches
-          const pageCount = options?.pageCount || 10;
-          const batchSize = 5; // Process 5 pages at a time
-          let allText = '';
-          let allTextBlocks: any[] = [];
-          
-          for (let start = 1; start <= pageCount; start += batchSize) {
-            const end = Math.min(start + batchSize - 1, pageCount);
-            
-            const batchResult = await pdfOperationsService.processPageBatch(
-              fileUrl!,
-              start,
-              end,
-              'extract',
-              {
-                preserveFormatting: true,
-                includeBoundingBoxes: true,
-                normalizeSpaces: true,
-                preserveLineBreaks: true
-              }
-            );
-            
-            if (batchResult.success) {
-              allText += (batchResult.text || '') + '\n\n';
-              allTextBlocks.push(...(batchResult.textBlocks || []));
-            }
-          }
-          
-          setExtractedText(allText);
-          toast({
-            title: "Batch Text Extraction Complete",
-            description: `Processed ${pageCount} pages in batches with enhanced formatting`,
-            duration: 4000
-          });
-          break;
-
         case 'add-qr-code':
           result = await pdfOperationsService.addQRCode(
             fileUrl!,
-            options?.qrText || "https://example.com",
+            options?.qrText || "https://clearqr.io",
             options?.x || 100,
             options?.y || 100,
             options?.size || 100
@@ -206,26 +206,12 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
           }
           break;
 
-        case 'extract-form-fields':
-          // This would extract form fields from the PDF
-          setFormFields([
-            { name: 'name', type: 'text', required: true },
-            { name: 'email', type: 'email', required: true },
-            { name: 'message', type: 'textarea', required: false }
-          ]);
-          toast({
-            title: "Form Fields Extracted",
-            description: "Found form fields in the PDF"
-          });
-          break;
-
         case 'export-pdf':
           const exportResult = await pdfOperationsService.exportPDF(fileUrl!, 'pdf', {
-            fileName: template.name || 'exported-document',
+            fileName: template.name || 'edited-document',
             compression: true
           });
           if (exportResult.success && exportResult.downloadUrl) {
-            // Trigger download
             const link = document.createElement('a');
             link.href = exportResult.downloadUrl;
             link.download = exportResult.fileName || 'document.pdf';
@@ -234,8 +220,8 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
             document.body.removeChild(link);
             
             toast({
-              title: "PDF Exported",
-              description: "PDF has been downloaded successfully"
+              title: "PDF Downloaded",
+              description: "Your edited PDF has been downloaded successfully"
             });
           }
           break;
@@ -251,7 +237,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
       if (result && !result.success) {
         let errorMessage = result.error || "An error occurred during processing";
         
-        // Handle specific error cases
         if (errorMessage.includes('expired') || errorMessage.includes('Access Forbidden') || errorMessage.includes('403')) {
           errorMessage = "PDF file has expired. Please refresh the page and try again, or re-upload the PDF file.";
           
@@ -307,9 +292,21 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     });
   };
 
+  const addSearchReplacePair = () => {
+    if (searchText.trim() && replaceText.trim()) {
+      setSearchReplaceList(prev => [...prev, { search: searchText.trim(), replace: replaceText.trim() }]);
+      setSearchText('');
+      setReplaceText('');
+    }
+  };
+
+  const removeSearchReplacePair = (index: number) => {
+    setSearchReplaceList(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleExtractAndEdit = async () => {
     setIsEditing(true);
-    await handleOperation('extract-text');
+    await handleOperation('extract-text-enhanced');
   };
 
   const handleSaveEditedText = async () => {
@@ -322,7 +319,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
       return;
     }
 
-    // Use enhanced text replacement with formatting preservation
     const result = await pdfOperationsService.replaceWithEditedText(
       template.template_url || template.preview!,
       extractedText
@@ -330,7 +326,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
 
     if (result.success) {
       toast({
-        title: "Text Updated with Enhanced Formatting",
+        title: "Text Updated Successfully",
         description: "PDF text has been updated while preserving layout and formatting",
         duration: 3000
       });
@@ -347,28 +343,28 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Enhanced PDF Operations</h2>
-        <p className="text-sm text-gray-600">Advanced text processing with format preservation</p>
+      <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-green-50">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Canva-Style PDF Editor</h2>
+        <p className="text-sm text-gray-600">Professional PDF editing with advanced text processing</p>
       </div>
 
       <div className="flex-1 overflow-auto">
-        <Tabs defaultValue="extract" className="h-full">
+        <Tabs defaultValue="search-replace" className="h-full">
           <div className="border-b bg-white sticky top-0 z-10">
-            <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-4 h-auto p-1">
               <TabsTrigger 
-                value="extract" 
+                value="search-replace" 
                 className="flex flex-col items-center gap-1 p-3 text-xs data-[state=active]:bg-blue-100"
               >
-                <Type className="h-4 w-4" />
-                Extract
+                <Search className="h-4 w-4" />
+                Search & Replace
               </TabsTrigger>
               <TabsTrigger 
-                value="edit" 
+                value="extract" 
                 className="flex flex-col items-center gap-1 p-3 text-xs data-[state=active]:bg-green-100"
               >
-                <Edit3 className="h-4 w-4" />
-                Edit
+                <Type className="h-4 w-4" />
+                Extract Text
               </TabsTrigger>
               <TabsTrigger 
                 value="annotate" 
@@ -376,22 +372,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               >
                 <Palette className="h-4 w-4" />
                 Annotate
-              </TabsTrigger>
-            </TabsList>
-            <TabsList className="grid w-full grid-cols-3 h-auto p-1 border-t">
-              <TabsTrigger 
-                value="forms" 
-                className="flex flex-col items-center gap-1 p-3 text-xs data-[state=active]:bg-orange-100"
-              >
-                <FileText className="h-4 w-4" />
-                Forms
-              </TabsTrigger>
-              <TabsTrigger 
-                value="qrcode" 
-                className="flex flex-col items-center gap-1 p-3 text-xs data-[state=active]:bg-indigo-100"
-              >
-                <QrCode className="h-4 w-4" />
-                QR Code
               </TabsTrigger>
               <TabsTrigger 
                 value="export" 
@@ -404,7 +384,155 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
           </div>
 
           <div className="p-4 space-y-4">
-            {/* Enhanced Extract Tab */}
+            {/* Enhanced Search & Replace Tab */}
+            <TabsContent value="search-replace" className="mt-0 space-y-4">
+              <Card className="border-blue-200 bg-blue-50/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+                    <Replace className="h-5 w-5" />
+                    Advanced Search & Replace
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Professional text replacement with formatting preservation, similar to Canva PDF Editor.
+                  </p>
+                  
+                  {/* Single Search & Replace */}
+                  <div className="space-y-3 p-4 bg-white rounded-lg border">
+                    <h4 className="font-medium text-gray-800">Quick Replace</h4>
+                    
+                    <div className="flex gap-4 mb-3">
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={preserveFormatting}
+                          onChange={(e) => setPreserveFormatting(e.target.checked)}
+                          className="mr-2"
+                        />
+                        Preserve Formatting
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={maintainLayout}
+                          onChange={(e) => setMaintainLayout(e.target.checked)}
+                          className="mr-2"
+                        />
+                        Maintain Layout
+                      </label>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="search" className="text-sm font-medium">Find:</Label>
+                        <Input
+                          id="search"
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Enter text to find..."
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="replace" className="text-sm font-medium">Replace with:</Label>
+                        <Input
+                          id="replace"
+                          value={replaceText}
+                          onChange={(e) => setReplaceText(e.target.value)}
+                          placeholder="Enter replacement text..."
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button
+                      onClick={() => handleOperation('single-search-replace')}
+                      disabled={isProcessing || !searchText.trim()}
+                      className="w-full"
+                    >
+                      {isOperationActive('single-search-replace') ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Replacing...
+                        </>
+                      ) : (
+                        <>
+                          <Replace className="h-4 w-4 mr-2" />
+                          Replace All Instances
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Multiple Search & Replace */}
+                  <div className="space-y-3 p-4 bg-white rounded-lg border">
+                    <h4 className="font-medium text-gray-800">Batch Replace (Multiple)</h4>
+                    
+                    {/* Add new pair */}
+                    <div className="flex gap-2">
+                      <Input
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Find..."
+                        className="flex-1"
+                      />
+                      <Input
+                        value={replaceText}
+                        onChange={(e) => setReplaceText(e.target.value)}
+                        placeholder="Replace with..."
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={addSearchReplacePair}
+                        disabled={!searchText.trim()}
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* List of pairs */}
+                    {searchReplaceList.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Replace List:</Label>
+                        {searchReplaceList.map((pair, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
+                            <span className="flex-1">"{pair.search}" → "{pair.replace}"</span>
+                            <Button
+                              onClick={() => removeSearchReplacePair(index)}
+                              variant="ghost"
+                              size="sm"
+                            >
+                              ×
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        <Button
+                          onClick={() => handleOperation('search-replace-multiple')}
+                          disabled={isProcessing}
+                          className="w-full mt-2"
+                        >
+                          {isOperationActive('search-replace-multiple') ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Replace className="h-4 w-4 mr-2" />
+                              Execute All Replacements
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Extract Tab */}
             <TabsContent value="extract" className="mt-0 space-y-4">
               <Card className="border-blue-200 bg-blue-50/30">
                 <CardHeader className="pb-3">
@@ -420,12 +548,12 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                   
                   <div className="grid grid-cols-2 gap-2">
                     <Button
-                      onClick={() => handleOperation('extract-text')}
+                      onClick={() => handleOperation('extract-text-enhanced')}
                       disabled={isProcessing}
                       className="bg-blue-600 hover:bg-blue-700"
                       size="sm"
                     >
-                      {isOperationActive('extract-text') ? (
+                      {isOperationActive('extract-text-enhanced') ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                           Extracting...
@@ -459,126 +587,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                       <p className="text-xs text-gray-500 mt-1">
                         {extractedText.length} characters • Formatting preserved
                       </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Enhanced Edit Tab */}
-            <TabsContent value="edit" className="mt-0 space-y-4">
-              <Card className="border-green-200 bg-green-50/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2 text-green-800">
-                    <Edit3 className="h-5 w-5" />
-                    Enhanced Text Editing
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!isEditing ? (
-                    <>
-                      <p className="text-sm text-gray-600">
-                        Advanced search and replace with layout preservation and bounding box mapping.
-                      </p>
-                      
-                      {/* Enhanced Options */}
-                      <div className="flex gap-4 mb-3">
-                        <label className="flex items-center text-sm">
-                          <input
-                            type="checkbox"
-                            checked={preserveFormatting}
-                            onChange={(e) => setPreserveFormatting(e.target.checked)}
-                            className="mr-2"
-                          />
-                          Preserve Formatting
-                        </label>
-                        <label className="flex items-center text-sm">
-                          <input
-                            type="checkbox"
-                            checked={maintainLayout}
-                            onChange={(e) => setMaintainLayout(e.target.checked)}
-                            className="mr-2"
-                          />
-                          Maintain Layout
-                        </label>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="search" className="text-sm font-medium">Search for:</Label>
-                          <Input
-                            id="search"
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            placeholder="Enter text to find..."
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="replace" className="text-sm font-medium">Replace with:</Label>
-                          <Input
-                            id="replace"
-                            value={replaceText}
-                            onChange={(e) => setReplaceText(e.target.value)}
-                            placeholder="Enter replacement text..."
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            onClick={() => handleOperation('edit-text')}
-                            disabled={isProcessing || !searchText.trim()}
-                            variant="outline"
-                            size="sm"
-                          >
-                            {isOperationActive('edit-text') ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600" />
-                            ) : (
-                              <>
-                                <Edit3 className="h-4 w-4 mr-1" />
-                                Enhanced Replace
-                              </>
-                            )}
-                          </Button>
-                          
-                          <Button
-                            onClick={handleExtractAndEdit}
-                            disabled={isProcessing}
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Type className="h-4 w-4 mr-1" />
-                            Rich Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Edit extracted text (formatting preserved):</Label>
-                      <Textarea
-                        value={extractedText}
-                        onChange={(e) => setExtractedText(e.target.value)}
-                        className="min-h-[200px] font-mono text-sm"
-                        placeholder="Extracted text will appear here for editing..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleSaveEditedText}
-                          disabled={isProcessing}
-                          size="sm"
-                        >
-                          <Save className="h-4 w-4 mr-1" />
-                          Save with Formatting
-                        </Button>
-                        <Button
-                          onClick={() => setIsEditing(false)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -646,103 +654,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
               </Card>
             </TabsContent>
 
-            {/* Forms Tab - Now with actual functionality */}
-            <TabsContent value="forms" className="mt-0 space-y-4">
-              <Card className="border-orange-200 bg-orange-50/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2 text-orange-800">
-                    <FileText className="h-5 w-5" />
-                    Form Operations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    Extract and fill form fields in your PDF documents.
-                  </p>
-                  
-                  <Button
-                    onClick={() => handleOperation('extract-form-fields')}
-                    disabled={isProcessing}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Extract Form Fields
-                  </Button>
-                  
-                  {formFields.length > 0 && (
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Fill Form Fields:</Label>
-                      {formFields.map((field, index) => (
-                        <div key={index}>
-                          <Label className="text-xs text-gray-600 capitalize">
-                            {field.name} {field.required && '*'}
-                          </Label>
-                          {field.type === 'textarea' ? (
-                            <Textarea
-                              value={formData[field.name] || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                [field.name]: e.target.value
-                              }))}
-                              placeholder={`Enter ${field.name}...`}
-                              className="mt-1"
-                            />
-                          ) : (
-                            <Input
-                              type={field.type}
-                              value={formData[field.name] || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                [field.name]: e.target.value
-                              }))}
-                              placeholder={`Enter ${field.name}...`}
-                              className="mt-1"
-                            />
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        onClick={() => handleOperation('fill-form', { fields: formData })}
-                        disabled={isProcessing}
-                        className="w-full"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        Fill Form
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* QR Code Tab */}
-            <TabsContent value="qrcode" className="mt-0 space-y-4">
-              <Card className="border-indigo-200 bg-indigo-50/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2 text-indigo-800">
-                    <QrCode className="h-5 w-5" />
-                    QR Code Generator
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Add QR codes to your PDF documents at specified positions.
-                  </p>
-                  <Button
-                    onClick={() => setShowQRGenerator(true)}
-                    disabled={isProcessing}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    size="lg"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add QR Code
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Export Tab - Now with actual functionality */}
+            {/* Export Tab */}
             <TabsContent value="export" className="mt-0 space-y-4">
               <Card className="border-pink-200 bg-pink-50/30">
                 <CardHeader className="pb-3">
@@ -788,11 +700,11 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
       {/* Enhanced Status Bar */}
       <div className="border-t bg-gray-50 p-3">
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Enhanced PDF Operations • Format Preservation Active</span>
+          <span>Canva-Style PDF Editor • ClearQR.io Integration</span>
           {isProcessing && (
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
-              <span>Processing with enhanced formatting...</span>
+              <span>Processing PDF...</span>
             </div>
           )}
         </div>

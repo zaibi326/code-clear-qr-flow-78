@@ -1,129 +1,146 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface FileUploadResult {
+export interface UploadResult {
   success: boolean;
   publicUrl?: string;
   error?: string;
+  fileName?: string;
+  fileSize?: number;
+}
+
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
 }
 
 export class FileUploadService {
-  private static instance: FileUploadService;
-
-  public static getInstance(): FileUploadService {
-    if (!FileUploadService.instance) {
-      FileUploadService.instance = new FileUploadService();
-    }
-    return FileUploadService.instance;
-  }
-
-  async uploadDataUrlToStorage(dataUrl: string, fileName: string = 'document.pdf'): Promise<FileUploadResult> {
+  async uploadFile(
+    file: File, 
+    bucketName: string = 'documents',
+    onProgress?: (progress: UploadProgress) => void
+  ): Promise<UploadResult> {
     try {
-      console.log('🔄 Converting data URL to public URL for PDF.co API');
-      
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ User not authenticated for file upload');
+      console.log('🔄 Starting file upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        bucket: bucketName
+      });
+
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
         return {
           success: false,
-          error: 'User must be authenticated to upload files'
+          error: 'File size exceeds 10MB limit. Please choose a smaller file.'
         };
       }
-      
-      // Convert data URL to blob
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      
-      // Generate unique filename with user prefix to avoid conflicts
+
+      // Validate PDF files
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        return {
+          success: false,
+          error: 'Only PDF files are supported for editing.'
+        };
+      }
+
+      // Generate unique filename
       const timestamp = Date.now();
-      const uniqueFileName = `${user.id}/${timestamp}-${fileName}`;
-      
-      console.log('📁 Uploading file to Supabase Storage:', uniqueFileName);
-      
-      // Upload to Supabase Storage with explicit content type
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${timestamp}_${sanitizedName}`;
+
+      // Simulate progress for file reading
+      if (onProgress) {
+        onProgress({ loaded: 0, total: file.size, percentage: 0 });
+      }
+
+      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
-        .from('templates')
-        .upload(uniqueFileName, blob, {
+        .from(bucketName)
+        .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false,
-          contentType: blob.type || 'application/pdf'
+          upsert: false
         });
 
       if (error) {
-        console.error('❌ Upload failed:', error);
-        
-        // Provide specific error messages for common issues
-        let errorMessage = `Upload failed: ${error.message}`;
-        if (error.message.includes('row-level security')) {
-          errorMessage = 'Upload permission denied. Please ensure you are logged in and have proper access rights.';
-        } else if (error.message.includes('duplicate')) {
-          errorMessage = 'File already exists. Please try again or use a different filename.';
-        } else if (error.message.includes('size')) {
-          errorMessage = 'File is too large. Please use a smaller file.';
-        }
-        
+        console.error('❌ Upload error:', error);
         return {
           success: false,
-          error: errorMessage
+          error: `Upload failed: ${error.message}`
         };
       }
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('templates')
-        .getPublicUrl(uniqueFileName);
+        .from(bucketName)
+        .getPublicUrl(fileName);
 
-      if (!urlData?.publicUrl) {
-        return {
-          success: false,
-          error: 'Failed to generate public URL'
-        };
+      if (onProgress) {
+        onProgress({ loaded: file.size, total: file.size, percentage: 100 });
       }
 
-      console.log('✅ File uploaded successfully, public URL:', urlData.publicUrl);
-      
+      console.log('✅ Upload successful:', {
+        fileName,
+        publicUrl: urlData.publicUrl,
+        fileSize: file.size
+      });
+
       return {
         success: true,
-        publicUrl: urlData.publicUrl
+        publicUrl: urlData.publicUrl,
+        fileName: fileName,
+        fileSize: file.size
       };
+
     } catch (error: any) {
-      console.error('💥 File upload service error:', error);
+      console.error('💥 Upload failed:', error);
       return {
         success: false,
-        error: error.message || 'Unknown upload error'
+        error: error.message || 'Upload failed unexpectedly'
       };
     }
   }
 
-  async ensurePublicUrl(url: string, fileName?: string): Promise<FileUploadResult> {
-    // If it's already a valid HTTP/HTTPS URL, return it
-    if (this.isValidHttpUrl(url)) {
-      return {
-        success: true,
-        publicUrl: url
-      };
-    }
-
-    // If it's a data URL, upload it to get a public URL
-    if (url.startsWith('data:')) {
-      return await this.uploadDataUrlToStorage(url, fileName);
-    }
-
-    return {
-      success: false,
-      error: 'Invalid URL format. Only HTTP/HTTPS and data URLs are supported.'
-    };
-  }
-
-  private isValidHttpUrl(url: string): boolean {
+  async uploadDataUrlToStorage(dataUrl: string, fileName: string = 'document.pdf'): Promise<UploadResult> {
     try {
-      const urlObj = new URL(url);
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-    } catch {
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      // Create File object
+      const file = new File([blob], fileName, { type: blob.type });
+      
+      // Use regular upload method
+      return this.uploadFile(file);
+    } catch (error: any) {
+      console.error('❌ Data URL upload failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to upload data URL'
+      };
+    }
+  }
+
+  async deleteFile(fileName: string, bucketName: string = 'documents'): Promise<boolean> {
+    try {
+      const { error } = await supabase.storage
+        .from(bucketName)
+        .remove([fileName]);
+
+      if (error) {
+        console.error('❌ Delete error:', error);
+        return false;
+      }
+
+      console.log('✅ File deleted successfully:', fileName);
+      return true;
+    } catch (error) {
+      console.error('💥 Delete failed:', error);
       return false;
     }
   }
 }
 
-export const fileUploadService = FileUploadService.getInstance();
+export const fileUploadService = new FileUploadService();

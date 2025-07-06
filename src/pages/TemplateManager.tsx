@@ -27,6 +27,12 @@ const EnhancedPDFEditor = React.lazy(() =>
   }))
 );
 
+const CanvaStylePDFEditor = React.lazy(() => 
+  import('@/components/template/pdf/CanvaStylePDFEditor').then(module => ({
+    default: module.CanvaStylePDFEditor
+  }))
+);
+
 // Loading fallback for editor components
 const EditorLoadingFallback = () => (
   <div className="h-screen w-full flex items-center justify-center bg-gray-50">
@@ -59,7 +65,7 @@ const TemplateManager = () => {
   
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf' | 'enhanced-pdf'>('canvas');
+  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf' | 'enhanced-pdf' | 'canva-pdf'>('canvas');
 
   const { templates, setTemplates, isLoaded, fileToDataUrl } = useTemplateStorage();
   
@@ -115,11 +121,11 @@ const TemplateManager = () => {
         setEditingTemplate(template);
         // Improved PDF detection
         if (isPDFTemplate(template)) {
-          setEditingMode('enhanced-pdf'); // Use enhanced PDF editor with operations
-          console.log('Setting enhanced PDF editing mode for template:', template.name);
+          setEditingMode('canva-pdf'); // Use new Canva-style PDF editor
+          console.log('Using Canva-style PDF editor for template:', template.name);
         } else {
           setEditingMode('canvas');
-          console.log('Setting canvas editing mode for template:', template.name);
+          console.log('Using canvas editor for template:', template.name);
         }
       } else {
         console.warn('Template not found for ID:', editingId);
@@ -174,8 +180,8 @@ const TemplateManager = () => {
     
     // Set editing mode based on improved PDF detection
     if (isPDF) {
-      setEditingMode('enhanced-pdf'); // Use enhanced PDF editor with operations
-      console.log('Using enhanced PDF editor for template:', template.name);
+      setEditingMode('canva-pdf'); // Use new Canva-style PDF editor
+      console.log('Using Canva-style PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
       console.log('Using canvas editor for template:', template.name);
@@ -220,7 +226,20 @@ const TemplateManager = () => {
 
   // Show template editor if editing - Full screen editor with lazy loading
   if (editingTemplate) {
-    if (editingMode === 'enhanced-pdf') {
+    if (editingMode === 'canva-pdf') {
+      console.log('Rendering Canva-style PDF editor for:', editingTemplate.name);
+      return (
+        <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
+          <Suspense fallback={<EditorLoadingFallback />}>
+            <CanvaStylePDFEditor
+              template={editingTemplate}
+              onSave={handleTemplateCustomizationSave}
+              onCancel={handleTemplateCustomizationCancel}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    } else if (editingMode === 'enhanced-pdf') {
       console.log('Rendering enhanced PDF editor for:', editingTemplate.name);
       return (
         <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
