@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,7 +65,6 @@ export const AdvancedPDFUploader: React.FC<AdvancedPDFUploaderProps> = ({
             preview: url,
             template_url: url,
             thumbnail_url: url,
-            file_url: url,
             file_type: 'application/pdf',
             file_size: file.size,
             dimensions: { width: 595, height: 842 }, // Standard A4 size
@@ -81,7 +79,7 @@ export const AdvancedPDFUploader: React.FC<AdvancedPDFUploaderProps> = ({
             updated_at: new Date().toISOString(),
             file: file,
             editable_json: null,
-            qr_position: null
+            qrPosition: null
           };
           
           resolve(template);

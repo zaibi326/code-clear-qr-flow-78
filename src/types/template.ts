@@ -34,19 +34,23 @@ export interface TemplateCustomization {
 export interface Template {
   id: string;
   name: string;
-  type: string;
+  type?: string;
   category?: string;
   description?: string;
   file?: File | null;
   preview?: string;
   qrPosition?: QRPosition;
   customization?: TemplateCustomization;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
   isPublic?: boolean; // for legacy, always fallback to below fields
   is_builtin?: boolean;
+  is_public?: boolean;
   thumbnail_url?: string;
   template_url?: string;
+  file_url?: string;
+  file_type?: string;
+  file_size?: number;
   editable_json?: any;
   tags?: string[];
   dimensions?: {
@@ -54,5 +58,9 @@ export interface Template {
     height: number;
   };
   fileSize?: number;
+  usage_count?: number;
   usageCount?: number;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
