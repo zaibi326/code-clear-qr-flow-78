@@ -224,7 +224,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
             </div>
             
             {/* API Status */}
-            {isApiConnected === true && (
+            {isApiConnected && (
               <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
                 <CheckCircle className="w-4 h-4" />
                 <span>API Connected</span>
@@ -283,7 +283,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
           
           <div className="flex items-center gap-2 md:gap-3">
             {/* API Status */}
-            {isApiConnected === true && (
+            {isApiConnected && (
               <div className="hidden sm:flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
                 <CheckCircle className="w-4 h-4" />
                 <span>Connected</span>
