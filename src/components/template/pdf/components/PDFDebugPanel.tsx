@@ -193,14 +193,17 @@ export const PDFDebugPanel: React.FC<PDFDebugPanelProps> = ({ fileUrl }) => {
           if (!result.success) throw new Error(result.error || 'API connection failed');
           return { 
             message: 'PDF.co API connection successful',
-            details: result.debugInfo
+            details: {
+              success: true,
+              url: result.url
+            }
           };
         }
       },
       {
         name: 'Text Extraction Test',
         test: async () => {
-          const result = await pdfOperationsService.extractText(finalUrl, { pages: "1" });
+          const result = await pdfOperationsService.extractTextEnhanced(finalUrl, { pages: "1" });
           if (!result.success) throw new Error(result.error || 'Text extraction failed');
           return { 
             message: 'Text extraction successful',
