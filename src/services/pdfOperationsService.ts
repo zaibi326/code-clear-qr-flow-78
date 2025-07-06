@@ -678,6 +678,95 @@ export class PDFOperationsService {
       reader.onerror = error => reject(error);
     });
   }
+
+  async convertToPNG(fileUrl: string, options?: {
+    pages?: string;
+    width?: number;
+    height?: number;
+    quality?: number;
+  }): Promise<PDFOperationResult> {
+    console.log('🖼️ Converting PDF to PNG images:', { 
+      fileUrl: fileUrl.substring(0, 100) + '...', 
+      options 
+    });
+    
+    if (!fileUrl) {
+      throw new Error('File URL is required for PNG conversion');
+    }
+
+    return this.performOperation({
+      operation: 'extract-text-enhanced', // Using enhanced extraction which includes page info
+      fileUrl,
+      options: {
+        pages: options?.pages || "1-",
+        convertToPNG: true,
+        width: options?.width || 800,
+        height: options?.height || 1000,
+        quality: options?.quality || 90,
+        // PNG conversion specific options
+        format: 'png',
+        async: false,
+        inline: true,
+        ...options
+      }
+    });
+  }
+
+  async convertPDFPagesToPNG(fileUrl: string, maxPages: number = 10): Promise<PDFOperationResult> {
+    console.log('📄➡️🖼️ Converting PDF pages to PNG for preview');
+    
+    try {
+      // First get page count
+      const textResult = await this.extractTextEnhanced(fileUrl, {
+        pages: "1",
+        preserveFormatting: true
+      });
+
+      if (!textResult.success) {
+        throw new Error(textResult.error || 'Failed to analyze PDF');
+      }
+
+      // Convert pages to PNG (limit to maxPages for performance)
+      const pagesToConvert = Math.min(textResult.pages || 1, maxPages);
+      const pngResults = [];
+
+      for (let page = 1; page <= pagesToConvert; page++) {
+        try {
+          const pngResult = await this.convertToPNG(fileUrl, {
+            pages: page.toString(),
+            width: 800,
+            height: 1000,
+            quality: 85
+          });
+
+          if (pngResult.success) {
+            pngResults.push({
+              pageNumber: page,
+              imageUrl: pngResult.url || pngResult.downloadUrl,
+              width: 800,
+              height: 1000
+            });
+          }
+        } catch (error) {
+          console.warn(`⚠️ Failed to convert page ${page}:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        pages: pagesToConvert,
+        pageData: pngResults,
+        text: textResult.text
+      };
+
+    } catch (error: any) {
+      console.error('❌ PDF to PNG conversion failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to convert PDF pages to PNG'
+      };
+    }
+  }
 }
 
 export const pdfOperationsService = new PDFOperationsService();
