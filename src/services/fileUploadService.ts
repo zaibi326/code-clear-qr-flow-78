@@ -18,7 +18,7 @@ export interface UploadProgress {
 export class FileUploadService {
   async uploadFile(
     file: File, 
-    bucketName: string = 'documents',
+    bucketName: string = 'pdf',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult> {
     try {
@@ -56,7 +56,7 @@ export class FileUploadService {
         onProgress({ loaded: 0, total: file.size, percentage: 0 });
       }
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage using the correct 'pdf' bucket
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(fileName, file, {
@@ -112,8 +112,8 @@ export class FileUploadService {
       // Create File object
       const file = new File([blob], fileName, { type: blob.type });
       
-      // Use regular upload method
-      return this.uploadFile(file);
+      // Use regular upload method with correct bucket
+      return this.uploadFile(file, 'pdf');
     } catch (error: any) {
       console.error('❌ Data URL upload failed:', error);
       return {
@@ -123,7 +123,7 @@ export class FileUploadService {
     }
   }
 
-  async deleteFile(fileName: string, bucketName: string = 'documents'): Promise<boolean> {
+  async deleteFile(fileName: string, bucketName: string = 'pdf'): Promise<boolean> {
     try {
       const { error } = await supabase.storage
         .from(bucketName)

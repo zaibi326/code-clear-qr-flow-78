@@ -37,7 +37,7 @@ export const EnhancedPDFUploader: React.FC<EnhancedPDFUploaderProps> = ({
     try {
       console.log('📤 Starting enhanced PDF upload:', file.name);
       
-      const result = await fileUploadService.uploadFile(file, 'documents', handleProgress);
+      const result = await fileUploadService.uploadFile(file, 'pdf', handleProgress);
 
       if (result.success && result.publicUrl) {
         // Create template object with correct property names

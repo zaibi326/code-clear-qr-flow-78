@@ -27,7 +27,7 @@ export const resolveTemplateImageUrl = async (template: Template): Promise<strin
     }
   }
 
-  // If no HTTP URLs found, try to convert data URLs to public URLs
+  // If no HTTP URLs found, try to convert data URLs to public URLs using correct bucket
   for (const url of urls) {
     if (url && url.startsWith('data:')) {
       console.log('Converting data URL to public URL for PDF.co compatibility');
