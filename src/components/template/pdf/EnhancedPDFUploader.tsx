@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ export const EnhancedPDFUploader: React.FC<EnhancedPDFUploaderProps> = ({
       const result = await fileUploadService.uploadFile(file, 'documents', handleProgress);
 
       if (result.success && result.publicUrl) {
-        // Create template object
+        // Create template object with correct property names
         const template: Template = {
           id: crypto.randomUUID(),
           name: file.name.replace('.pdf', ''),
@@ -52,7 +51,7 @@ export const EnhancedPDFUploader: React.FC<EnhancedPDFUploaderProps> = ({
           createdAt: new Date(),
           updatedAt: new Date(),
           file: file,
-          file_size: result.fileSize || file.size,
+          fileSize: result.fileSize || file.size, // Fixed: use fileSize instead of file_size
           file_type: 'application/pdf'
         };
 
