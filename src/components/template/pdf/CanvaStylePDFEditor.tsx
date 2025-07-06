@@ -273,6 +273,8 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
             <PDFOperationsPanel
               template={currentTemplate}
               onTemplateUpdate={handleTemplateUpdate}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
             />
           </div>
         </div>

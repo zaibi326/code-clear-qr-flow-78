@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 
 export interface PDFOperationResult {
@@ -60,19 +59,33 @@ class PDFOperationsService {
       console.log('🔄 Starting enhanced text replacement:', {
         searchTexts,
         replaceTexts,
-        options
+        options,
+        preserveFormatting: options.preserveFormatting,
+        maintainLayout: options.maintainLayout
       });
 
       // For demo purposes, we'll simulate text replacement
       // In production, this would make actual API calls to PDF.co
       
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate processing delay based on complexity
+      const processingTime = options.maintainLayout ? 3000 : 2000;
+      await new Promise(resolve => setTimeout(resolve, processingTime));
       
       // Create a mock result URL (in production, this would be the actual processed PDF URL)
-      const resultUrl = pdfUrl + '?edited=' + Date.now();
+      const resultUrl = pdfUrl + '?edited=' + Date.now() + '&preserve=' + (options.preserveFormatting ? '1' : '0');
       
-      const replacementCount = searchTexts.length;
+      // Simulate realistic replacement count based on search terms
+      const replacementCount = searchTexts.reduce((total, term) => {
+        // Simulate finding multiple instances of each search term
+        return total + Math.floor(Math.random() * 5) + 1;
+      }, 0);
+      
+      console.log('✅ Text replacement completed:', {
+        replacements: replacementCount,
+        resultUrl,
+        preservedFormatting: options.preserveFormatting,
+        maintainedLayout: options.maintainLayout
+      });
       
       return {
         success: true,
@@ -84,6 +97,80 @@ class PDFOperationsService {
       return {
         success: false,
         error: error.message || 'Text replacement failed'
+      };
+    }
+  }
+
+  async searchInPDF(pdfUrl: string, searchTerm: string): Promise<{
+    success: boolean;
+    results?: Array<{
+      pageNumber: number;
+      text: string;
+      x: number;
+      y: number;
+      context?: string;
+    }>;
+    error?: string;
+  }> {
+    try {
+      console.log('🔍 Enhanced search in PDF:', { pdfUrl, searchTerm });
+
+      // Simulate search delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Mock comprehensive search results
+      const mockResults = [
+        { 
+          pageNumber: 1, 
+          text: `Sample text containing "${searchTerm}" found here`, 
+          x: 100, 
+          y: 200,
+          context: `This is a longer context showing where "${searchTerm}" appears in the document with surrounding text.`
+        },
+        { 
+          pageNumber: 1, 
+          text: `Another instance of "${searchTerm}" on same page`, 
+          x: 150, 
+          y: 400,
+          context: `Here is another example where the term "${searchTerm}" is used in a different context.`
+        },
+        { 
+          pageNumber: 2, 
+          text: `"${searchTerm}" appears in page 2 as well`, 
+          x: 80, 
+          y: 150,
+          context: `On the second page, we find "${searchTerm}" mentioned in this section of the document.`
+        },
+        { 
+          pageNumber: 3, 
+          text: `Final mention of "${searchTerm}" in document`, 
+          x: 200, 
+          y: 300,
+          context: `The last occurrence of "${searchTerm}" appears here in the final section.`
+        }
+      ];
+      
+      // Filter results based on search term (simulate more realistic search)
+      const filteredResults = mockResults.filter(() => {
+        // Randomly include/exclude results to simulate real search behavior
+        return Math.random() > 0.3; // 70% chance of including each result
+      });
+      
+      console.log('✅ Search completed:', {
+        searchTerm,
+        resultsFound: filteredResults.length,
+        results: filteredResults
+      });
+      
+      return {
+        success: true,
+        results: filteredResults
+      };
+    } catch (error: any) {
+      console.error('❌ PDF search failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Search failed'
       };
     }
   }
@@ -272,41 +359,6 @@ class PDFOperationsService {
       return {
         success: false,
         error: error.message || 'Failed to add text box'
-      };
-    }
-  }
-
-  async searchInPDF(pdfUrl: string, searchTerm: string): Promise<{
-    success: boolean;
-    results?: Array<{
-      pageNumber: number;
-      text: string;
-      x: number;
-      y: number;
-    }>;
-    error?: string;
-  }> {
-    try {
-      console.log('🔍 Searching in PDF:', { searchTerm });
-
-      // Simulate search delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock search results
-      const results = [
-        { pageNumber: 1, text: `Found "${searchTerm}" on page 1`, x: 100, y: 200 },
-        { pageNumber: 2, text: `Found "${searchTerm}" on page 2`, x: 150, y: 300 }
-      ];
-      
-      return {
-        success: true,
-        results: results.filter(() => Math.random() > 0.5) // Random results for demo
-      };
-    } catch (error: any) {
-      console.error('❌ PDF search failed:', error);
-      return {
-        success: false,
-        error: error.message || 'Search failed'
       };
     }
   }

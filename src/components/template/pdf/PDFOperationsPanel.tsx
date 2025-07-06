@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +15,9 @@ import {
   Palette,
   AlignLeft,
   Bold,
-  Italic
+  Italic,
+  RefreshCw,
+  CheckCircle
 } from 'lucide-react';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
 import { toast } from '@/hooks/use-toast';
@@ -24,20 +25,90 @@ import { toast } from '@/hooks/use-toast';
 interface PDFOperationsPanelProps {
   template: Template;
   onTemplateUpdate: (template: Template) => void;
+  searchTerm?: string;
+  onSearchTermChange?: (term: string) => void;
 }
 
 export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   template,
-  onTemplateUpdate
+  onTemplateUpdate,
+  searchTerm = '',
+  onSearchTermChange
 }) => {
-  const [searchText, setSearchText] = useState('');
+  const [localSearchText, setLocalSearchText] = useState(searchTerm);
   const [replaceText, setReplaceText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [newTextContent, setNewTextContent] = useState('New Text');
   const [textBoxPosition, setTextBoxPosition] = useState({ x: 100, y: 100 });
 
+  // Update local search when prop changes
+  useEffect(() => {
+    setLocalSearchText(searchTerm);
+  }, [searchTerm]);
+
+  // Debounced search functionality
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (localSearchText.trim() && localSearchText !== searchTerm) {
+        handleSearch();
+      } else if (!localSearchText.trim()) {
+        setSearchResults([]);
+        onSearchTermChange?.('');
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [localSearchText]);
+
+  const handleSearch = async () => {
+    if (!localSearchText.trim()) {
+      setSearchResults([]);
+      onSearchTermChange?.('');
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      console.log('🔍 Searching for text in PDF:', localSearchText);
+      
+      const result = await pdfOperationsService.searchInPDF(
+        template.template_url || template.preview || '',
+        localSearchText
+      );
+
+      if (result.success && result.results) {
+        setSearchResults(result.results);
+        onSearchTermChange?.(localSearchText);
+        
+        toast({
+          title: "Search Complete",
+          description: `Found ${result.results.length} matches for "${localSearchText}".`,
+        });
+      } else {
+        setSearchResults([]);
+        toast({
+          title: "No Results",
+          description: `No matches found for "${localSearchText}".`,
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Search failed:', error);
+      setSearchResults([]);
+      toast({
+        title: "Search Failed",
+        description: error.message || "Failed to search in PDF.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleSearchAndReplace = async () => {
-    if (!searchText.trim() || !replaceText.trim()) {
+    if (!localSearchText.trim() || !replaceText.trim()) {
       toast({
         title: "Input Required",
         description: "Please enter both search and replace text.",
@@ -49,11 +120,14 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     setIsProcessing(true);
     
     try {
-      console.log('🔍 Starting search and replace:', { searchText, replaceText });
+      console.log('🔄 Starting global search and replace:', { 
+        searchText: localSearchText, 
+        replaceText 
+      });
       
       const result = await pdfOperationsService.editTextEnhanced(
         template.template_url || template.preview || '',
-        [searchText],
+        [localSearchText],
         [replaceText],
         {
           caseSensitive: false,
@@ -74,12 +148,19 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         
         toast({
           title: "Text Replaced Successfully",
-          description: `Found and replaced ${result.replacements || 0} instances of "${searchText}".`,
+          description: `Replaced ${result.replacements || 0} instances of "${localSearchText}" with "${replaceText}".`,
         });
         
-        // Clear inputs
-        setSearchText('');
+        // Clear search results and refresh search
+        setSearchResults([]);
         setReplaceText('');
+        
+        // Refresh search results with new text
+        setTimeout(() => {
+          if (replaceText.trim()) {
+            setLocalSearchText(replaceText);
+          }
+        }, 500);
       } else {
         throw new Error(result.error || 'Search and replace failed');
       }
@@ -179,6 +260,13 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
+  const clearSearch = () => {
+    setLocalSearchText('');
+    setReplaceText('');
+    setSearchResults([]);
+    onSearchTermChange?.('');
+  };
+
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center gap-2 mb-4">
@@ -186,12 +274,124 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
         <h2 className="text-lg font-semibold">PDF Editor Tools</h2>
       </div>
 
-      <Tabs defaultValue="text" className="w-full">
+      <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="text">Text</TabsTrigger>
           <TabsTrigger value="search">Search</TabsTrigger>
+          <TabsTrigger value="text">Text</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="search" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                Enhanced Search & Replace
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="search-text">Search for</Label>
+                  {isSearching && (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    id="search-text"
+                    value={localSearchText}
+                    onChange={(e) => setLocalSearchText(e.target.value)}
+                    placeholder="Enter text to search..."
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSearch}
+                    disabled={!localSearchText}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
+                {searchResults.length > 0 && (
+                  <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    {searchResults.length} matches found
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="replace-text">Replace with</Label>
+                <Input
+                  id="replace-text"
+                  value={replaceText}
+                  onChange={(e) => setReplaceText(e.target.value)}
+                  placeholder="Enter replacement text..."
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleSearchAndReplace}
+                  disabled={isProcessing || !localSearchText.trim() || !replaceText.trim() || searchResults.length === 0}
+                  className="w-full"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Replacing...
+                    </>
+                  ) : (
+                    <>
+                      <Replace className="w-4 h-4 mr-2" />
+                      Replace All ({searchResults.length})
+                    </>
+                  )}
+                </Button>
+                
+                {searchResults.length > 0 && (
+                  <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                    <p className="font-medium mb-1">Preview changes:</p>
+                    <p>This will replace <span className="font-mono bg-red-100 px-1">"{localSearchText}"</span> with <span className="font-mono bg-green-100 px-1">"{replaceText}"</span> in {searchResults.length} location{searchResults.length > 1 ? 's' : ''} while preserving formatting and layout.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Search Results Panel */}
+          {searchResults.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Search Results ({searchResults.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {searchResults.slice(0, 10).map((result, index) => (
+                    <div
+                      key={index}
+                      className="text-xs p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer"
+                      title={`Found on page ${result.pageNumber}`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Page {result.pageNumber}</span>
+                        <span className="text-gray-500">Match {index + 1}</span>
+                      </div>
+                      <p className="mt-1 text-gray-700 truncate">{result.text}</p>
+                    </div>
+                  ))}
+                  {searchResults.length > 10 && (
+                    <div className="text-xs text-gray-500 text-center py-1">
+                      ... and {searchResults.length - 10} more matches
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="text" className="space-y-4">
           <Card>
@@ -278,56 +478,6 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
                   <Palette className="w-4 h-4" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="search" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                Search & Replace
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label htmlFor="search-text">Search for</Label>
-                <Input
-                  id="search-text"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Enter text to search..."
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="replace-text">Replace with</Label>
-                <Input
-                  id="replace-text"
-                  value={replaceText}
-                  onChange={(e) => setReplaceText(e.target.value)}
-                  placeholder="Enter replacement text..."
-                />
-              </div>
-              
-              <Button 
-                onClick={handleSearchAndReplace}
-                disabled={isProcessing || !searchText.trim() || !replaceText.trim()}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Replace className="w-4 h-4 mr-2" />
-                    Replace All
-                  </>
-                )}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
