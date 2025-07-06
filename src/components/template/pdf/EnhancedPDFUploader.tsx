@@ -44,6 +44,7 @@ export const EnhancedPDFUploader: React.FC<EnhancedPDFUploaderProps> = ({
         const template: Template = {
           id: crypto.randomUUID(),
           name: file.name.replace('.pdf', ''),
+          type: 'pdf',
           preview: result.publicUrl,
           template_url: result.publicUrl,
           thumbnail_url: result.publicUrl,
@@ -51,8 +52,7 @@ export const EnhancedPDFUploader: React.FC<EnhancedPDFUploaderProps> = ({
           createdAt: new Date(),
           updatedAt: new Date(),
           file: file,
-          fileSize: result.fileSize || file.size, // Fixed: use fileSize instead of file_size
-          file_type: 'application/pdf'
+          fileSize: result.fileSize || file.size
         };
 
         toast({
