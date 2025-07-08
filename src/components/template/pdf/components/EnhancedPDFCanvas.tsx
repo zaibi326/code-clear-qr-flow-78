@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { PDFElement } from '../ClearQRPDFEditor';
 import { InlinePDFTextEditor } from './InlinePDFTextEditor';
@@ -70,8 +69,8 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
     const y = (event.clientY - rect.top) / zoom;
 
     if (activeTool === 'text') {
-      const newElementId = onAddElement({
-        type: 'text',
+      const newElement = {
+        type: 'text' as const,
         x,
         y,
         width: 200,
@@ -80,18 +79,31 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
         text: 'Click to edit text',
         fontSize: 16,
         fontFamily: 'Arial',
-        fontWeight: 'normal',
-        fontStyle: 'normal',
-        textAlign: 'left',
+        fontWeight: 'normal' as const,
+        fontStyle: 'normal' as const,
+        textAlign: 'left' as const,
         color: '#000000',
         backgroundColor: 'transparent',
         opacity: 1,
         rotation: 0,
         properties: {}
-      });
+      };
+      
+      onAddElement(newElement);
       onToolChange('select');
-      // Start editing immediately for new text elements
-      setTimeout(() => setEditingElementId(newElementId), 100);
+      
+      // Generate a temporary ID for immediate editing
+      const tempId = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setTimeout(() => {
+        // Find the newly added element by checking the latest one
+        const latestElement = elements
+          .filter(el => el.type === 'text' && el.pageNumber === currentPage)
+          .sort((a, b) => new Date(b.id).getTime() - new Date(a.id).getTime())[0];
+        
+        if (latestElement) {
+          setEditingElementId(latestElement.id);
+        }
+      }, 100);
     } else if (activeTool === 'shape') {
       onAddElement({
         type: 'shape',
@@ -113,7 +125,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
       onSelectElement(null);
       setEditingElementId(null);
     }
-  }, [activeTool, zoom, currentPage, onAddElement, onSelectElement, onToolChange, editingElementId]);
+  }, [activeTool, zoom, currentPage, onAddElement, onSelectElement, onToolChange, editingElementId, elements]);
 
   // Handle element dragging
   const handleMouseDown = useCallback((e: React.MouseEvent, elementId: string) => {
