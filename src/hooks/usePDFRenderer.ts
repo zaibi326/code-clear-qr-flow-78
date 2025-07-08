@@ -4,6 +4,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 interface PDFPageRender {
   canvas: HTMLCanvasElement;
+  textLayer?: HTMLDivElement;
   width: number;
   height: number;
   pageNumber: number;
@@ -37,6 +38,7 @@ interface PDFSearchResult {
 export const usePDFRenderer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pageRenders, setPageRenders] = useState<PDFPageRender[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [documentInfo, setDocumentInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export const usePDFRenderer = () => {
 
     try {
       setIsLoading(true);
-      const { scale = 1.5 } = options;
+      const { scale = 1.5, enableTextLayer = false } = options;
       const renders: PDFPageRender[] = [];
 
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
@@ -111,12 +113,50 @@ export const usePDFRenderer = () => {
 
         await page.render(renderContext).promise;
 
-        renders.push({
+        const render: PDFPageRender = {
           canvas,
           width: viewport.width,
           height: viewport.height,
           pageNumber: pageNum
-        });
+        };
+
+        // Add text layer if requested
+        if (enableTextLayer) {
+          try {
+            const textContent = await page.getTextContent();
+            const textLayer = document.createElement('div');
+            textLayer.style.position = 'absolute';
+            textLayer.style.left = '0';
+            textLayer.style.top = '0';
+            textLayer.style.right = '0';
+            textLayer.style.bottom = '0';
+            textLayer.style.overflow = 'hidden';
+            textLayer.style.opacity = '0.2';
+            textLayer.style.lineHeight = '1.0';
+
+            textContent.items.forEach((textItem: any) => {
+              const textDiv = document.createElement('div');
+              textDiv.textContent = textItem.str;
+              textDiv.style.position = 'absolute';
+              textDiv.style.whiteSpace = 'pre';
+              textDiv.style.color = 'transparent';
+              textDiv.style.transformOrigin = '0% 0%';
+              
+              const transform = textItem.transform;
+              if (transform) {
+                textDiv.style.transform = `matrix(${transform.join(',')})`;
+              }
+
+              textLayer.appendChild(textDiv);
+            });
+
+            render.textLayer = textLayer;
+          } catch (textError) {
+            console.warn('Failed to create text layer:', textError);
+          }
+        }
+
+        renders.push(render);
       }
 
       setPageRenders(renders);
@@ -152,7 +192,7 @@ export const usePDFRenderer = () => {
             textElements.push({
               text: item.str.trim(),
               x: x,
-              y: y - fontSize, // Adjust for baseline
+              y: y - fontSize,
               width: width,
               height: height,
               fontSize: fontSize,
@@ -221,15 +261,58 @@ export const usePDFRenderer = () => {
     }
   }, [pdfDoc]);
 
+  const convertToImages = useCallback(async (options: { format?: 'PNG' | 'JPEG'; quality?: number } = {}): Promise<string[]> => {
+    if (!pageRenders || pageRenders.length === 0) return [];
+
+    try {
+      const { format = 'PNG', quality = 0.95 } = options;
+      const images: string[] = [];
+
+      pageRenders.forEach((render) => {
+        const imageData = render.canvas.toDataURL(`image/${format.toLowerCase()}`, quality);
+        images.push(imageData);
+      });
+
+      return images;
+    } catch (err) {
+      console.error('❌ Error converting to images:', err);
+      return [];
+    }
+  }, [pageRenders]);
+
+  const processWithPDFCo = useCallback(async (operation: string, params: any = {}) => {
+    try {
+      console.log('🔄 Processing with PDF.co API:', operation);
+      
+      // This is a placeholder for PDF.co integration
+      // In a real implementation, you would call the actual PDF.co API
+      switch (operation) {
+        case 'textReplace':
+          return { success: true, url: params.pdfUrl };
+        case 'convertToImage':
+          return { success: true, images: [] };
+        default:
+          throw new Error(`Unsupported PDF.co operation: ${operation}`);
+      }
+    } catch (error) {
+      console.error('❌ PDF.co operation failed:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     isLoading,
     pageRenders,
+    currentPage,
+    setCurrentPage,
     numPages,
     documentInfo,
     error,
     loadPDF,
     renderAllPages,
     extractTextElements,
-    searchInPDF
+    searchInPDF,
+    convertToImages,
+    processWithPDFCo
   };
 };
