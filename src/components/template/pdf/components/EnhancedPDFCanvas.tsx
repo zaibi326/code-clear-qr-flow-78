@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { PDFElement } from '../ClearQRPDFEditor';
 import { InlinePDFTextEditor } from './InlinePDFTextEditor';
@@ -15,7 +14,8 @@ import {
   Circle,
   Minus,
   Download,
-  Save
+  Save,
+  X
 } from 'lucide-react';
 
 interface EnhancedPDFCanvasProps {

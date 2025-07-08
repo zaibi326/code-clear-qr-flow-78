@@ -1,6 +1,5 @@
-
 import React, { useCallback } from 'react';
-import { Upload, FileText, Loader2, Sparkles, Zap, Palette } from 'lucide-react';
+import { Upload, FileText, Loader2, Sparkles, Zap, Palette, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
