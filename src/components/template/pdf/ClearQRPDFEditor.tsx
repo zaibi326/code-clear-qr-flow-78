@@ -5,10 +5,10 @@ import { usePDFRenderer } from '@/hooks/usePDFRenderer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PDFUploadZone } from './components/PDFUploadZone';
-import { PDFEditorToolbar } from './components/PDFEditorToolbar';
-import { PDFEditorCanvas } from './components/PDFEditorCanvas';
-import { PDFEditorSidebar } from './components/PDFEditorSidebar';
+import { EnhancedPDFCanvas } from './components/EnhancedPDFCanvas';
 import { PDFExportDialog } from './components/PDFExportDialog';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 interface ClearQRPDFEditorProps {
   template?: Template;
@@ -45,7 +45,7 @@ export interface PDFElement {
   width: number;
   height: number;
   pageNumber: number;
-  properties: Record<string, any>; // Make properties required for CanvasElement compatibility
+  properties: Record<string, any>;
   // Text properties
   text?: string;
   fontSize?: number;
@@ -94,20 +94,19 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     error,
     loadPDF,
     renderAllPages,
-    searchInPDF,
     extractTextElements
   } = usePDFRenderer();
 
   // Handle PDF upload
   const handlePDFUpload = useCallback(async (file: File) => {
     try {
-      console.log('📄 Starting PDF upload for ClearQR editor:', file.name);
+      console.log('📄 Starting PDF upload for enhanced ClearQR editor:', file.name);
       setIsProcessing(true);
       
       // Upload to Supabase storage
       const { data, error } = await supabase.storage
         .from('pdf')
-        .upload(`clearqr-pdfs/${Date.now()}-${file.name}`, file, {
+        .upload(`enhanced-pdfs/${Date.now()}-${file.name}`, file, {
           cacheControl: '3600',
           upsert: false
         });
@@ -145,19 +144,19 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         opacity: 1,
         rotation: 0,
         isEdited: false,
-        properties: {} // Initialize properties as required field
+        properties: {}
       }));
 
       setElements(convertedElements);
       
       const template: Template = {
-        id: `clearqr-pdf-${Date.now()}`,
+        id: `enhanced-pdf-${Date.now()}`,
         name: file.name.replace('.pdf', ''),
         template_url: publicUrl,
         preview: '',
         thumbnail_url: '',
         category: 'pdf-editor',
-        tags: ['pdf', 'clearqr', 'editable'],
+        tags: ['pdf', 'enhanced', 'editable'],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         customization: {
@@ -165,7 +164,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
           canvasHeight: 1000,
           backgroundColor: '#ffffff',
           elements: convertedElements,
-          version: '3.0'
+          version: '4.0'
         }
       };
       
@@ -174,7 +173,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       
       toast({
         title: "PDF loaded successfully",
-        description: `${file.name} with ${numPages} pages is ready for editing`,
+        description: `${file.name} with ${numPages} pages is ready for enhanced editing`,
       });
     } catch (error) {
       console.error('PDF upload failed:', error);
@@ -194,7 +193,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     const newElement: PDFElement = { 
       ...element, 
       id,
-      properties: element.properties || {} // Ensure properties exist as required field
+      properties: element.properties || {}
     };
     
     setElements(prev => [...prev, newElement]);
@@ -224,7 +223,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       customization: {
         ...currentTemplate.customization,
         elements: elements,
-        version: '3.0'
+        version: '4.0'
       },
       updated_at: new Date().toISOString()
     };
@@ -234,14 +233,27 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     
     toast({
       title: "Project saved",
-      description: "Your PDF edits have been saved successfully",
+      description: "Your enhanced PDF edits have been saved successfully",
     });
   }, [currentTemplate, elements, onSave]);
+
+  // Handle export
+  const handleExport = useCallback(() => {
+    console.log('Exporting enhanced PDF with', elements.length, 'elements');
+    setShowExportDialog(true);
+  }, [elements]);
 
   // Show upload screen if no PDF is loaded
   if (!currentTemplate) {
     return (
-      <div className="h-screen w-full bg-gradient-to-br from-gray-50 to-blue-50/30">
+      <div className="h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="absolute top-4 left-4">
+          <Button variant="ghost" onClick={onCancel} className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Templates
+          </Button>
+        </div>
+        
         <PDFUploadZone
           onUpload={handlePDFUpload}
           onCancel={onCancel}
@@ -251,52 +263,47 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     );
   }
 
-  const selectedElement = selectedElementId ? elements.find(el => el.id === selectedElementId) : null;
   const currentPageElements = elements.filter(el => el.pageNumber === currentPage);
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col">
-      {/* Header Toolbar */}
-      <PDFEditorToolbar
-        currentTemplate={currentTemplate}
-        activeTool={activeTool}
-        onToolChange={setActiveTool}
+    <div className="h-screen w-full bg-white flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={onCancel} className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{currentTemplate.name}</h1>
+            <p className="text-sm text-gray-600">Enhanced PDF Editor • {numPages} pages</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">{elements.length} elements</span>
+        </div>
+      </div>
+
+      {/* Main Canvas */}
+      <EnhancedPDFCanvas
+        pageRender={pageRenders[currentPage - 1]}
+        elements={currentPageElements}
+        selectedElementId={selectedElementId}
+        onSelectElement={setSelectedElementId}
+        onUpdateElement={updateElement}
+        onAddElement={addElement}
+        onDeleteElement={deleteElement}
         zoom={zoom}
         onZoomChange={setZoom}
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
         currentPage={currentPage}
         totalPages={numPages}
         onPageChange={setCurrentPage}
         onSave={handleSave}
-        onExport={() => setShowExportDialog(true)}
-        onCancel={onCancel}
+        onExport={handleExport}
       />
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Tools and Properties */}
-        <PDFEditorSidebar
-          activeTool={activeTool}
-          selectedElement={selectedElement}
-          onUpdateElement={updateElement}
-          onDeleteElement={deleteElement}
-          onAddElement={addElement}
-          currentPage={currentPage}
-        />
-
-        {/* Main Canvas Area */}
-        <div className="flex-1 relative overflow-auto bg-gray-100">
-          <PDFEditorCanvas
-            pageRender={pageRenders[currentPage - 1]}
-            elements={currentPageElements}
-            selectedElementId={selectedElementId}
-            onSelectElement={setSelectedElementId}
-            onUpdateElement={updateElement}
-            onAddElement={addElement}
-            zoom={zoom}
-            activeTool={activeTool}
-            currentPage={currentPage}
-          />
-        </div>
-      </div>
 
       {/* Export Dialog */}
       {showExportDialog && (
@@ -305,8 +312,12 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
           elements={elements}
           onClose={() => setShowExportDialog(false)}
           onExport={(format) => {
-            console.log(`Exporting as ${format}`);
+            console.log(`Exporting enhanced PDF as ${format}`);
             setShowExportDialog(false);
+            toast({
+              title: "Export started",
+              description: `Exporting PDF as ${format}...`,
+            });
           }}
         />
       )}
