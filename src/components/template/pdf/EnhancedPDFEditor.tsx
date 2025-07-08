@@ -17,11 +17,16 @@ export const EnhancedPDFEditor: React.FC<EnhancedPDFEditorProps> = ({
   onCancel
 }) => {
   const [currentTemplate, setCurrentTemplate] = useState<Template>(template);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleTemplateUpdate = (updatedTemplate: Template) => {
     console.log('Template updated:', updatedTemplate);
     setCurrentTemplate(updatedTemplate);
     onSave(updatedTemplate);
+  };
+
+  const handleSearchTermChange = (term: string) => {
+    setSearchTerm(term);
   };
 
   const getPDFUrl = () => {
@@ -53,6 +58,8 @@ export const EnhancedPDFEditor: React.FC<EnhancedPDFEditorProps> = ({
           <PDFOperationsPanel
             template={currentTemplate}
             onTemplateUpdate={handleTemplateUpdate}
+            searchTerm={searchTerm}
+            onSearchTermChange={handleSearchTermChange}
           />
         </div>
 
