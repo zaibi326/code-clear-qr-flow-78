@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -127,8 +126,7 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     try {
       const images = await convertToImages({
         format: 'PNG',
-        quality: 0.95,
-        dpi: 300
+        quality: 0.95
       });
 
       // Create download links for each image

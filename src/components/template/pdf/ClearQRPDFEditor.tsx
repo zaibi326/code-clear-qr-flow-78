@@ -45,6 +45,7 @@ export interface PDFElement {
   width: number;
   height: number;
   pageNumber: number;
+  properties?: Record<string, any>; // Add properties field for CanvasElement compatibility
   // Text properties
   text?: string;
   fontSize?: number;
@@ -143,7 +144,8 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         backgroundColor: 'transparent',
         opacity: 1,
         rotation: 0,
-        isEdited: false
+        isEdited: false,
+        properties: {} // Initialize properties for CanvasElement compatibility
       }));
 
       setElements(convertedElements);
@@ -177,7 +179,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     } catch (error) {
       console.error('PDF upload failed:', error);
       toast({
-        title: "Upload failed",
+        title: "Upload failed",  
         description: "Failed to load PDF file",
         variant: "destructive"
       });
@@ -189,7 +191,11 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   // Element management
   const addElement = useCallback((element: Omit<PDFElement, 'id'>) => {
     const id = `${element.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newElement: PDFElement = { ...element, id };
+    const newElement: PDFElement = { 
+      ...element, 
+      id,
+      properties: element.properties || {} // Ensure properties exist
+    };
     
     setElements(prev => [...prev, newElement]);
     setSelectedElementId(id);
@@ -209,7 +215,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     }
   }, [selectedElementId]);
 
-  // Save template
+  // Save template  
   const handleSave = useCallback(() => {
     if (!currentTemplate) return;
     

@@ -61,12 +61,10 @@ export const EnhancedPDFPreview: React.FC<EnhancedPDFPreviewProps> = ({
     if (numPages > 0) {
       renderAllPages({
         scale: zoom,
-        rotation: rotation,
-        enableTextLayer: showTextLayer,
-        enableAnnotations: true
+        enableTextLayer: showTextLayer
       });
     }
-  }, [numPages, zoom, rotation, showTextLayer, renderAllPages]);
+  }, [numPages, zoom, showTextLayer, renderAllPages]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -91,8 +89,7 @@ export const EnhancedPDFPreview: React.FC<EnhancedPDFPreviewProps> = ({
     try {
       const images = await convertToImages({
         format: 'PNG',
-        quality: 0.95,
-        dpi: 300
+        quality: 0.95
       });
       
       // Download each image

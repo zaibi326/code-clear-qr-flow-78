@@ -35,6 +35,16 @@ interface PDFSearchResult {
   context: string;
 }
 
+interface PDFRenderOptions {
+  scale?: number;
+  enableTextLayer?: boolean;
+}
+
+interface ConvertToImagesOptions {
+  format?: 'PNG' | 'JPEG';
+  quality?: number;
+}
+
 export const usePDFRenderer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pageRenders, setPageRenders] = useState<PDFPageRender[]>([]);
@@ -86,7 +96,7 @@ export const usePDFRenderer = () => {
     }
   }, []);
 
-  const renderAllPages = useCallback(async (options: { scale?: number; enableTextLayer?: boolean } = {}) => {
+  const renderAllPages = useCallback(async (options: PDFRenderOptions = {}) => {
     if (!pdfDoc) return;
 
     try {
@@ -261,7 +271,7 @@ export const usePDFRenderer = () => {
     }
   }, [pdfDoc]);
 
-  const convertToImages = useCallback(async (options: { format?: 'PNG' | 'JPEG'; quality?: number } = {}): Promise<string[]> => {
+  const convertToImages = useCallback(async (options: ConvertToImagesOptions = {}): Promise<string[]> => {
     if (!pageRenders || pageRenders.length === 0) return [];
 
     try {
@@ -288,7 +298,7 @@ export const usePDFRenderer = () => {
       // In a real implementation, you would call the actual PDF.co API
       switch (operation) {
         case 'textReplace':
-          return { success: true, url: params.pdfUrl };
+          return { success: true, url: params.pdfUrl, replacements: 0 };
         case 'convertToImage':
           return { success: true, images: [] };
         default:
