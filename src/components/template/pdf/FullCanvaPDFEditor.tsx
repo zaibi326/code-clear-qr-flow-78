@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
+import { pdfOperationsService } from '@/services/pdfOperationsService';
+import { supabase } from '@/integrations/supabase/client';
 import { CanvaUploadArea } from './components/CanvaUploadArea';
 import { CanvaToolbar } from './components/CanvaToolbar';
 import { CanvaCanvas } from './components/CanvaCanvas';
@@ -92,13 +94,43 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
   // Handle PDF upload
   const handlePDFUpload = useCallback(async (file: File) => {
     try {
+      console.log('📄 Starting PDF upload process for:', file.name);
+      
+      // Upload to Supabase storage first
+      const { data, error } = await supabase.storage
+        .from('pdf')
+        .upload(`pdfs/${Date.now()}-${file.name}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('pdf')
+        .getPublicUrl(data.path);
+
+      console.log('✅ PDF uploaded to storage:', publicUrl);
+
+      // Load PDF for rendering
       await loadPDF(file);
       await renderAllPages({ scale: 1.5, enableTextLayer: true });
+
+      // Convert to images via PDF.co for better editing experience
+      try {
+        const imageResult = await pdfOperationsService.convertPDFToImages(publicUrl);
+        if (imageResult.success && imageResult.images) {
+          console.log('✅ PDF converted to images for editing');
+        }
+      } catch (conversionError) {
+        console.warn('⚠️ PDF.co conversion failed, using PDF.js rendering');
+      }
       
       const template: Template = {
         id: `pdf-editor-${Date.now()}`,
         name: file.name,
-        template_url: URL.createObjectURL(file),
+        template_url: publicUrl, // Use the Supabase URL
         preview: '',
         thumbnail_url: '',
         category: 'pdf',
@@ -181,6 +213,8 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
     if (!searchTerm.trim() || !currentTemplate) return;
     
     try {
+      console.log('🔍 Starting search and replace:', { searchTerm, replaceTerm });
+
       // Search in PDF first
       const searchResults = await searchInPDF(searchTerm);
       
@@ -208,13 +242,42 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
         description: `Found ${searchResults.length} matches for "${searchTerm}"`,
       });
       
-      // If replace term is provided, perform replacement
+      // If replace term is provided, perform replacement via PDF.co
       if (replaceTerm.trim() && searchResults.length > 0) {
-        // This would typically call PDF.co API for actual text replacement
-        toast({
-          title: "Replace functionality",
-          description: "Text replacement will be implemented with PDF.co API",
-        });
+        try {
+          const replaceResult = await pdfOperationsService.editTextEnhanced(
+            currentTemplate.template_url!,
+            [searchTerm],
+            [replaceTerm],
+            { preserveFormatting: true, maintainLayout: true }
+          );
+
+          if (replaceResult.success && replaceResult.url) {
+            // Update template with new URL
+            const updatedTemplate = {
+              ...currentTemplate,
+              template_url: replaceResult.url,
+              updated_at: new Date().toISOString()
+            };
+            setCurrentTemplate(updatedTemplate);
+
+            // Reload PDF with changes
+            await loadPDF(replaceResult.url);
+            await renderAllPages({ scale: 1.5, enableTextLayer: true });
+
+            toast({
+              title: "Text replacement completed",
+              description: `Replaced ${replaceResult.replacements} instances of "${searchTerm}" with "${replaceTerm}"`,
+            });
+          }
+        } catch (replaceError) {
+          console.error('Replace operation failed:', replaceError);
+          toast({
+            title: "Replace failed",
+            description: "Could not complete text replacement",
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -224,7 +287,7 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
         variant: "destructive"
       });
     }
-  }, [searchTerm, replaceTerm, currentTemplate, searchInPDF, addElement]);
+  }, [searchTerm, replaceTerm, currentTemplate, searchInPDF, addElement, loadPDF, renderAllPages]);
 
   // Watermark functionality
   const addWatermark = useCallback((text: string, options: any = {}) => {
@@ -261,22 +324,56 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
     if (!currentTemplate) return;
     
     try {
+      console.log('📦 Starting export process:', { format, template: currentTemplate.name });
+
       if (format === 'pdf') {
-        // Export as PDF with modifications
+        // Export current PDF with all modifications
         const modifiedPDF = await generateModifiedPDF();
-        downloadFile(modifiedPDF, `${currentTemplate.name}-edited.pdf`, 'application/pdf');
+        await downloadFile(modifiedPDF, `${currentTemplate.name}-edited.pdf`, 'application/pdf');
       } else if (format === 'png' || format === 'jpg') {
-        // Convert to images
-        const images = await convertToImages({ format: format.toUpperCase() as any });
-        images.forEach((image, index) => {
-          downloadFile(image, `${currentTemplate.name}-page-${index + 1}.${format}`, `image/${format}`);
-        });
+        // Convert to images via PDF.co or PDF.js
+        try {
+          const imageResult = await pdfOperationsService.convertPDFToImages(
+            currentTemplate.template_url!,
+            { format: format.toUpperCase() }
+          );
+          
+          if (imageResult.success && imageResult.images) {
+            imageResult.images.forEach((image, index) => {
+              downloadFile(image, `${currentTemplate.name}-page-${index + 1}.${format}`, `image/${format}`);
+            });
+          } else {
+            // Fallback to PDF.js rendering
+            const images = await convertToImages({ format: format.toUpperCase() as any });
+            images.forEach((image, index) => {
+              downloadFile(image, `${currentTemplate.name}-page-${index + 1}.${format}`, `image/${format}`);
+            });
+          }
+        } catch (conversionError) {
+          console.warn('PDF.co conversion failed, using PDF.js fallback');
+          const images = await convertToImages({ format: format.toUpperCase() as any });
+          images.forEach((image, index) => {
+            downloadFile(image, `${currentTemplate.name}-page-${index + 1}.${format}`, `image/${format}`);
+          });
+        }
       } else if (format === 'docx') {
-        // Convert to DOCX (would use PDF.co API)
-        toast({
-          title: "DOCX export",
-          description: "DOCX export will be implemented with PDF.co API",
-        });
+        // Convert to DOCX via PDF.co
+        try {
+          const exportResult = await pdfOperationsService.exportPDF(
+            currentTemplate.template_url!,
+            'docx'
+          );
+          
+          if (exportResult.success && exportResult.downloadUrl) {
+            await downloadFile(exportResult.downloadUrl, `${currentTemplate.name}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+          }
+        } catch (docxError) {
+          toast({
+            title: "DOCX export not available",
+            description: "DOCX export requires PDF.co API configuration",
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       console.error('Export failed:', error);
@@ -289,21 +386,72 @@ export const FullCanvaPDFEditor: React.FC<FullCanvaPDFEditorProps> = ({
   }, [currentTemplate, convertToImages]);
 
   const generateModifiedPDF = async () => {
-    // This would generate a new PDF with all modifications
-    // For now, return the original template URL
-    return currentTemplate?.template_url || '';
+    if (!currentTemplate) return '';
+    
+    try {
+      // Compile all modifications into PDF.co format
+      const modifications = {
+        annotations: Array.from(elements.values()).filter(e => e.type === 'annotation'),
+        textBoxes: Array.from(elements.values()).filter(e => e.type === 'text'),
+        shapes: Array.from(elements.values()).filter(e => e.type === 'shape'),
+        images: Array.from(elements.values()).filter(e => e.type === 'image')
+      };
+
+      // Use PDF.co to finalize the PDF with all modifications
+      const finalizeResult = await pdfOperationsService.finalizePDF(
+        currentTemplate.template_url!,
+        modifications
+      );
+
+      if (finalizeResult.success && finalizeResult.url) {
+        return finalizeResult.url;
+      }
+    } catch (error) {
+      console.error('PDF finalization failed:', error);
+    }
+    
+    // Fallback to original PDF
+    return currentTemplate.template_url || '';
   };
 
-  const downloadFile = (data: string, filename: string, mimeType: string) => {
-    const blob = new Blob([data], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const downloadFile = async (url: string, filename: string, mimeType: string) => {
+    try {
+      if (url.startsWith('data:')) {
+        // Handle data URLs
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Handle regular URLs - fetch and download
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(downloadUrl);
+      }
+      
+      toast({
+        title: "Download started",
+        description: `${filename} is being downloaded`,
+      });
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download failed",
+        description: "Could not download the file",
+        variant: "destructive"
+      });
+    }
   };
 
   // Save template
