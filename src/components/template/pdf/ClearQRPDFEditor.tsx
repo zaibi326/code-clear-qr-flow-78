@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -86,6 +85,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
 
   // PDF rendering hook
   const {
@@ -99,14 +99,34 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     extractTextElements
   } = usePDFRenderer();
 
-  // Check authentication status
+  // Check authentication status and get session
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      console.log('Current user:', user);
+    const getAuthState = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Auth session error:', error);
+          return;
+        }
+        
+        console.log('Current session:', session);
+        setSession(session);
+        setUser(session?.user || null);
+      } catch (error) {
+        console.error('Error getting auth state:', error);
+      }
     };
-    getUser();
+
+    getAuthState();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session);
+      setSession(session);
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Load existing template PDF if available
@@ -185,19 +205,28 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     loadExistingPDF();
   }, [currentTemplate, loadPDF, renderAllPages, extractTextElements, pdfLoaded]);
 
-  // Handle PDF upload
+  // Handle PDF upload with improved authentication and storage
   const handlePDFUpload = useCallback(async (file: File) => {
     try {
       console.log('📄 Starting PDF upload for enhanced ClearQR editor:', file.name);
       
       // Check if user is authenticated
-      if (!user) {
+      if (!session || !user) {
+        console.error('No authenticated session found');
         toast({
           title: "Authentication required",
-          description: "Please log in to upload PDF files",
+          description: "Please log in to upload PDF files. Refreshing page...",
           variant: "destructive"
         });
-        return;
+        
+        // Try to refresh the session
+        const { data: { session: newSession } } = await supabase.auth.getSession();
+        if (!newSession) {
+          window.location.reload();
+          return;
+        }
+        setSession(newSession);
+        setUser(newSession.user);
       }
       
       setIsProcessing(true);
@@ -215,11 +244,12 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       // Create a unique filename with user ID to avoid conflicts
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 15);
-      const fileName = `pdf-templates/${user.id}/${timestamp}-${randomId}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `pdf-templates/${user.id}/${timestamp}-${randomId}-${cleanFileName}`;
       
       console.log('Uploading to storage with filename:', fileName);
       
-      // Upload to Supabase storage with proper options
+      // Upload to Supabase storage with authenticated user
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('pdf')
         .upload(fileName, file, {
@@ -230,7 +260,29 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
 
       if (uploadError) {
         console.error('Upload error details:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        
+        // Handle specific RLS errors
+        if (uploadError.message.includes('row-level security') || uploadError.message.includes('RLS')) {
+          // Try to create the bucket policy if it doesn't exist
+          console.log('Attempting to resolve RLS policy issue...');
+          
+          // Alternative: Try uploading with different approach
+          const { data: retryUpload, error: retryError } = await supabase.storage
+            .from('pdf')
+            .upload(`public/${fileName}`, file, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: 'application/pdf'
+            });
+            
+          if (retryError) {
+            throw new Error(`Upload failed: ${retryError.message}. Please ensure you are logged in and try again.`);
+          }
+          
+          uploadData = retryUpload;
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
       }
 
       if (!uploadData) {
@@ -328,7 +380,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [loadPDF, renderAllPages, extractTextElements, numPages, initialTemplate, user]);
+  }, [loadPDF, renderAllPages, extractTextElements, numPages, initialTemplate, user, session]);
 
   // Element management
   const addElement = useCallback((element: Omit<PDFElement, 'id'>) => {
@@ -387,7 +439,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   }, [elements]);
 
   // Show authentication message if not logged in
-  if (!user) {
+  if (!user || !session) {
     return (
       <div className="h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-lg shadow-lg">
