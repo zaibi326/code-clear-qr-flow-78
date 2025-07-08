@@ -63,6 +63,9 @@ export const usePDFRenderer = () => {
     try {
       setIsLoading(true);
       setError(null);
+      setPageRenders([]);
+      
+      console.log('🔄 Loading PDF for rendering...', source instanceof File ? source.name : source);
       
       let data: ArrayBuffer;
       
@@ -70,13 +73,17 @@ export const usePDFRenderer = () => {
         data = await source.arrayBuffer();
       } else {
         const response = await fetch(source);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+        }
         data = await response.arrayBuffer();
       }
 
       const loadingTask = pdfjsLib.getDocument({
         data,
         useSystemFonts: true,
-        disableFontFace: false
+        disableFontFace: false,
+        verbosity: 0
       });
 
       const doc = await loadingTask.promise;
@@ -84,134 +91,168 @@ export const usePDFRenderer = () => {
       setNumPages(doc.numPages);
       
       // Get document info
-      const info = await doc.getMetadata();
-      setDocumentInfo(info);
+      try {
+        const info = await doc.getMetadata();
+        setDocumentInfo(info);
+      } catch (metaError) {
+        console.warn('Could not load PDF metadata:', metaError);
+      }
       
       console.log('✅ PDF loaded successfully:', doc.numPages, 'pages');
+      return doc;
     } catch (err) {
       console.error('❌ Error loading PDF:', err);
-      setError('Failed to load PDF');
+      setError(err instanceof Error ? err.message : 'Failed to load PDF');
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const renderAllPages = useCallback(async (options: PDFRenderOptions = {}) => {
-    if (!pdfDoc) return;
+    if (!pdfDoc) {
+      console.warn('No PDF document loaded');
+      return [];
+    }
 
     try {
       setIsLoading(true);
       const { scale = 1.5, enableTextLayer = false } = options;
       const renders: PDFPageRender[] = [];
 
+      console.log('🔄 Rendering all pages with scale:', scale);
+
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale });
+        try {
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale });
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        
-        if (!context) continue;
-
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport
-        };
-
-        await page.render(renderContext).promise;
-
-        const render: PDFPageRender = {
-          canvas,
-          width: viewport.width,
-          height: viewport.height,
-          pageNumber: pageNum
-        };
-
-        // Add text layer if requested
-        if (enableTextLayer) {
-          try {
-            const textContent = await page.getTextContent();
-            const textLayer = document.createElement('div');
-            textLayer.style.position = 'absolute';
-            textLayer.style.left = '0';
-            textLayer.style.top = '0';
-            textLayer.style.right = '0';
-            textLayer.style.bottom = '0';
-            textLayer.style.overflow = 'hidden';
-            textLayer.style.opacity = '0.2';
-            textLayer.style.lineHeight = '1.0';
-
-            textContent.items.forEach((textItem: any) => {
-              const textDiv = document.createElement('div');
-              textDiv.textContent = textItem.str;
-              textDiv.style.position = 'absolute';
-              textDiv.style.whiteSpace = 'pre';
-              textDiv.style.color = 'transparent';
-              textDiv.style.transformOrigin = '0% 0%';
-              
-              const transform = textItem.transform;
-              if (transform) {
-                textDiv.style.transform = `matrix(${transform.join(',')})`;
-              }
-
-              textLayer.appendChild(textDiv);
-            });
-
-            render.textLayer = textLayer;
-          } catch (textError) {
-            console.warn('Failed to create text layer:', textError);
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          
+          if (!context) {
+            console.error('Could not get canvas context for page', pageNum);
+            continue;
           }
-        }
 
-        renders.push(render);
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+
+          await page.render(renderContext).promise;
+
+          const render: PDFPageRender = {
+            canvas,
+            width: viewport.width,
+            height: viewport.height,
+            pageNumber: pageNum
+          };
+
+          // Add text layer if requested
+          if (enableTextLayer) {
+            try {
+              const textContent = await page.getTextContent();
+              const textLayer = document.createElement('div');
+              textLayer.style.position = 'absolute';
+              textLayer.style.left = '0';
+              textLayer.style.top = '0';
+              textLayer.style.right = '0';
+              textLayer.style.bottom = '0';
+              textLayer.style.overflow = 'hidden';
+              textLayer.style.opacity = '0.2';
+              textLayer.style.lineHeight = '1.0';
+
+              textContent.items.forEach((textItem: any) => {
+                if (textItem.str && textItem.str.trim()) {
+                  const textDiv = document.createElement('div');
+                  textDiv.textContent = textItem.str;
+                  textDiv.style.position = 'absolute';
+                  textDiv.style.whiteSpace = 'pre';
+                  textDiv.style.color = 'transparent';
+                  textDiv.style.transformOrigin = '0% 0%';
+                  
+                  const transform = textItem.transform;
+                  if (transform) {
+                    textDiv.style.transform = `matrix(${transform.join(',')})`;
+                  }
+
+                  textLayer.appendChild(textDiv);
+                }
+              });
+
+              render.textLayer = textLayer;
+            } catch (textError) {
+              console.warn('Failed to create text layer for page', pageNum, ':', textError);
+            }
+          }
+
+          renders.push(render);
+          console.log(`✅ Rendered page ${pageNum}/${pdfDoc.numPages}`);
+        } catch (pageError) {
+          console.error(`❌ Error rendering page ${pageNum}:`, pageError);
+        }
       }
 
       setPageRenders(renders);
-      console.log('✅ All pages rendered successfully');
+      console.log('✅ All pages rendered successfully:', renders.length);
+      return renders;
     } catch (err) {
       console.error('❌ Error rendering pages:', err);
       setError('Failed to render PDF pages');
+      return [];
     } finally {
       setIsLoading(false);
     }
   }, [pdfDoc]);
 
   const extractTextElements = useCallback(async (): Promise<PDFTextElement[]> => {
-    if (!pdfDoc) return [];
+    if (!pdfDoc) {
+      console.warn('No PDF document loaded for text extraction');
+      return [];
+    }
 
     try {
       const textElements: PDFTextElement[] = [];
 
+      console.log('🔄 Extracting text elements from', pdfDoc.numPages, 'pages');
+
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
-        const textContent = await page.getTextContent();
+        try {
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const textContent = await page.getTextContent();
 
-        textContent.items.forEach((item: any, index: number) => {
-          if (item.str && item.str.trim()) {
-            const transform = item.transform;
-            const x = transform[4];
-            const y = viewport.height - transform[5];
-            const fontSize = transform[0] || 12;
-            const width = item.width || (item.str.length * fontSize * 0.6);
-            const height = fontSize;
+          textContent.items.forEach((item: any, index: number) => {
+            if (item.str && item.str.trim()) {
+              const transform = item.transform;
+              if (transform && transform.length >= 6) {
+                const x = transform[4];
+                const y = viewport.height - transform[5];
+                const fontSize = Math.abs(transform[3]) || 12;
+                const width = item.width || (item.str.length * fontSize * 0.6);
+                const height = fontSize;
 
-            textElements.push({
-              text: item.str.trim(),
-              x: x,
-              y: y - fontSize,
-              width: width,
-              height: height,
-              fontSize: fontSize,
-              fontFamily: item.fontName || 'Arial',
-              color: '#000000',
-              pageNumber: pageNum
-            });
-          }
-        });
+                textElements.push({
+                  text: item.str.trim(),
+                  x: x,
+                  y: y - fontSize,
+                  width: width,
+                  height: height,
+                  fontSize: fontSize,
+                  fontFamily: item.fontName || 'Arial',
+                  color: '#000000',
+                  pageNumber: pageNum
+                });
+              }
+            }
+          });
+        } catch (pageError) {
+          console.error(`❌ Error extracting text from page ${pageNum}:`, pageError);
+        }
       }
 
       console.log('✅ Extracted', textElements.length, 'text elements');
@@ -238,7 +279,7 @@ export const usePDFRenderer = () => {
             const transform = item.transform;
             const x = transform[4];
             const y = viewport.height - transform[5];
-            const fontSize = transform[0] || 12;
+            const fontSize = Math.abs(transform[3]) || 12;
             const width = item.width || (item.str.length * fontSize * 0.6);
             const height = fontSize;
 
@@ -272,7 +313,10 @@ export const usePDFRenderer = () => {
   }, [pdfDoc]);
 
   const convertToImages = useCallback(async (options: ConvertToImagesOptions = {}): Promise<string[]> => {
-    if (!pageRenders || pageRenders.length === 0) return [];
+    if (!pageRenders || pageRenders.length === 0) {
+      console.warn('No rendered pages available for conversion');
+      return [];
+    }
 
     try {
       const { format = 'PNG', quality = 0.95 } = options;
@@ -283,6 +327,7 @@ export const usePDFRenderer = () => {
         images.push(imageData);
       });
 
+      console.log('✅ Converted', images.length, 'pages to images');
       return images;
     } catch (err) {
       console.error('❌ Error converting to images:', err);

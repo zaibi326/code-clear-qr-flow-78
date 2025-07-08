@@ -120,11 +120,19 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       console.log('✅ PDF uploaded successfully:', publicUrl);
 
       // Load PDF for rendering and text extraction
-      await loadPDF(file);
-      await renderAllPages({ scale: 1.5, enableTextLayer: true });
+      const pdfDoc = await loadPDF(file);
+      if (!pdfDoc) {
+        throw new Error('Failed to load PDF document');
+      }
+
+      // Render all pages with proper scale
+      const renders = await renderAllPages({ scale: 1.5, enableTextLayer: true });
+      console.log('✅ Pages rendered:', renders.length);
 
       // Extract text elements for direct editing
       const textElements = await extractTextElements();
+      console.log('✅ Text elements extracted:', textElements.length);
+
       const convertedElements: PDFElement[] = textElements.map((textEl, index) => ({
         id: `text-${index}-${Date.now()}`,
         type: 'text' as const,
@@ -160,8 +168,8 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         customization: {
-          canvasWidth: 800,
-          canvasHeight: 1000,
+          canvasWidth: renders[0]?.width || 800,
+          canvasHeight: renders[0]?.height || 1000,
           backgroundColor: '#ffffff',
           elements: convertedElements,
           version: '4.0'
@@ -179,7 +187,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       console.error('PDF upload failed:', error);
       toast({
         title: "Upload failed",  
-        description: "Failed to load PDF file",
+        description: error instanceof Error ? error.message : "Failed to load PDF file",
         variant: "destructive"
       });
     } finally {
@@ -244,7 +252,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   }, [elements]);
 
   // Show upload screen if no PDF is loaded
-  if (!currentTemplate) {
+  if (!currentTemplate || pageRenders.length === 0) {
     return (
       <div className="h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="absolute top-4 left-4">
