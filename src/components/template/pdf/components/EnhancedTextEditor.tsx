@@ -1,5 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Bold, Italic, Type, Trash2 } from 'lucide-react';
 
 interface PDFTextElement {
   id: string;
@@ -29,6 +32,7 @@ interface EnhancedTextEditorProps {
   onSelect: () => void;
   onUpdate: (elementId: string, updates: Partial<PDFTextElement>) => void;
   onDelete?: (elementId: string) => void;
+  searchTerm?: string;
 }
 
 export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
@@ -37,13 +41,15 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
   isSelected,
   onSelect,
   onUpdate,
-  onDelete
+  onDelete,
+  searchTerm
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localText, setLocalText] = useState(textElement.text);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, elementX: 0, elementY: 0 });
+  const [showToolbar, setShowToolbar] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const elementRef = useRef<HTMLDivElement>(null);
 
@@ -55,35 +61,15 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.select();
-      
-      // Auto-resize textarea
-      const resizeTextarea = () => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-          textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-          textareaRef.current.style.width = Math.max(textareaRef.current.scrollWidth, textElement.width * scale) + 'px';
-        }
-      };
-      
-      resizeTextarea();
-      textareaRef.current.addEventListener('input', resizeTextarea);
-      
-      return () => {
-        if (textareaRef.current) {
-          textareaRef.current.removeEventListener('input', resizeTextarea);
-        }
-      };
     }
-  }, [isEditing, textElement.width, scale]);
+  }, [isEditing]);
 
-  // Enhanced click handling
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (!isSelected) {
       onSelect();
-      console.log('Text element selected:', textElement.id);
     }
   };
 
@@ -93,7 +79,7 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     
     if (isSelected) {
       setIsEditing(true);
-      console.log('Starting text edit for:', textElement.id);
+      setShowToolbar(false);
     }
   };
 
@@ -134,18 +120,7 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
+  const handleMouseUp = () => {
     setIsDragging(false);
   };
 
@@ -153,19 +128,9 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     setIsEditing(false);
     
     if (localText.trim() !== textElement.text && localText.trim() !== '') {
-      // Preserve original formatting while updating text
-      const textWidth = Math.max(localText.length * textElement.fontSize * 0.6, 50);
-      
       onUpdate(textElement.id, { 
         text: localText.trim(),
-        width: textWidth,
         isEdited: true
-      });
-      
-      console.log('Text updated:', {
-        id: textElement.id,
-        oldText: textElement.text,
-        newText: localText.trim()
       });
     } else if (localText.trim() === '' && onDelete) {
       onDelete(textElement.id);
@@ -183,13 +148,37 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     } else if (e.key === 'Escape') {
       setLocalText(textElement.text);
       setIsEditing(false);
-    } else if (e.key === 'Delete' && e.ctrlKey && onDelete) {
-      e.preventDefault();
-      onDelete(textElement.id);
     }
   };
 
-  // Enhanced styling with better visual feedback
+  const toggleBold = () => {
+    onUpdate(textElement.id, {
+      fontWeight: textElement.fontWeight === 'bold' ? 'normal' : 'bold'
+    });
+  };
+
+  const toggleItalic = () => {
+    onUpdate(textElement.id, {
+      fontStyle: textElement.fontStyle === 'italic' ? 'normal' : 'italic'
+    });
+  };
+
+  const handleFontSizeChange = (size: number) => {
+    onUpdate(textElement.id, { fontSize: size });
+  };
+
+  const handleColorChange = (color: string) => {
+    onUpdate(textElement.id, { color });
+  };
+
+  // Highlight search terms
+  const getHighlightedText = (text: string) => {
+    if (!searchTerm || !searchTerm.trim()) return text;
+    
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark style="background-color: yellow;">$1</mark>');
+  };
+
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${textElement.x * scale}px`,
@@ -236,16 +225,6 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
     overflow: 'visible'
   };
 
-  const editStyle: React.CSSProperties = {
-    ...baseStyle,
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-    border: `${Math.max(2 * scale, 2)}px solid #3B82F6`,
-    boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)',
-    cursor: 'text',
-    resize: 'none',
-    zIndex: 1200
-  };
-
   if (isEditing) {
     return (
       <textarea
@@ -254,92 +233,96 @@ export const EnhancedTextEditor: React.FC<EnhancedTextEditorProps> = ({
         onChange={(e) => setLocalText(e.target.value)}
         onBlur={handleFinishEditing}
         onKeyDown={handleKeyDown}
-        style={editStyle}
+        style={{
+          ...baseStyle,
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          border: `${Math.max(2 * scale, 2)}px solid #3B82F6`,
+          boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)',
+          cursor: 'text',
+          resize: 'none',
+          zIndex: 1200
+        }}
         spellCheck="false"
         autoComplete="off"
         placeholder="Type your text..."
-        data-text-id={textElement.id}
       />
     );
   }
 
   return (
-    <div
-      ref={elementRef}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onMouseEnter={handleMouseEnter}
-      style={baseStyle}
-      title={`${textElement.isEdited ? 'Modified' : 'Original'} text • Click to select • Double-click to edit`}
-      data-text-id={textElement.id}
-      data-is-selected={isSelected}
-      data-is-editing={isEditing}
-    >
-      {textElement.text || 'Empty text'}
-      
-      {/* Selection handles */}
+    <>
+      <div
+        ref={elementRef}
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsDragging(false);
+        }}
+        style={baseStyle}
+        title="Click to select • Double-click to edit"
+        dangerouslySetInnerHTML={{
+          __html: getHighlightedText(textElement.text || 'Empty text')
+        }}
+      />
+
+      {/* Toolbar */}
       {isSelected && !isEditing && (
-        <>
-          <div 
-            className="absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ 
-              transform: `scale(${Math.max(1 / scale, 0.8)})`, 
-              transformOrigin: 'center'
-            }}
-          />
-          <div 
-            className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ 
-              transform: `scale(${Math.max(1 / scale, 0.8)})`, 
-              transformOrigin: 'center'
-            }}
-          />
-          <div 
-            className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ 
-              transform: `scale(${Math.max(1 / scale, 0.8)})`, 
-              transformOrigin: 'center'
-            }}
-          />
-          <div 
-            className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white shadow-sm"
-            style={{ 
-              transform: `scale(${Math.max(1 / scale, 0.8)})`, 
-              transformOrigin: 'center'
-            }}
-          />
-        </>
-      )}
-      
-      {/* Hover tooltip */}
-      {isHovered && !isSelected && !isEditing && (
-        <div 
-          className="absolute -top-8 left-0 bg-gray-800 text-white px-2 py-1 rounded text-xs whitespace-nowrap shadow-lg"
-          style={{ 
-            fontSize: `${Math.max(10 / scale, 8)}px`,
-            transform: `scale(${Math.max(1 / scale, 0.8)})`,
-            transformOrigin: 'left bottom'
+        <div
+          className="absolute bg-white border border-gray-300 rounded-lg shadow-lg p-2 flex items-center gap-2 z-50"
+          style={{
+            left: `${textElement.x * scale}px`,
+            top: `${(textElement.y - 50) * scale}px`,
+            transform: `scale(${Math.min(1, 1 / scale)})`
           }}
         >
-          Click to select • Double-click to edit
+          <Button
+            size="sm"
+            variant={textElement.fontWeight === 'bold' ? 'default' : 'outline'}
+            onClick={toggleBold}
+            className="h-8 w-8 p-0"
+          >
+            <Bold className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={textElement.fontStyle === 'italic' ? 'default' : 'outline'}
+            onClick={toggleItalic}
+            className="h-8 w-8 p-0"
+          >
+            <Italic className="w-4 h-4" />
+          </Button>
+          <Input
+            type="number"
+            value={textElement.fontSize}
+            onChange={(e) => handleFontSizeChange(parseInt(e.target.value) || 12)}
+            className="w-16 h-8"
+            min="8"
+            max="72"
+          />
+          <input
+            type="color"
+            value={textElement.color}
+            onChange={(e) => handleColorChange(e.target.value)}
+            className="w-8 h-8 border rounded cursor-pointer"
+            title="Text Color"
+          />
+          {onDelete && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(textElement.id)}
+              className="h-8 w-8 p-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )}
-      
-      {/* Edit indicator */}
-      {textElement.isEdited && (
-        <div 
-          className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full border border-white shadow-sm"
-          style={{ 
-            transform: `scale(${Math.max(1 / scale, 0.6)})`, 
-            transformOrigin: 'center'
-          }}
-          title="This text has been modified"
-        />
-      )}
-    </div>
+    </>
   );
 };
