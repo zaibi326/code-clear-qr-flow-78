@@ -45,7 +45,7 @@ export interface PDFElement {
   width: number;
   height: number;
   pageNumber: number;
-  properties?: Record<string, any>; // Add properties field for CanvasElement compatibility
+  properties: Record<string, any>; // Make properties required for CanvasElement compatibility
   // Text properties
   text?: string;
   fontSize?: number;
@@ -145,7 +145,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         opacity: 1,
         rotation: 0,
         isEdited: false,
-        properties: {} // Initialize properties for CanvasElement compatibility
+        properties: {} // Initialize properties as required field
       }));
 
       setElements(convertedElements);
@@ -194,7 +194,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     const newElement: PDFElement = { 
       ...element, 
       id,
-      properties: element.properties || {} // Ensure properties exist
+      properties: element.properties || {} // Ensure properties exist as required field
     };
     
     setElements(prev => [...prev, newElement]);
