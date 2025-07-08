@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { EnhancedPDFUploader } from './EnhancedPDFUploader';
