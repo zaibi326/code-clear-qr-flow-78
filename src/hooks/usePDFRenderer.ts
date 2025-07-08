@@ -1,198 +1,235 @@
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { pdfRenderingService, PDFRenderOptions, PDFPageRender } from '@/services/pdfRenderingService';
-import { toast } from '@/hooks/use-toast';
+import { useState, useCallback } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+interface PDFPageRender {
+  canvas: HTMLCanvasElement;
+  width: number;
+  height: number;
+  pageNumber: number;
+}
+
+interface PDFTextElement {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  fontFamily?: string;
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
+  textAlign?: 'left' | 'center' | 'right';
+  color?: string;
+  pageNumber: number;
+}
+
+interface PDFSearchResult {
+  pageNumber: number;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  context: string;
+}
 
 export const usePDFRenderer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pageRenders, setPageRenders] = useState<PDFPageRender[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [documentInfo, setDocumentInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
 
-  const loadPDF = useCallback(async (source: string | File | ArrayBuffer) => {
-    setIsLoading(true);
-    setError(null);
-    
+  // Initialize PDF.js worker
+  if (typeof window !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+  }
+
+  const loadPDF = useCallback(async (source: File | string) => {
     try {
-      let pdfData: string | ArrayBuffer;
+      setIsLoading(true);
+      setError(null);
+      
+      let data: ArrayBuffer;
       
       if (source instanceof File) {
-        pdfData = await source.arrayBuffer();
+        data = await source.arrayBuffer();
       } else {
-        pdfData = source;
+        const response = await fetch(source);
+        data = await response.arrayBuffer();
       }
+
+      const loadingTask = pdfjsLib.getDocument({
+        data,
+        useSystemFonts: true,
+        disableFontFace: false
+      });
+
+      const doc = await loadingTask.promise;
+      setPdfDoc(doc);
+      setNumPages(doc.numPages);
       
-      await pdfRenderingService.loadPDF(pdfData);
-      const info = pdfRenderingService.getDocumentInfo();
+      // Get document info
+      const info = await doc.getMetadata();
+      setDocumentInfo(info);
       
-      if (info) {
-        setNumPages(info.numPages);
-        setDocumentInfo(info);
-        setCurrentPage(1);
+      console.log('✅ PDF loaded successfully:', doc.numPages, 'pages');
+    } catch (err) {
+      console.error('❌ Error loading PDF:', err);
+      setError('Failed to load PDF');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const renderAllPages = useCallback(async (options: { scale?: number; enableTextLayer?: boolean } = {}) => {
+    if (!pdfDoc) return;
+
+    try {
+      setIsLoading(true);
+      const { scale = 1.5 } = options;
+      const renders: PDFPageRender[] = [];
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
         
-        toast({
-          title: "PDF Loaded Successfully",
-          description: `Document with ${info.numPages} pages loaded with full preview support`,
+        if (!context) continue;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport
+        };
+
+        await page.render(renderContext).promise;
+
+        renders.push({
+          canvas,
+          width: viewport.width,
+          height: viewport.height,
+          pageNumber: pageNum
         });
       }
-    } catch (error: any) {
-      console.error('Error loading PDF:', error);
-      setError(error.message || 'Failed to load PDF');
-      toast({
-        title: "Error Loading PDF",
-        description: error.message || 'Failed to load PDF document',
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
-  const renderPage = useCallback(async (pageNumber: number, options: PDFRenderOptions = {}) => {
-    try {
-      const pageRender = await pdfRenderingService.renderPage(pageNumber, {
-        scale: 1.5,
-        enableTextLayer: true,
-        enableAnnotations: true,
-        ...options
-      });
-      
-      return pageRender;
-    } catch (error: any) {
-      console.error('Error rendering page:', error);
-      setError(error.message || 'Failed to render page');
-      throw error;
-    }
-  }, []);
-
-  const renderAllPages = useCallback(async (options: PDFRenderOptions = {}) => {
-    setIsLoading(true);
-    
-    try {
-      const renders = await pdfRenderingService.renderAllPages({
-        scale: 1.2,
-        enableTextLayer: true,
-        ...options
-      });
-      
       setPageRenders(renders);
-      
-      toast({
-        title: "All Pages Rendered",
-        description: `Successfully rendered ${renders.length} pages with full preview`,
-      });
-      
-      return renders;
-    } catch (error: any) {
-      console.error('Error rendering all pages:', error);
-      setError(error.message || 'Failed to render pages');
-      toast({
-        title: "Rendering Error",
-        description: error.message || 'Failed to render PDF pages',
-        variant: "destructive"
-      });
+      console.log('✅ All pages rendered successfully');
+    } catch (err) {
+      console.error('❌ Error rendering pages:', err);
+      setError('Failed to render PDF pages');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pdfDoc]);
 
-  const convertToImages = useCallback(async (options: any = {}) => {
-    setIsLoading(true);
-    
+  const extractTextElements = useCallback(async (): Promise<PDFTextElement[]> => {
+    if (!pdfDoc) return [];
+
     try {
-      const images = await pdfRenderingService.convertToImages({
-        format: 'PNG',
-        quality: 0.95,
-        dpi: 300,
-        ...options
-      });
-      
-      toast({
-        title: "PDF Converted to Images",
-        description: `Successfully converted ${images.length} pages to images`,
-      });
-      
-      return images;
-    } catch (error: any) {
-      console.error('Error converting to images:', error);
-      setError(error.message || 'Failed to convert PDF');
-      toast({
-        title: "Conversion Error",
-        description: error.message || 'Failed to convert PDF to images',
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      const textElements: PDFTextElement[] = [];
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const textContent = await page.getTextContent();
+
+        textContent.items.forEach((item: any, index: number) => {
+          if (item.str && item.str.trim()) {
+            const transform = item.transform;
+            const x = transform[4];
+            const y = viewport.height - transform[5];
+            const fontSize = transform[0] || 12;
+            const width = item.width || (item.str.length * fontSize * 0.6);
+            const height = fontSize;
+
+            textElements.push({
+              text: item.str.trim(),
+              x: x,
+              y: y - fontSize, // Adjust for baseline
+              width: width,
+              height: height,
+              fontSize: fontSize,
+              fontFamily: item.fontName || 'Arial',
+              color: '#000000',
+              pageNumber: pageNum
+            });
+          }
+        });
+      }
+
+      console.log('✅ Extracted', textElements.length, 'text elements');
+      return textElements;
+    } catch (err) {
+      console.error('❌ Error extracting text elements:', err);
+      return [];
     }
-  }, []);
+  }, [pdfDoc]);
 
-  const searchInPDF = useCallback(async (searchTerm: string) => {
+  const searchInPDF = useCallback(async (searchTerm: string): Promise<PDFSearchResult[]> => {
+    if (!pdfDoc || !searchTerm.trim()) return [];
+
     try {
-      const results = await pdfRenderingService.searchText(searchTerm);
-      
-      toast({
-        title: "Search Completed",
-        description: `Found ${results.length} matches for "${searchTerm}"`,
-      });
-      
+      const results: PDFSearchResult[] = [];
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const textContent = await page.getTextContent();
+
+        textContent.items.forEach((item: any, index: number) => {
+          if (item.str && item.str.toLowerCase().includes(searchTerm.toLowerCase())) {
+            const transform = item.transform;
+            const x = transform[4];
+            const y = viewport.height - transform[5];
+            const fontSize = transform[0] || 12;
+            const width = item.width || (item.str.length * fontSize * 0.6);
+            const height = fontSize;
+
+            // Get context from surrounding items
+            const contextStart = Math.max(0, index - 2);
+            const contextEnd = Math.min(textContent.items.length, index + 3);
+            const context = textContent.items
+              .slice(contextStart, contextEnd)
+              .map((contextItem: any) => contextItem.str || '')
+              .join(' ');
+
+            results.push({
+              pageNumber: pageNum,
+              text: item.str,
+              x: x,
+              y: y - fontSize,
+              width: width,
+              height: height,
+              context: context
+            });
+          }
+        });
+      }
+
+      console.log('✅ Found', results.length, 'search results for:', searchTerm);
       return results;
-    } catch (error: any) {
-      console.error('Error searching PDF:', error);
-      setError(error.message || 'Failed to search PDF');
-      throw error;
+    } catch (err) {
+      console.error('❌ Error searching PDF:', err);
+      return [];
     }
-  }, []);
-
-  const processWithPDFCo = useCallback(async (operation: string, params: any = {}) => {
-    setIsLoading(true);
-    
-    try {
-      const result = await pdfRenderingService.processWithPDFCo(operation, params);
-      
-      toast({
-        title: "PDF.co Operation Successful",
-        description: `${operation} completed successfully`,
-      });
-      
-      return result;
-    } catch (error: any) {
-      console.error('Error with PDF.co operation:', error);
-      setError(error.message || 'PDF.co operation failed');
-      toast({
-        title: "PDF.co Error",
-        description: error.message || 'PDF.co operation failed',
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      pdfRenderingService.dispose();
-    };
-  }, []);
+  }, [pdfDoc]);
 
   return {
     isLoading,
     pageRenders,
-    currentPage,
-    setCurrentPage,
     numPages,
     documentInfo,
     error,
-    containerRef,
     loadPDF,
-    renderPage,
     renderAllPages,
-    convertToImages,
-    searchInPDF,
-    processWithPDFCo
+    extractTextElements,
+    searchInPDF
   };
 };
