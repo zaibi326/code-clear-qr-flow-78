@@ -1,174 +1,80 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Template } from '@/types/template';
 import { 
   Type, 
   Search, 
-  Replace, 
-  Plus, 
-  Download,
-  Palette,
-  AlignLeft,
-  Bold,
-  Italic,
-  RefreshCw,
-  CheckCircle
+  Download, 
+  QrCode, 
+  FileImage,
+  Edit3,
+  Wand2,
+  ImageIcon
 } from 'lucide-react';
+import { Template } from '@/types/template';
+import { usePDFRenderer } from '@/hooks/usePDFRenderer';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
 import { toast } from '@/hooks/use-toast';
 
 interface PDFOperationsPanelProps {
   template: Template;
   onTemplateUpdate: (template: Template) => void;
-  searchTerm?: string;
-  onSearchTermChange?: (term: string) => void;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
 }
 
 export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
   template,
   onTemplateUpdate,
-  searchTerm = '',
+  searchTerm,
   onSearchTermChange
 }) => {
-  const [localSearchText, setLocalSearchText] = useState(searchTerm);
+  const [activeOperation, setActiveOperation] = useState<string>('');
+  const [searchText, setSearchText] = useState('');
   const [replaceText, setReplaceText] = useState('');
+  const [qrContent, setQrContent] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [newTextContent, setNewTextContent] = useState('New Text');
-  const [textBoxPosition, setTextBoxPosition] = useState({ x: 100, y: 100 });
 
-  // Update local search when prop changes
-  useEffect(() => {
-    setLocalSearchText(searchTerm);
-  }, [searchTerm]);
+  const { processWithPDFCo, convertToImages } = usePDFRenderer();
 
-  // Debounced search functionality
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (localSearchText.trim() && localSearchText !== searchTerm) {
-        handleSearch();
-      } else if (!localSearchText.trim()) {
-        setSearchResults([]);
-        onSearchTermChange?.('');
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [localSearchText]);
-
-  const handleSearch = async () => {
-    if (!localSearchText.trim()) {
-      setSearchResults([]);
-      onSearchTermChange?.('');
-      return;
-    }
-
-    setIsSearching(true);
-    
-    try {
-      console.log('🔍 Searching for text in PDF:', localSearchText);
-      
-      const result = await pdfOperationsService.searchInPDF(
-        template.template_url || template.preview || '',
-        localSearchText
-      );
-
-      if (result.success && result.results) {
-        setSearchResults(result.results);
-        onSearchTermChange?.(localSearchText);
-        
-        toast({
-          title: "Search Complete",
-          description: `Found ${result.results.length} matches for "${localSearchText}".`,
-        });
-      } else {
-        setSearchResults([]);
-        toast({
-          title: "No Results",
-          description: `No matches found for "${localSearchText}".`,
-        });
-      }
-    } catch (error: any) {
-      console.error('❌ Search failed:', error);
-      setSearchResults([]);
-      toast({
-        title: "Search Failed",
-        description: error.message || "Failed to search in PDF.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSearchAndReplace = async () => {
-    if (!localSearchText.trim() || !replaceText.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter both search and replace text.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleTextReplace = async () => {
+    if (!searchText.trim() || !template.template_url) return;
 
     setIsProcessing(true);
-    
     try {
-      console.log('🔄 Starting global search and replace:', { 
-        searchText: localSearchText, 
-        replaceText 
-      });
-      
-      const result = await pdfOperationsService.editTextEnhanced(
-        template.template_url || template.preview || '',
-        [localSearchText],
-        [replaceText],
-        {
+      const result = await processWithPDFCo('textReplace', {
+        pdfUrl: template.template_url,
+        searchTexts: [searchText],
+        replaceTexts: [replaceText],
+        options: {
           caseSensitive: false,
           preserveFormatting: true,
           maintainLayout: true
         }
-      );
+      });
 
-      if (result.success) {
+      if (result.success && result.url) {
         const updatedTemplate = {
           ...template,
           template_url: result.url,
-          preview: result.url,
-          updated_at: new Date().toISOString()
+          preview: result.url
         };
-        
         onTemplateUpdate(updatedTemplate);
         
         toast({
           title: "Text Replaced Successfully",
-          description: `Replaced ${result.replacements || 0} instances of "${localSearchText}" with "${replaceText}".`,
+          description: `${result.replacements || 0} instances replaced`,
         });
-        
-        // Clear search results and refresh search
-        setSearchResults([]);
-        setReplaceText('');
-        
-        // Refresh search results with new text
-        setTimeout(() => {
-          if (replaceText.trim()) {
-            setLocalSearchText(replaceText);
-          }
-        }, 500);
-      } else {
-        throw new Error(result.error || 'Search and replace failed');
       }
     } catch (error: any) {
-      console.error('❌ Search and replace failed:', error);
       toast({
-        title: "Operation Failed",
-        description: error.message || "Failed to perform search and replace.",
+        title: "Text Replace Failed",
+        description: error.message || "Failed to replace text",
         variant: "destructive"
       });
     } finally {
@@ -176,60 +82,37 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
-  const handleAddTextBox = async () => {
-    if (!newTextContent.trim()) {
-      toast({
-        title: "Text Required",
-        description: "Please enter text for the new text box.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleAddQRCode = async () => {
+    if (!qrContent.trim() || !template.template_url) return;
 
     setIsProcessing(true);
-    
     try {
-      console.log('➕ Adding text box:', { 
-        text: newTextContent, 
-        position: textBoxPosition 
+      const result = await processWithPDFCo('addQRCode', {
+        pdfUrl: template.template_url,
+        content: qrContent,
+        x: 50,
+        y: 50,
+        size: 100,
+        pages: '1'
       });
-      
-      const result = await pdfOperationsService.addTextBox(
-        template.template_url || template.preview || '',
-        1, // page number
-        textBoxPosition.x,
-        textBoxPosition.y,
-        newTextContent,
-        16, // font size
-        '#000000' // color
-      );
 
-      if (result.success) {
+      if (result.success && result.url) {
         const updatedTemplate = {
           ...template,
           template_url: result.url,
-          preview: result.url,
-          updated_at: new Date().toISOString()
+          preview: result.url
         };
-        
         onTemplateUpdate(updatedTemplate);
         
         toast({
-          title: "Text Box Added",
-          description: `Added text box with content: "${newTextContent}".`,
+          title: "QR Code Added",
+          description: "QR code successfully added to PDF",
         });
-        
-        // Reset values
-        setNewTextContent('New Text');
-        setTextBoxPosition({ x: textBoxPosition.x + 20, y: textBoxPosition.y + 20 });
-      } else {
-        throw new Error(result.error || 'Failed to add text box');
       }
     } catch (error: any) {
-      console.error('❌ Add text box failed:', error);
       toast({
-        title: "Operation Failed",
-        description: error.message || "Failed to add text box.",
+        title: "QR Code Failed",
+        description: error.message || "Failed to add QR code",
         variant: "destructive"
       });
     } finally {
@@ -237,271 +120,198 @@ export const PDFOperationsPanel: React.FC<PDFOperationsPanelProps> = ({
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleConvertToImages = async () => {
+    if (!template.template_url) return;
+
+    setIsProcessing(true);
     try {
-      const pdfUrl = template.template_url || template.preview || '';
-      if (!pdfUrl) {
-        throw new Error('No PDF URL available');
-      }
-      
-      await pdfOperationsService.downloadPDF(pdfUrl, `${template.name}.pdf`);
-      
+      const images = await convertToImages({
+        format: 'PNG',
+        quality: 0.95,
+        dpi: 300
+      });
+
+      // Create download links for each image
+      images.forEach((imageData, index) => {
+        const link = document.createElement('a');
+        link.href = imageData;
+        link.download = `${template.name}-page-${index + 1}.png`;
+        link.click();
+      });
+
       toast({
-        title: "Download Started",
-        description: "Your PDF download has begun.",
+        title: "Images Downloaded",
+        description: `${images.length} page(s) converted to images`,
       });
     } catch (error: any) {
-      console.error('❌ Download failed:', error);
       toast({
-        title: "Download Failed",
-        description: error.message || "Failed to download PDF.",
+        title: "Conversion Failed",
+        description: error.message || "Failed to convert PDF to images",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const clearSearch = () => {
-    setLocalSearchText('');
-    setReplaceText('');
-    setSearchResults([]);
-    onSearchTermChange?.('');
-  };
+  const operations = [
+    {
+      id: 'search',
+      title: 'Search & Replace',
+      icon: Search,
+      description: 'Find and replace text in PDF'
+    },
+    {
+      id: 'qrcode',
+      title: 'Add QR Code',
+      icon: QrCode,
+      description: 'Insert QR codes into PDF'
+    },
+    {
+      id: 'convert',
+      title: 'Convert to Images',
+      icon: ImageIcon,
+      description: 'Export PDF pages as images'
+    }
+  ];
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Type className="w-5 h-5 text-blue-600" />
-        <h2 className="text-lg font-semibold">PDF Editor Tools</h2>
-      </div>
+    <div className="space-y-4">
+      {/* Search Bar */}
+      <Card className="border-blue-200 bg-blue-50/30">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-blue-600" />
+            <Input
+              placeholder="Search in PDF..."
+              value={searchTerm}
+              onChange={(e) => onSearchTermChange(e.target.value)}
+              className="flex-1 bg-white/80"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-      <Tabs defaultValue="search" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="search">Search</TabsTrigger>
-          <TabsTrigger value="text">Text</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-        </TabsList>
+      {/* Operations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wand2 className="w-5 h-5 text-purple-600" />
+            PDF Operations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {operations.map((operation) => (
+            <div key={operation.id}>
+              <Button
+                variant={activeOperation === operation.id ? "default" : "outline"}
+                onClick={() => setActiveOperation(activeOperation === operation.id ? '' : operation.id)}
+                className="w-full justify-start"
+              >
+                <operation.icon className="w-4 h-4 mr-2" />
+                {operation.title}
+              </Button>
 
-        <TabsContent value="search" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                Enhanced Search & Replace
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="search-text">Search for</Label>
-                  {isSearching && (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    id="search-text"
-                    value={localSearchText}
-                    onChange={(e) => setLocalSearchText(e.target.value)}
-                    placeholder="Enter text to search..."
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearSearch}
-                    disabled={!localSearchText}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                </div>
-                {searchResults.length > 0 && (
-                  <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    {searchResults.length} matches found
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="replace-text">Replace with</Label>
-                <Input
-                  id="replace-text"
-                  value={replaceText}
-                  onChange={(e) => setReplaceText(e.target.value)}
-                  placeholder="Enter replacement text..."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleSearchAndReplace}
-                  disabled={isProcessing || !localSearchText.trim() || !replaceText.trim() || searchResults.length === 0}
-                  className="w-full"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Replacing...
-                    </>
-                  ) : (
-                    <>
-                      <Replace className="w-4 h-4 mr-2" />
-                      Replace All ({searchResults.length})
-                    </>
-                  )}
-                </Button>
-                
-                {searchResults.length > 0 && (
-                  <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                    <p className="font-medium mb-1">Preview changes:</p>
-                    <p>This will replace <span className="font-mono bg-red-100 px-1">"{localSearchText}"</span> with <span className="font-mono bg-green-100 px-1">"{replaceText}"</span> in {searchResults.length} location{searchResults.length > 1 ? 's' : ''} while preserving formatting and layout.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Search Results Panel */}
-          {searchResults.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Search Results ({searchResults.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-32 overflow-y-auto space-y-1">
-                  {searchResults.slice(0, 10).map((result, index) => (
-                    <div
-                      key={index}
-                      className="text-xs p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer"
-                      title={`Found on page ${result.pageNumber}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Page {result.pageNumber}</span>
-                        <span className="text-gray-500">Match {index + 1}</span>
+              {activeOperation === operation.id && (
+                <div className="mt-3 p-4 bg-gray-50 rounded-lg space-y-3">
+                  <p className="text-sm text-gray-600">{operation.description}</p>
+                  
+                  {operation.id === 'search' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="search-text">Search for:</Label>
+                        <Input
+                          id="search-text"
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Enter text to find..."
+                        />
                       </div>
-                      <p className="mt-1 text-gray-700 truncate">{result.text}</p>
+                      <div>
+                        <Label htmlFor="replace-text">Replace with:</Label>
+                        <Input
+                          id="replace-text"
+                          value={replaceText}
+                          onChange={(e) => setReplaceText(e.target.value)}
+                          placeholder="Enter replacement text..."
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleTextReplace}
+                        disabled={!searchText.trim() || isProcessing}
+                        className="w-full"
+                      >
+                        {isProcessing ? 'Processing...' : 'Replace Text'}
+                      </Button>
                     </div>
-                  ))}
-                  {searchResults.length > 10 && (
-                    <div className="text-xs text-gray-500 text-center py-1">
-                      ... and {searchResults.length - 10} more matches
+                  )}
+
+                  {operation.id === 'qrcode' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="qr-content">QR Code Content:</Label>
+                        <Textarea
+                          id="qr-content"
+                          value={qrContent}
+                          onChange={(e) => setQrContent(e.target.value)}
+                          placeholder="Enter URL or text for QR code..."
+                          rows={3}
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleAddQRCode}
+                        disabled={!qrContent.trim() || isProcessing}
+                        className="w-full"
+                      >
+                        {isProcessing ? 'Adding...' : 'Add QR Code'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {operation.id === 'convert' && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        Convert all PDF pages to high-quality PNG images.
+                      </p>
+                      <Button 
+                        onClick={handleConvertToImages}
+                        disabled={isProcessing}
+                        className="w-full"
+                      >
+                        {isProcessing ? 'Converting...' : 'Download as Images'}
+                      </Button>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="text" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add Text Box
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label htmlFor="new-text">Text Content</Label>
-                <Input
-                  id="new-text"
-                  value={newTextContent}
-                  onChange={(e) => setNewTextContent(e.target.value)}
-                  placeholder="Enter text to add..."
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="text-x">X Position</Label>
-                  <Input
-                    id="text-x"
-                    type="number"
-                    value={textBoxPosition.x}
-                    onChange={(e) => setTextBoxPosition({
-                      ...textBoxPosition,
-                      x: parseInt(e.target.value) || 0
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="text-y">Y Position</Label>
-                  <Input
-                    id="text-y"
-                    type="number"
-                    value={textBoxPosition.y}
-                    onChange={(e) => setTextBoxPosition({
-                      ...textBoxPosition,
-                      y: parseInt(e.target.value) || 0
-                    })}
-                  />
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleAddTextBox}
-                disabled={isProcessing || !newTextContent.trim()}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Text Box
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Text Formatting</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Bold className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Italic className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="sm">
-                  <AlignLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Palette className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="export" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Download PDF
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={handleDownloadPDF}
-                className="w-full"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download PDF
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-green-600" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Button variant="outline" className="w-full justify-start">
+            <Type className="w-4 h-4 mr-2" />
+            Extract Text
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <Edit3 className="w-4 h-4 mr-2" />
+            Add Annotations
+          </Button>
+          <Button variant="outline" className="w-full justify-start">
+            <FileImage className="w-4 h-4 mr-2" />
+            Optimize PDF
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
