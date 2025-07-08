@@ -1,10 +1,8 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Type, Palette, AlignLeft, AlignCenter, AlignRight, Check, X } from 'lucide-react';
+import { Type, AlignLeft, AlignCenter, AlignRight, Check, X, Bold, Italic, Palette } from 'lucide-react';
 
 interface InlinePDFTextEditorProps {
   element: {
@@ -38,12 +36,22 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
   const [editedText, setEditedText] = useState(element.text);
   const [fontSize, setFontSize] = useState(element.fontSize);
   const [fontFamily, setFontFamily] = useState(element.fontFamily);
+  const [fontWeight, setFontWeight] = useState(element.fontWeight);
   const [color, setColor] = useState(element.color);
   const [textAlign, setTextAlign] = useState(element.textAlign);
-  const [showToolbar, setShowToolbar] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Reset state when element changes
+  useEffect(() => {
+    setEditedText(element.text);
+    setFontSize(element.fontSize);
+    setFontFamily(element.fontFamily);
+    setFontWeight(element.fontWeight);
+    setColor(element.color);
+    setTextAlign(element.textAlign);
+  }, [element.id, element.text, element.fontSize, element.fontFamily, element.fontWeight, element.color, element.textAlign]);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -57,45 +65,66 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
       text: editedText,
       fontSize,
       fontFamily,
+      fontWeight,
       color,
       textAlign
     });
-    setShowToolbar(false);
-  }, [editedText, fontSize, fontFamily, color, textAlign, onFinishEdit]);
+  }, [editedText, fontSize, fontFamily, fontWeight, color, textAlign, onFinishEdit]);
 
   const handleCancel = useCallback(() => {
     setEditedText(element.text);
     setFontSize(element.fontSize);
+    setFontFamily(element.fontFamily);
+    setFontWeight(element.fontWeight);
     setColor(element.color);
     setTextAlign(element.textAlign);
     onCancel();
-    setShowToolbar(false);
   }, [element, onCancel]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
       handleSave();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       handleCancel();
     }
+    e.stopPropagation();
   }, [handleSave, handleCancel]);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) {
+      onStartEdit();
+    }
+  }, [isEditing, onStartEdit]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) {
+      onStartEdit();
+    }
+  }, [isEditing, onStartEdit]);
 
   if (isEditing) {
     return (
       <div
         ref={containerRef}
-        className="absolute z-50"
+        className="absolute z-50 bg-white border-2 border-blue-500 rounded-lg shadow-lg"
         style={{
           left: element.x * scale,
           top: element.y * scale,
-          width: element.width * scale,
+          width: Math.max(element.width * scale, 200),
           minHeight: element.height * scale,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Editing Toolbar */}
-        <div className="absolute -top-12 left-0 flex items-center gap-2 bg-white rounded-lg shadow-lg border p-2 z-60">
+        <div className="flex items-center gap-2 bg-gray-50 rounded-t-lg p-2 border-b">
           <Select value={fontSize.toString()} onValueChange={(value) => setFontSize(parseInt(value))}>
-            <SelectTrigger className="w-16 h-8">
+            <SelectTrigger className="w-16 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -106,7 +135,7 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
           </Select>
 
           <Select value={fontFamily} onValueChange={setFontFamily}>
-            <SelectTrigger className="w-24 h-8">
+            <SelectTrigger className="w-20 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -118,46 +147,57 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
             </SelectContent>
           </Select>
 
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="w-8 h-8 rounded border cursor-pointer"
-          />
+          <Button
+            variant={fontWeight === 'bold' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setFontWeight(fontWeight === 'bold' ? 'normal' : 'bold')}
+            className="h-7 w-7 p-0"
+          >
+            <Bold className="w-3 h-3" />
+          </Button>
+
+          <div className="relative">
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-7 h-7 rounded border cursor-pointer"
+            />
+          </div>
 
           <div className="flex gap-1">
             <Button
               variant={textAlign === 'left' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setTextAlign('left')}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
             >
-              <AlignLeft className="w-4 h-4" />
+              <AlignLeft className="w-3 h-3" />
             </Button>
             <Button
               variant={textAlign === 'center' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setTextAlign('center')}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
             >
-              <AlignCenter className="w-4 h-4" />
+              <AlignCenter className="w-3 h-3" />
             </Button>
             <Button
               variant={textAlign === 'right' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setTextAlign('right')}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
             >
-              <AlignRight className="w-4 h-4" />
+              <AlignRight className="w-3 h-3" />
             </Button>
           </div>
 
-          <div className="flex gap-1 ml-2">
-            <Button variant="default" size="sm" onClick={handleSave} className="h-8 w-8 p-0">
-              <Check className="w-4 h-4" />
+          <div className="flex gap-1 ml-auto">
+            <Button variant="default" size="sm" onClick={handleSave} className="h-7 w-7 p-0">
+              <Check className="w-3 h-3" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleCancel} className="h-8 w-8 p-0">
-              <X className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={handleCancel} className="h-7 w-7 p-0">
+              <X className="w-3 h-3" />
             </Button>
           </div>
         </div>
@@ -168,14 +208,16 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full h-full resize-none border border-blue-500 bg-white/95 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full resize-none border-0 bg-white rounded-b-lg px-3 py-2 focus:outline-none"
           style={{
-            fontSize: fontSize * scale,
+            fontSize: Math.max(fontSize * scale * 0.8, 12),
             fontFamily,
+            fontWeight,
             color,
             textAlign,
-            minHeight: element.height * scale,
+            minHeight: Math.max(element.height * scale - 40, 60),
           }}
+          placeholder="Enter your text here..."
           autoFocus
         />
       </div>
@@ -184,7 +226,7 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
 
   return (
     <div
-      className="absolute cursor-text hover:bg-blue-100/30 rounded transition-colors group"
+      className="absolute cursor-pointer hover:bg-blue-100/30 hover:border hover:border-blue-300 rounded transition-all group select-none"
       style={{
         left: element.x * scale,
         top: element.y * scale,
@@ -192,21 +234,25 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
         height: element.height * scale,
         fontSize: fontSize * scale,
         fontFamily,
+        fontWeight,
         color,
         textAlign,
         display: 'flex',
-        alignItems: 'center',
-        padding: '2px',
+        alignItems: 'flex-start',
+        padding: '4px',
+        lineHeight: '1.2',
       }}
-      onClick={onStartEdit}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      title="Click to edit text"
     >
-      <span className="w-full break-words">{element.text}</span>
+      <span className="w-full break-words whitespace-pre-wrap">{element.text || 'Click to edit'}</span>
       
       {/* Hover edit indicator */}
       <div className="absolute -top-6 -right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 bg-blue-500 text-white rounded-full">
+        <div className="bg-blue-500 text-white rounded-full p-1 shadow-lg">
           <Type className="w-3 h-3" />
-        </Button>
+        </div>
       </div>
     </div>
   );

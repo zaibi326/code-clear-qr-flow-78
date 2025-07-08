@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { PDFElement } from '../ClearQRPDFEditor';
 import { InlinePDFTextEditor } from './InlinePDFTextEditor';
@@ -6,16 +7,13 @@ import { Card } from '@/components/ui/card';
 import { 
   ZoomIn, 
   ZoomOut, 
-  RotateCw, 
   Move, 
   Type, 
-  Image as ImageIcon, 
   Square, 
-  Circle,
-  Minus,
   Download,
   Save,
-  X
+  X,
+  MousePointer
 } from 'lucide-react';
 
 interface EnhancedPDFCanvasProps {
@@ -72,7 +70,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
     const y = (event.clientY - rect.top) / zoom;
 
     if (activeTool === 'text') {
-      onAddElement({
+      const newElementId = onAddElement({
         type: 'text',
         x,
         y,
@@ -92,6 +90,8 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
         properties: {}
       });
       onToolChange('select');
+      // Start editing immediately for new text elements
+      setTimeout(() => setEditingElementId(newElementId), 100);
     } else if (activeTool === 'shape') {
       onAddElement({
         type: 'shape',
@@ -111,6 +111,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
       onToolChange('select');
     } else if (activeTool === 'select') {
       onSelectElement(null);
+      setEditingElementId(null);
     }
   }, [activeTool, zoom, currentPage, onAddElement, onSelectElement, onToolChange, editingElementId]);
 
@@ -156,17 +157,27 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedElementId && !editingElementId) {
+      if (editingElementId) return; // Don't handle shortcuts while editing
+      
+      if (selectedElementId) {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           onDeleteElement(selectedElementId);
           onSelectElement(null);
+        } else if (e.key === 'Enter' || e.key === 'F2') {
+          // Start editing selected text element
+          const element = elements.find(el => el.id === selectedElementId);
+          if (element?.type === 'text') {
+            setEditingElementId(selectedElementId);
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementId, editingElementId, onDeleteElement, onSelectElement]);
+  }, [selectedElementId, editingElementId, onDeleteElement, onSelectElement, elements]);
+
+  const currentPageElements = elements.filter(el => el.pageNumber === currentPage);
 
   const renderElement = (element: PDFElement) => {
     if (element.type === 'text') {
@@ -188,9 +199,12 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
           }}
           scale={zoom}
           isEditing={editingElementId === element.id}
-          onStartEdit={() => setEditingElementId(element.id)}
+          onStartEdit={() => {
+            setEditingElementId(element.id);
+            onSelectElement(element.id);
+          }}
           onFinishEdit={(updates) => {
-            onUpdateElement(element.id, updates);
+            onUpdateElement(element.id, { ...updates, isEdited: true });
             setEditingElementId(null);
           }}
           onCancel={() => setEditingElementId(null)}
@@ -202,8 +216,8 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
       return (
         <div
           key={element.id}
-          className={`absolute cursor-move border-2 transition-all ${
-            selectedElementId === element.id ? 'border-blue-500 shadow-lg' : 'border-transparent hover:border-blue-300'
+          className={`absolute cursor-move transition-all ${
+            selectedElementId === element.id ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:ring-1 hover:ring-blue-300'
           }`}
           style={{
             left: element.x * zoom,
@@ -236,8 +250,9 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
               size="sm"
               onClick={() => onToolChange('select')}
               className="h-8"
+              title="Select Tool"
             >
-              <Move className="w-4 h-4 mr-2" />
+              <MousePointer className="w-4 h-4 mr-2" />
               Select
             </Button>
             <Button
@@ -245,25 +260,17 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
               size="sm"
               onClick={() => onToolChange('text')}
               className="h-8"
+              title="Add Text"
             >
               <Type className="w-4 h-4 mr-2" />
               Text
-            </Button>
-            <Button
-              variant={activeTool === 'image' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => onToolChange('image')}
-              className="h-8"
-              disabled
-            >
-              <ImageIcon className="w-4 h-4 mr-2" />
-              Image
             </Button>
             <Button
               variant={activeTool === 'shape' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => onToolChange('shape')}
               className="h-8"
+              title="Add Shape"
             >
               <Square className="w-4 h-4 mr-2" />
               Shape
@@ -277,6 +284,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
               size="sm"
               onClick={() => onZoomChange(Math.max(0.25, zoom - 0.25))}
               className="h-8 w-8 p-0"
+              title="Zoom Out"
             >
               <ZoomOut className="w-4 h-4" />
             </Button>
@@ -288,6 +296,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
               size="sm"
               onClick={() => onZoomChange(Math.min(3, zoom + 0.25))}
               className="h-8 w-8 p-0"
+              title="Zoom In"
             >
               <ZoomIn className="w-4 h-4" />
             </Button>
@@ -321,6 +330,11 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {activeTool === 'text' && (
+            <div className="text-sm text-gray-600 mr-4">
+              Click anywhere to add text
+            </div>
+          )}
           <Button variant="outline" onClick={onSave} className="h-8">
             <Save className="w-4 h-4 mr-2" />
             Save
@@ -369,22 +383,38 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
 
             {/* Elements Layer */}
             <div className="absolute inset-0 w-full h-full">
-              {elements.map(renderElement)}
+              {currentPageElements.map(renderElement)}
             </div>
 
             {/* Selection Overlay */}
             {selectedElementId && !editingElementId && (
               <SelectionOverlay
-                element={elements.find(el => el.id === selectedElementId)!}
+                element={currentPageElements.find(el => el.id === selectedElementId)!}
                 zoom={zoom}
                 onDelete={() => {
                   onDeleteElement(selectedElementId);
                   onSelectElement(null);
                 }}
+                onEdit={() => {
+                  const element = currentPageElements.find(el => el.id === selectedElementId);
+                  if (element?.type === 'text') {
+                    setEditingElementId(selectedElementId);
+                  }
+                }}
               />
             )}
           </div>
         </Card>
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-white border-t border-gray-200 px-6 py-2">
+        <div className="text-xs text-gray-500 flex items-center justify-center gap-6">
+          <span>• Click on text to edit directly</span>
+          <span>• Press Enter or F2 to edit selected text</span>
+          <span>• Press Delete to remove selected element</span>
+          <span>• Drag elements to move them</span>
+        </div>
       </div>
     </div>
   );
@@ -395,10 +425,13 @@ const SelectionOverlay: React.FC<{
   element: PDFElement;
   zoom: number;
   onDelete: () => void;
-}> = ({ element, zoom, onDelete }) => {
+  onEdit: () => void;
+}> = ({ element, zoom, onDelete, onEdit }) => {
+  if (!element) return null;
+
   return (
     <div
-      className="absolute border-2 border-blue-500 bg-blue-500/10 pointer-events-none"
+      className="absolute border-2 border-blue-500 bg-blue-500/5 pointer-events-none"
       style={{
         left: element.x * zoom - 2,
         top: element.y * zoom - 2,
@@ -407,20 +440,34 @@ const SelectionOverlay: React.FC<{
       }}
     >
       {/* Resize handles */}
-      <div className="absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full pointer-events-auto cursor-nw-resize" />
-      <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full pointer-events-auto cursor-ne-resize" />
-      <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-500 rounded-full pointer-events-auto cursor-sw-resize" />
-      <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full pointer-events-auto cursor-se-resize" />
+      <div className="absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full" />
+      <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
+      <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-500 rounded-full" />
+      <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full" />
       
-      {/* Delete button */}
-      <Button
-        variant="destructive"
-        size="sm"
-        className="absolute -top-8 -right-8 h-6 w-6 p-0 pointer-events-auto"
-        onClick={onDelete}
-      >
-        <X className="w-3 h-3" />
-      </Button>
+      {/* Action buttons */}
+      <div className="absolute -top-10 -right-0 flex gap-1 pointer-events-auto">
+        {element.type === 'text' && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={onEdit}
+            title="Edit Text"
+          >
+            <Type className="w-3 h-3" />
+          </Button>
+        )}
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={onDelete}
+          title="Delete Element"
+        >
+          <X className="w-3 h-3" />
+        </Button>
+      </div>
     </div>
   );
 };
