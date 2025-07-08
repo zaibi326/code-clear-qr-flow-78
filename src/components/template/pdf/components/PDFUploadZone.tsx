@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react';
+
+import React, { useCallback, useRef } from 'react';
 import { Upload, FileText, Loader2, Sparkles, Zap, Palette, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,31 +15,76 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
   onCancel,
   isLoading
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    console.log('File selected:', file?.name, file?.type, file?.size);
+    
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Please select a PDF file');
+        return;
+      }
+      
       if (file.size > 50 * 1024 * 1024) {
         alert('File size must be less than 50MB');
         return;
       }
+      
+      console.log('Valid PDF file selected, calling onUpload');
       onUpload(file);
+    }
+    
+    // Reset the input value so the same file can be selected again if needed
+    if (event.target) {
+      event.target.value = '';
     }
   }, [onUpload]);
 
   const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
+    
     const file = event.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') {
+    console.log('File dropped:', file?.name, file?.type, file?.size);
+    
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Please drop a PDF file');
+        return;
+      }
+      
       if (file.size > 50 * 1024 * 1024) {
         alert('File size must be less than 50MB');
         return;
       }
+      
+      console.log('Valid PDF file dropped, calling onUpload');
       onUpload(file);
     }
   }, [onUpload]);
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleDragEnter = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleChooseFileClick = useCallback(() => {
+    console.log('Choose file button clicked');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   }, []);
 
   if (isLoading) {
@@ -120,6 +166,8 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
             className="p-12 text-center cursor-pointer hover:bg-gray-50/50 transition-colors"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
           >
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Upload className="w-8 h-8 text-white" />
@@ -133,18 +181,21 @@ export const PDFUploadZone: React.FC<PDFUploadZoneProps> = ({
             </p>
             
             <input
+              ref={fileInputRef}
               type="file"
-              accept=".pdf"
+              accept=".pdf,application/pdf"
               onChange={handleFileSelect}
               className="hidden"
               id="enhanced-pdf-upload"
             />
             
-            <label htmlFor="enhanced-pdf-upload">
-              <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-3 text-lg shadow-lg">
-                Choose PDF File
-              </Button>
-            </label>
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-3 text-lg shadow-lg"
+              onClick={handleChooseFileClick}
+            >
+              Choose PDF File
+            </Button>
             
             <div className="mt-6 text-sm text-gray-500 space-y-1">
               <p>Maximum file size: 50MB</p>

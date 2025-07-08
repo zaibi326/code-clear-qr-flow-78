@@ -84,6 +84,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   // UI state
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pdfLoaded, setPdfLoaded] = useState(false);
 
   // PDF rendering hook
   const {
@@ -97,21 +98,113 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     extractTextElements
   } = usePDFRenderer();
 
+  // Load existing template PDF if available
+  useEffect(() => {
+    const loadExistingPDF = async () => {
+      if (currentTemplate && (currentTemplate.template_url || currentTemplate.preview) && !pdfLoaded) {
+        console.log('Loading existing PDF template:', currentTemplate.name);
+        setIsProcessing(true);
+        
+        try {
+          let pdfUrl = currentTemplate.template_url || currentTemplate.preview;
+          
+          // Clean up URL if it has editing parameters
+          if (pdfUrl && pdfUrl.includes('?edited=')) {
+            pdfUrl = pdfUrl.split('?edited=')[0];
+          }
+          
+          console.log('PDF URL to load:', pdfUrl);
+          
+          if (pdfUrl) {
+            const pdfDoc = await loadPDF(pdfUrl);
+            if (pdfDoc) {
+              console.log('PDF loaded successfully, rendering pages...');
+              const renders = await renderAllPages({ scale: 1.5, enableTextLayer: true });
+              console.log('Pages rendered:', renders.length);
+              
+              if (renders.length > 0) {
+                const textElements = await extractTextElements();
+                console.log('Text elements extracted:', textElements.length);
+                
+                const convertedElements: PDFElement[] = textElements.map((textEl, index) => ({
+                  id: `text-${index}-${Date.now()}`,
+                  type: 'text' as const,
+                  x: textEl.x,
+                  y: textEl.y,
+                  width: textEl.width,
+                  height: textEl.height,
+                  pageNumber: textEl.pageNumber,
+                  text: textEl.text,
+                  fontSize: textEl.fontSize,
+                  fontFamily: textEl.fontFamily || 'Arial',
+                  fontWeight: textEl.fontWeight || 'normal',
+                  fontStyle: textEl.fontStyle || 'normal',
+                  textAlign: textEl.textAlign || 'left',
+                  color: textEl.color || '#000000',
+                  backgroundColor: 'transparent',
+                  opacity: 1,
+                  rotation: 0,
+                  isEdited: false,
+                  properties: {}
+                }));
+                
+                setElements(convertedElements);
+                setPdfLoaded(true);
+                
+                toast({
+                  title: "PDF loaded",
+                  description: `${currentTemplate.name} is ready for editing`,
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading existing PDF:', error);
+          toast({
+            title: "Loading failed",
+            description: "Could not load the PDF. Please try uploading again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    loadExistingPDF();
+  }, [currentTemplate, loadPDF, renderAllPages, extractTextElements, pdfLoaded]);
+
   // Handle PDF upload
   const handlePDFUpload = useCallback(async (file: File) => {
     try {
       console.log('📄 Starting PDF upload for enhanced ClearQR editor:', file.name);
       setIsProcessing(true);
+      setPdfLoaded(false);
+      
+      // Validate file
+      if (!file || file.type !== 'application/pdf') {
+        throw new Error('Please select a valid PDF file');
+      }
+      
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit
+        throw new Error('PDF file size must be less than 50MB');
+      }
       
       // Upload to Supabase storage
-      const { data, error } = await supabase.storage
+      const fileName = `enhanced-pdfs/${Date.now()}-${file.name}`;
+      console.log('Uploading to storage:', fileName);
+      
+      const { data, error: uploadError } = await supabase.storage
         .from('pdf')
-        .upload(`enhanced-pdfs/${Date.now()}-${file.name}`, file, {
+        .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) throw error;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('pdf')
@@ -120,16 +213,23 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       console.log('✅ PDF uploaded successfully:', publicUrl);
 
       // Load PDF for rendering and text extraction
+      console.log('Loading PDF document...');
       const pdfDoc = await loadPDF(file);
       if (!pdfDoc) {
         throw new Error('Failed to load PDF document');
       }
 
+      console.log('Rendering PDF pages...');
       // Render all pages with proper scale
       const renders = await renderAllPages({ scale: 1.5, enableTextLayer: true });
       console.log('✅ Pages rendered:', renders.length);
 
+      if (renders.length === 0) {
+        throw new Error('No pages could be rendered from the PDF');
+      }
+
       // Extract text elements for direct editing
+      console.log('Extracting text elements...');
       const textElements = await extractTextElements();
       console.log('✅ Text elements extracted:', textElements.length);
 
@@ -158,14 +258,14 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       setElements(convertedElements);
       
       const template: Template = {
-        id: `enhanced-pdf-${Date.now()}`,
-        name: file.name.replace('.pdf', ''),
+        id: initialTemplate?.id || `enhanced-pdf-${Date.now()}`,
+        name: initialTemplate?.name || file.name.replace('.pdf', ''),
         template_url: publicUrl,
-        preview: '',
-        thumbnail_url: '',
+        preview: publicUrl,
+        thumbnail_url: publicUrl,
         category: 'pdf-editor',
         tags: ['pdf', 'enhanced', 'editable'],
-        created_at: new Date().toISOString(),
+        created_at: initialTemplate?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         customization: {
           canvasWidth: renders[0]?.width || 800,
@@ -178,6 +278,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       
       setCurrentTemplate(template);
       setCurrentPage(1);
+      setPdfLoaded(true);
       
       toast({
         title: "PDF loaded successfully",
@@ -185,15 +286,17 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       });
     } catch (error) {
       console.error('PDF upload failed:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load PDF file";
       toast({
         title: "Upload failed",  
-        description: error instanceof Error ? error.message : "Failed to load PDF file",
+        description: errorMessage,
         variant: "destructive"
       });
+      setPdfLoaded(false);
     } finally {
       setIsProcessing(false);
     }
-  }, [loadPDF, renderAllPages, extractTextElements, numPages]);
+  }, [loadPDF, renderAllPages, extractTextElements, numPages, initialTemplate]);
 
   // Element management
   const addElement = useCallback((element: Omit<PDFElement, 'id'>) => {
@@ -252,7 +355,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   }, [elements]);
 
   // Show upload screen if no PDF is loaded
-  if (!currentTemplate || pageRenders.length === 0) {
+  if (!currentTemplate || !pdfLoaded || pageRenders.length === 0) {
     return (
       <div className="h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="absolute top-4 left-4">

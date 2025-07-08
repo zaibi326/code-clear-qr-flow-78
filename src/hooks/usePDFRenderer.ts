@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -64,21 +63,31 @@ export const usePDFRenderer = () => {
       setIsLoading(true);
       setError(null);
       setPageRenders([]);
+      setPdfDoc(null);
       
       console.log('🔄 Loading PDF for rendering...', source instanceof File ? source.name : source);
       
       let data: ArrayBuffer;
       
       if (source instanceof File) {
+        console.log('Converting file to array buffer...');
         data = await source.arrayBuffer();
+        console.log('File converted to array buffer, size:', data.byteLength);
       } else {
+        console.log('Fetching PDF from URL...');
         const response = await fetch(source);
         if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.statusText}`);
+          throw new Error(`Failed to fetch PDF: ${response.statusText} (${response.status})`);
         }
         data = await response.arrayBuffer();
+        console.log('PDF fetched from URL, size:', data.byteLength);
       }
 
+      if (data.byteLength === 0) {
+        throw new Error('PDF file is empty or corrupted');
+      }
+
+      console.log('Creating PDF document...');
       const loadingTask = pdfjsLib.getDocument({
         data,
         useSystemFonts: true,
@@ -87,6 +96,8 @@ export const usePDFRenderer = () => {
       });
 
       const doc = await loadingTask.promise;
+      console.log('PDF document created successfully');
+      
       setPdfDoc(doc);
       setNumPages(doc.numPages);
       
@@ -102,8 +113,9 @@ export const usePDFRenderer = () => {
       return doc;
     } catch (err) {
       console.error('❌ Error loading PDF:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load PDF');
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
