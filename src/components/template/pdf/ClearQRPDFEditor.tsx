@@ -85,6 +85,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pdfLoaded, setPdfLoaded] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // PDF rendering hook
   const {
@@ -97,6 +98,16 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     renderAllPages,
     extractTextElements
   } = usePDFRenderer();
+
+  // Check authentication status
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      console.log('Current user:', user);
+    };
+    getUser();
+  }, []);
 
   // Load existing template PDF if available
   useEffect(() => {
@@ -178,6 +189,17 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
   const handlePDFUpload = useCallback(async (file: File) => {
     try {
       console.log('📄 Starting PDF upload for enhanced ClearQR editor:', file.name);
+      
+      // Check if user is authenticated
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to upload PDF files",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       setIsProcessing(true);
       setPdfLoaded(false);
       
@@ -190,33 +212,43 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         throw new Error('PDF file size must be less than 50MB');
       }
       
-      // Upload to Supabase storage
-      const fileName = `enhanced-pdfs/${Date.now()}-${file.name}`;
-      console.log('Uploading to storage:', fileName);
+      // Create a unique filename with user ID to avoid conflicts
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      const fileName = `pdf-templates/${user.id}/${timestamp}-${randomId}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       
-      const { data, error: uploadError } = await supabase.storage
+      console.log('Uploading to storage with filename:', fileName);
+      
+      // Upload to Supabase storage with proper options
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('pdf')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: 'application/pdf'
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('Upload error details:', uploadError);
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
+      if (!uploadData) {
+        throw new Error('Upload failed: No data returned from storage');
+      }
+
+      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('pdf')
-        .getPublicUrl(data.path);
+        .getPublicUrl(uploadData.path);
 
       console.log('✅ PDF uploaded successfully:', publicUrl);
 
       // Load PDF for rendering and text extraction
-      console.log('Loading PDF document...');
+      console.log('Loading PDF document for processing...');
       const pdfDoc = await loadPDF(file);
       if (!pdfDoc) {
-        throw new Error('Failed to load PDF document');
+        throw new Error('Failed to load PDF document for processing');
       }
 
       console.log('Rendering PDF pages...');
@@ -258,7 +290,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       setElements(convertedElements);
       
       const template: Template = {
-        id: initialTemplate?.id || `enhanced-pdf-${Date.now()}`,
+        id: initialTemplate?.id || `enhanced-pdf-${timestamp}`,
         name: initialTemplate?.name || file.name.replace('.pdf', ''),
         template_url: publicUrl,
         preview: publicUrl,
@@ -296,7 +328,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [loadPDF, renderAllPages, extractTextElements, numPages, initialTemplate]);
+  }, [loadPDF, renderAllPages, extractTextElements, numPages, initialTemplate, user]);
 
   // Element management
   const addElement = useCallback((element: Omit<PDFElement, 'id'>) => {
@@ -353,6 +385,19 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
     console.log('Exporting enhanced PDF with', elements.length, 'elements');
     setShowExportDialog(true);
   }, [elements]);
+
+  // Show authentication message if not logged in
+  if (!user) {
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Please log in to use the PDF editor</p>
+          <Button onClick={onCancel} className="mr-4">Back to Templates</Button>
+        </div>
+      </div>
+    );
+  }
 
   // Show upload screen if no PDF is loaded
   if (!currentTemplate || !pdfLoaded || pageRenders.length === 0) {
