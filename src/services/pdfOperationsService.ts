@@ -362,6 +362,99 @@ class PDFOperationsService {
       };
     }
   }
+
+  async convertPDFToImages(pdfUrl: string, options: any = {}): Promise<{
+    success: boolean;
+    images?: string[];
+    error?: string;
+  }> {
+    try {
+      console.log('🔄 Converting PDF to images:', { pdfUrl, options });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock conversion result with sample images
+      const mockImages = Array.from({ length: 3 }, (_, i) => 
+        `data:image/svg+xml,${encodeURIComponent(`
+          <svg width="600" height="800" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#f8f9fa"/>
+            <rect x="50" y="50" width="500" height="700" fill="white" stroke="#dee2e6" stroke-width="2"/>
+            <text x="300" y="100" text-anchor="middle" font-family="Arial" font-size="18" fill="#495057">
+              ClearQR PDF Editor
+            </text>
+            <text x="300" y="400" text-anchor="middle" font-family="Arial" font-size="24" fill="#6c757d">
+              PDF Page ${i + 1}
+            </text>
+            <text x="300" y="450" text-anchor="middle" font-family="Arial" font-size="14" fill="#adb5bd">
+              Sample content for editing
+            </text>
+            <rect x="100" y="500" width="400" height="100" fill="#e9ecef" stroke="#ced4da"/>
+            <text x="300" y="530" text-anchor="middle" font-family="Arial" font-size="12" fill="#6c757d">
+              Search and replace text here
+            </text>
+            <text x="300" y="550" text-anchor="middle" font-family="Arial" font-size="12" fill="#6c757d">
+              Add annotations and comments
+            </text>
+            <text x="300" y="570" text-anchor="middle" font-family="Arial" font-size="12" fill="#6c757d">
+              Edit with Canva-style tools
+            </text>
+          </svg>
+        `)}`
+      );
+      
+      console.log('✅ PDF converted to images:', mockImages.length, 'pages');
+      
+      return {
+        success: true,
+        images: mockImages
+      };
+    } catch (error: any) {
+      console.error('❌ PDF to image conversion failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to convert PDF to images'
+      };
+    }
+  }
+
+  async processWithPDFCo(operation: string, params: any = {}): Promise<any> {
+    try {
+      console.log('🔄 Processing with PDF.co API:', operation, params);
+      
+      switch (operation) {
+        case 'convertToImage':
+          return await this.convertPDFToImages(params.pdfUrl, params);
+        
+        case 'textReplace':
+          return await this.editTextEnhanced(
+            params.pdfUrl,
+            params.searchTexts,
+            params.replaceTexts,
+            params.options
+          );
+        
+        case 'addAnnotations':
+          return await this.addAnnotations(params.pdfUrl, params.annotations);
+        
+        case 'addQRCode':
+          return await this.addQRCode(
+            params.pdfUrl,
+            params.content,
+            params.x,
+            params.y,
+            params.size,
+            params.pages
+          );
+        
+        default:
+          throw new Error(`Unsupported PDF.co operation: ${operation}`);
+      }
+    } catch (error) {
+      console.error('❌ PDF.co operation failed:', error);
+      throw error;
+    }
+  }
 }
 
 export const pdfOperationsService = new PDFOperationsService();

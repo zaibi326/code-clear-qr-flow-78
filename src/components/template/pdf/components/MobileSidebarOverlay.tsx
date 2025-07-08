@@ -14,7 +14,7 @@ export const MobileSidebarOverlay: React.FC<MobileSidebarOverlayProps> = ({
 
   return (
     <div 
-      className="absolute inset-0 bg-black/20 backdrop-blur-sm z-40"
+      className="fixed inset-0 bg-black/50 z-40 md:hidden"
       onClick={onClick}
     />
   );
