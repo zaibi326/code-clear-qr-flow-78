@@ -12,7 +12,9 @@ import {
   Download,
   Save,
   X,
-  MousePointer
+  MousePointer,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface EnhancedPDFCanvasProps {
@@ -56,6 +58,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [showOriginalPDF, setShowOriginalPDF] = useState(false);
 
   const canvasWidth = pageRender ? pageRender.width : 800;
   const canvasHeight = pageRender ? pageRender.height : 1000;
@@ -127,7 +130,6 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
     }
   }, [activeTool, zoom, currentPage, onAddElement, onSelectElement, onToolChange, editingElementId, elements]);
 
-  // Handle element dragging
   const handleMouseDown = useCallback((e: React.MouseEvent, elementId: string) => {
     if (editingElementId) return;
     
@@ -289,6 +291,20 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
             </Button>
           </div>
 
+          {/* PDF Background Toggle */}
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={showOriginalPDF ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setShowOriginalPDF(!showOriginalPDF)}
+              className="h-8"
+              title={showOriginalPDF ? "Hide Original PDF" : "Show Original PDF"}
+            >
+              {showOriginalPDF ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {showOriginalPDF ? 'Hide PDF' : 'Show PDF'}
+            </Button>
+          </div>
+
           {/* Zoom Controls */}
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
             <Button
@@ -374,8 +390,8 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
-            {/* PDF Background */}
-            {pageRender && (
+            {/* PDF Background - Only show when toggled on */}
+            {showOriginalPDF && pageRender && (
               <canvas
                 ref={(canvas) => {
                   if (canvas && pageRender.canvas) {
@@ -388,7 +404,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
                     }
                   }
                 }}
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 w-full h-full opacity-30"
                 style={{ width: '100%', height: '100%' }}
               />
             )}
@@ -425,7 +441,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
           <span>• Click on text to edit directly</span>
           <span>• Press Enter or F2 to edit selected text</span>
           <span>• Press Delete to remove selected element</span>
-          <span>• Drag elements to move them</span>
+          <span>• Use {showOriginalPDF ? 'Hide PDF' : 'Show PDF'} to toggle original background</span>
         </div>
       </div>
     </div>
