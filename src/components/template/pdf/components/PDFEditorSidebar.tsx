@@ -41,7 +41,8 @@ export const PDFEditorSidebar: React.FC<PDFEditorSidebarProps> = ({
       color: '#000000',
       backgroundColor: 'transparent',
       opacity: 1,
-      rotation: 0
+      rotation: 0,
+      properties: {} // Add required properties field
     });
   };
 
