@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +10,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react';
 import { pdfOperationsService } from '@/services/pdfOperationsService';
 import { toast } from '@/hooks/use-toast';
