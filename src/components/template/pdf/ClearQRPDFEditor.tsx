@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -250,7 +251,7 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
       console.log('Uploading to storage with filename:', fileName);
       
       // Upload to Supabase storage with authenticated user
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      let { data: uploadData, error: uploadError } = await supabase.storage
         .from('pdf')
         .upload(fileName, file, {
           cacheControl: '3600',
