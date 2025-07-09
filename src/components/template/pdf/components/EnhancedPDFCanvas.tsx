@@ -58,12 +58,11 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
   const [editingElementId, setEditingElementId] = useState<string | null>(null);
   const [draggedElement, setDraggedElement] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [showOriginalPDF, setShowOriginalPDF] = useState(false);
+  const [showOriginalPDF, setShowOriginalPDF] = useState(true);
 
   const canvasWidth = pageRender ? pageRender.width : 800;
   const canvasHeight = pageRender ? pageRender.height : 1000;
 
-  // Handle canvas click for adding elements
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
     if (editingElementId) return;
     
@@ -168,7 +167,6 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
     setDragOffset({ x: 0, y: 0 });
   }, []);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingElementId) return; // Don't handle shortcuts while editing
@@ -375,65 +373,66 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
       </div>
 
       {/* Canvas Area */}
-      <div className="flex-1 flex items-start justify-center p-4 overflow-auto bg-gray-100">
-        <Card className="shadow-2xl max-w-full">
-          <div
-            ref={canvasContainerRef}
-            className="relative bg-white overflow-hidden"
-            style={{
-              width: Math.min(canvasWidth * zoom, window.innerWidth - 100),
-              height: canvasHeight * zoom,
-              cursor: activeTool === 'text' || activeTool === 'shape' ? 'crosshair' : 'default',
-              minWidth: '800px'
-            }}
-            onClick={handleCanvasClick}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            {/* PDF Background - Only show when toggled on */}
-            {showOriginalPDF && pageRender && (
-              <canvas
-                ref={(canvas) => {
-                  if (canvas && pageRender.canvas) {
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      canvas.width = canvasWidth * zoom;
-                      canvas.height = canvasHeight * zoom;
-                      ctx.scale(zoom, zoom);
-                      ctx.drawImage(pageRender.canvas, 0, 0);
+      <div className="flex-1 overflow-auto bg-gray-100">
+        <div className="flex items-start justify-center p-4 min-h-full">
+          <Card className="shadow-2xl">
+            <div
+              ref={canvasContainerRef}
+              className="relative bg-white overflow-visible"
+              style={{
+                width: canvasWidth * zoom,
+                height: canvasHeight * zoom,
+                cursor: activeTool === 'text' || activeTool === 'shape' ? 'crosshair' : 'default',
+              }}
+              onClick={handleCanvasClick}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {/* PDF Background - Only show when toggled on */}
+              {showOriginalPDF && pageRender && (
+                <canvas
+                  ref={(canvas) => {
+                    if (canvas && pageRender.canvas) {
+                      const ctx = canvas.getContext('2d');
+                      if (ctx) {
+                        canvas.width = canvasWidth * zoom;
+                        canvas.height = canvasHeight * zoom;
+                        ctx.scale(zoom, zoom);
+                        ctx.drawImage(pageRender.canvas, 0, 0);
+                      }
                     }
-                  }
-                }}
-                className="absolute inset-0 w-full h-full opacity-30"
-                style={{ width: '100%', height: '100%' }}
-              />
-            )}
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-30"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              )}
 
-            {/* Elements Layer */}
-            <div className="absolute inset-0 w-full h-full">
-              {currentPageElements.map(renderElement)}
+              {/* Elements Layer */}
+              <div className="absolute inset-0 w-full h-full">
+                {currentPageElements.map(renderElement)}
+              </div>
+
+              {/* Selection Overlay */}
+              {selectedElementId && !editingElementId && (
+                <SelectionOverlay
+                  element={currentPageElements.find(el => el.id === selectedElementId)!}
+                  zoom={zoom}
+                  onDelete={() => {
+                    onDeleteElement(selectedElementId);
+                    onSelectElement(null);
+                  }}
+                  onEdit={() => {
+                    const element = currentPageElements.find(el => el.id === selectedElementId);
+                    if (element?.type === 'text') {
+                      setEditingElementId(selectedElementId);
+                    }
+                  }}
+                />
+              )}
             </div>
-
-            {/* Selection Overlay */}
-            {selectedElementId && !editingElementId && (
-              <SelectionOverlay
-                element={currentPageElements.find(el => el.id === selectedElementId)!}
-                zoom={zoom}
-                onDelete={() => {
-                  onDeleteElement(selectedElementId);
-                  onSelectElement(null);
-                }}
-                onEdit={() => {
-                  const element = currentPageElements.find(el => el.id === selectedElementId);
-                  if (element?.type === 'text') {
-                    setEditingElementId(selectedElementId);
-                  }
-                }}
-              />
-            )}
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       {/* Help Text */}

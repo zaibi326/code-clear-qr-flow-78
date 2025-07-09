@@ -114,11 +114,11 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
         ref={containerRef}
         className="absolute z-50 bg-white border-2 border-blue-500 rounded-lg shadow-lg"
         style={{
-          left: Math.max(0, element.x * scale),
-          top: Math.max(0, element.y * scale),
-          width: Math.max(element.width * scale, 250),
-          minHeight: Math.max(element.height * scale, 40),
-          maxWidth: 'calc(100vw - 40px)',
+          left: element.x * scale,
+          top: element.y * scale,
+          width: Math.max(element.width * scale, 200),
+          minHeight: Math.max(element.height * scale, 32),
+          maxWidth: '90vw',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -209,15 +209,15 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full resize-none border-0 bg-white rounded-b-lg px-3 py-2 focus:outline-none leading-tight"
+          className="w-full resize-none border-0 bg-white rounded-b-lg px-2 py-1 focus:outline-none"
           style={{
-            fontSize: Math.max(fontSize * scale * 0.9, 14),
+            fontSize: fontSize * scale,
             fontFamily,
             fontWeight,
             color,
             textAlign,
-            minHeight: Math.max(element.height * scale - 40, 80),
-            lineHeight: '1.2',
+            minHeight: Math.max(element.height * scale - 32, 24),
+            lineHeight: '1.1',
           }}
           placeholder="Enter your text here..."
           autoFocus
@@ -228,7 +228,7 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
 
   return (
     <div
-      className="absolute cursor-pointer hover:bg-blue-100/30 hover:border hover:border-blue-300 rounded transition-all group select-none"
+      className="absolute cursor-pointer hover:bg-blue-100/20 hover:border hover:border-blue-300 rounded transition-all group select-none"
       style={{
         left: element.x * scale,
         top: element.y * scale,
@@ -241,14 +241,17 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
         textAlign,
         display: 'flex',
         alignItems: 'flex-start',
-        padding: '4px',
-        lineHeight: '1.2',
+        padding: '1px 2px',
+        lineHeight: '1.1',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        overflow: 'hidden',
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       title="Click to edit text"
     >
-      <span className="w-full break-words whitespace-pre-wrap">{element.text || 'Click to edit'}</span>
+      <span className="w-full">{element.text || 'Click to edit'}</span>
       
       {/* Hover edit indicator */}
       <div className="absolute -top-6 -right-6 opacity-0 group-hover:opacity-100 transition-opacity">
