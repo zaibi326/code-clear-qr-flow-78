@@ -114,10 +114,11 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
         ref={containerRef}
         className="absolute z-50 bg-white border-2 border-blue-500 rounded-lg shadow-lg"
         style={{
-          left: element.x * scale,
-          top: element.y * scale,
-          width: Math.max(element.width * scale, 200),
-          minHeight: element.height * scale,
+          left: Math.max(0, element.x * scale),
+          top: Math.max(0, element.y * scale),
+          width: Math.max(element.width * scale, 250),
+          minHeight: Math.max(element.height * scale, 40),
+          maxWidth: 'calc(100vw - 40px)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -208,14 +209,15 @@ export const InlinePDFTextEditor: React.FC<InlinePDFTextEditorProps> = ({
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full resize-none border-0 bg-white rounded-b-lg px-3 py-2 focus:outline-none"
+          className="w-full resize-none border-0 bg-white rounded-b-lg px-3 py-2 focus:outline-none leading-tight"
           style={{
-            fontSize: Math.max(fontSize * scale * 0.8, 12),
+            fontSize: Math.max(fontSize * scale * 0.9, 14),
             fontFamily,
             fontWeight,
             color,
             textAlign,
-            minHeight: Math.max(element.height * scale - 40, 60),
+            minHeight: Math.max(element.height * scale - 40, 80),
+            lineHeight: '1.2',
           }}
           placeholder="Enter your text here..."
           autoFocus

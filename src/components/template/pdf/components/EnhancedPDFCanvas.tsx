@@ -375,15 +375,16 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
       </div>
 
       {/* Canvas Area */}
-      <div className="flex-1 flex items-center justify-center p-8 overflow-auto bg-gray-100">
-        <Card className="shadow-2xl">
+      <div className="flex-1 flex items-start justify-center p-4 overflow-auto bg-gray-100">
+        <Card className="shadow-2xl max-w-full">
           <div
             ref={canvasContainerRef}
             className="relative bg-white overflow-hidden"
             style={{
-              width: canvasWidth * zoom,
+              width: Math.min(canvasWidth * zoom, window.innerWidth - 100),
               height: canvasHeight * zoom,
-              cursor: activeTool === 'text' || activeTool === 'shape' ? 'crosshair' : 'default'
+              cursor: activeTool === 'text' || activeTool === 'shape' ? 'crosshair' : 'default',
+              minWidth: '800px'
             }}
             onClick={handleCanvasClick}
             onMouseMove={handleMouseMove}
