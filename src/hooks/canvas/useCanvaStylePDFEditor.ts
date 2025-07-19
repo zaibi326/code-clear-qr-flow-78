@@ -91,6 +91,23 @@ interface ExportOptions {
   includeAnnotations?: boolean;
 }
 
+// Configure PDF.js worker with fallback options
+const configurePDFWorker = () => {
+  if (typeof window !== 'undefined') {
+    // Try multiple CDN options for better reliability
+    const workerUrls = [
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
+      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+    ];
+    
+    // Use the first available worker URL
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
+    
+    console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  }
+};
+
 export const useCanvaStylePDFEditor = () => {
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [originalPdfBytes, setOriginalPdfBytes] = useState<Uint8Array | null>(null);
@@ -188,14 +205,15 @@ export const useCanvaStylePDFEditor = () => {
       const uint8Array = new Uint8Array(arrayBuffer);
       setOriginalPdfBytes(uint8Array);
 
-      // Initialize PDF.js with proper worker
-      if (typeof window !== 'undefined') {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-      }
+      // Configure worker before loading PDF
+      configurePDFWorker();
 
       const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
-        verbosity: 0
+        verbosity: 0,
+        // Add additional options to help with worker loading
+        isEvalSupported: false,
+        useWorkerFetch: false
       });
       const pdfDoc = await loadingTask.promise;
       setPdfDocument(pdfDoc);
@@ -297,9 +315,21 @@ export const useCanvaStylePDFEditor = () => {
 
     } catch (error) {
       console.error('Error loading PDF:', error);
+      let errorMessage = 'Failed to load PDF';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('worker') || error.message.includes('Worker')) {
+          errorMessage = 'PDF viewer initialization failed. Please refresh the page and try again.';
+        } else if (error.message.includes('fetch')) {
+          errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Error Loading PDF',
-        description: `Failed to load PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: errorMessage,
         variant: 'destructive'
       });
       

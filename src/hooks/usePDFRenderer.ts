@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -45,6 +44,23 @@ interface ConvertToImagesOptions {
   quality?: number;
 }
 
+// Configure PDF.js worker with multiple fallback options
+const configurePDFWorker = () => {
+  if (typeof window !== 'undefined') {
+    // Try multiple CDN options for better reliability
+    const workerUrls = [
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
+      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+    ];
+    
+    // Use the first available worker URL
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
+    
+    console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  }
+};
+
 export const usePDFRenderer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pageRenders, setPageRenders] = useState<PDFPageRender[]>([]);
@@ -54,17 +70,15 @@ export const usePDFRenderer = () => {
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
 
-  // Initialize PDF.js worker
-  if (typeof window !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-  }
-
   const loadPDF = useCallback(async (source: File | string) => {
     try {
       setIsLoading(true);
       setError(null);
       setPageRenders([]);
       setPdfDoc(null);
+      
+      // Configure worker before loading PDF
+      configurePDFWorker();
       
       console.log('🔄 Loading PDF for rendering...', source instanceof File ? source.name : source);
       
@@ -93,7 +107,10 @@ export const usePDFRenderer = () => {
         data,
         useSystemFonts: true,
         disableFontFace: false,
-        verbosity: 0
+        verbosity: 0,
+        // Add additional options to help with worker loading
+        isEvalSupported: false,
+        useWorkerFetch: false
       });
 
       const doc = await loadingTask.promise;
@@ -114,7 +131,18 @@ export const usePDFRenderer = () => {
       return doc;
     } catch (err) {
       console.error('❌ Error loading PDF:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
+      let errorMessage = 'Failed to load PDF';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('worker') || err.message.includes('Worker')) {
+          errorMessage = 'PDF viewer initialization failed. Please refresh the page and try again.';
+        } else if (err.message.includes('fetch')) {
+          errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
