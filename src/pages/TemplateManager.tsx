@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
@@ -7,6 +8,7 @@ import { TemplateManagerLayout } from '@/components/template/TemplateManagerLayo
 import { TemplateManagerContent } from '@/components/template/TemplateManagerContent';
 import { LoadingScreen } from '@/components/template/LoadingScreen';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { toast } from '@/hooks/use-toast';
 
 // Lazy load heavy editor components to prevent crashes on initial load
 const TemplateEditorWrapper = React.lazy(() => 
@@ -76,10 +78,10 @@ const TemplateManager = () => {
   const { templates, setTemplates, isLoaded, fileToDataUrl } = useTemplateStorage();
   
   const {
-    handleTemplateUpload,
+    handleTemplateUpload: originalHandleTemplateUpload,
     handleTemplateSelect,
     handleTemplateDelete,
-    handleTemplateDuplicate
+    handleTemplateDuplicate: originalHandleTemplateDuplicate
   } = useTemplateActions({ templates, setTemplates, fileToDataUrl });
 
   // Helper function to determine if a template is a PDF
@@ -230,7 +232,8 @@ const TemplateManager = () => {
     setActiveTab('upload');
   };
 
-  const handleTemplateUpload = async (file: File) => {
+  // Fixed function signatures to match expected types
+  const handleTemplateUploadFixed = async (file: File) => {
     try {
       const fileUrl = URL.createObjectURL(file);
       const newTemplate: Template = {
@@ -262,7 +265,7 @@ const TemplateManager = () => {
     }
   };
 
-  const handleTemplateDuplicate = (template: Template) => {
+  const handleTemplateDuplicateFixed = (template: Template) => {
     const duplicatedTemplate: Template = {
       ...template,
       id: `template-${Date.now()}-copy`,
@@ -362,10 +365,10 @@ const TemplateManager = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onTemplateSelect={handleTemplateSelect}
-          onTemplateUpload={handleTemplateUpload}
+          onTemplateUpload={handleTemplateUploadFixed}
           onTemplateEdit={handleTemplateEdit}
           onTemplateDelete={handleTemplateDelete}
-          onTemplateDuplicate={handleTemplateDuplicate}
+          onTemplateDuplicate={handleTemplateDuplicateFixed}
           onUploadNew={handleUploadNew}
         />
       </TemplateManagerLayout>

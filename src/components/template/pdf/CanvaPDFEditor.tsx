@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -294,13 +293,18 @@ export const CanvaPDFEditor: React.FC<CanvaPDFEditorProps> = ({
       const editedPdfBlob = new Blob([editedPdfBytes], { type: 'application/pdf' });
       const editedPdfUrl = URL.createObjectURL(editedPdfBlob);
       
-      // Update template with edited PDF
+      // Update template with edited PDF and proper customization structure
       const updatedTemplate: Template = {
         ...currentTemplate,
         template_url: editedPdfUrl,
         preview: editedPdfUrl,
         updated_at: new Date().toISOString(),
         customization: {
+          canvasWidth: 800,
+          canvasHeight: 1200,
+          backgroundColor: '#ffffff',
+          elements: [],
+          version: '1.0',
           editedTexts: editableTexts.filter(text => text.isEdited),
           totalEdits: editableTexts.filter(text => text.isEdited).length
         }
