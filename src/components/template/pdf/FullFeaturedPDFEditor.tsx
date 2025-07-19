@@ -321,7 +321,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
             </div>
           ) : (
             <PDFCanvas
-              pageData={currentPageData}
+              pageRender={currentPageData}
               zoom={zoom}
               selectedTool={selectedTool}
               selectedElementId={selectedElementId}

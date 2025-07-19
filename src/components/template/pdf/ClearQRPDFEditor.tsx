@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -464,9 +463,8 @@ export const ClearQRPDFEditor: React.FC<ClearQRPDFEditorProps> = ({
         </div>
         
         <PDFUploadZone
-          onUpload={handlePDFUpload}
-          onCancel={onCancel}
-          isLoading={isProcessing || isLoading}
+          onFileSelect={handlePDFUpload}
+          isUploading={isProcessing || isLoading}
         />
       </div>
     );
