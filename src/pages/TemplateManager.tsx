@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
@@ -67,10 +66,14 @@ const TemplateManager = () => {
   // Helper function to determine if a template is a PDF
   const isPDFTemplate = (template: Template): boolean => {
     if (template.file?.type === 'application/pdf') return true;
+    if (template.type === 'application/pdf') return true;
+    if (template.file_type === 'application/pdf') return true;
     if (template.preview?.startsWith('data:application/pdf')) return true;
+    if (template.template_url?.startsWith('data:application/pdf')) return true;
     if (template.template_url?.toLowerCase().includes('.pdf')) return true;
     if (template.file?.name?.toLowerCase().endsWith('.pdf')) return true;
     if (template.category === 'pdf') return true;
+    if (template.isPdf) return true;
     return false;
   };
 
@@ -109,6 +112,15 @@ const TemplateManager = () => {
   }, [editingTemplate]);
 
   const handleTemplateEdit = (template: Template) => {
+    console.log('Editing template:', {
+      name: template.name,
+      isPDF: isPDFTemplate(template),
+      hasTemplateUrl: !!template.template_url,
+      hasPreview: !!template.preview,
+      urlType: template.template_url?.startsWith('data:') ? 'data-url' : 
+               template.template_url?.startsWith('blob:') ? 'blob-url' : 'http-url'
+    });
+    
     const isPDF = isPDFTemplate(template);
     
     setEditingTemplate(template);
@@ -143,17 +155,31 @@ const TemplateManager = () => {
   // Template upload handler
   const handleTemplateUpload = async (file: File) => {
     try {
-      const fileUrl = URL.createObjectURL(file);
+      console.log('Processing template upload:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        isPDF: file.type === 'application/pdf'
+      });
+      
+      // Convert file to data URL immediately for persistent storage
+      const dataUrl = await fileToDataUrl(file);
+      console.log('File converted to data URL, length:', dataUrl.length);
+      
       const newTemplate: Template = {
         id: `template-${Date.now()}`,
         name: file.name,
-        template_url: fileUrl,
-        preview: fileUrl,
-        thumbnail_url: '',
+        template_url: dataUrl, // Use data URL instead of blob URL
+        preview: dataUrl,
+        thumbnail_url: dataUrl,
         category: file.type === 'application/pdf' ? 'pdf' : 'image',
+        type: file.type,
+        file_type: file.type,
         tags: [file.type === 'application/pdf' ? 'pdf' : 'image'],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        fileSize: file.size,
+        isPdf: file.type === 'application/pdf',
         file
       };
       
@@ -161,7 +187,7 @@ const TemplateManager = () => {
       
       toast({
         title: "Template uploaded",
-        description: `${file.name} has been uploaded successfully`
+        description: `${file.name} has been uploaded and is ready for editing`
       });
     } catch (error) {
       console.error('Upload failed:', error);

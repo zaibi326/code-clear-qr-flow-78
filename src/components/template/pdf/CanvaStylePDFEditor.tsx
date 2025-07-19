@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -40,6 +39,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [originalPdfBytes, setOriginalPdfBytes] = useState<Uint8Array | null>(null);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
   const {
     isLoading,
@@ -62,43 +62,96 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     
     try {
       setIsProcessing(true);
-      const pdfUrl = currentTemplate.template_url || currentTemplate.preview;
+      setLoadingError(null);
       
-      if (pdfUrl) {
+      let pdfUrl = currentTemplate.template_url || currentTemplate.preview;
+      
+      console.log('Loading existing PDF template:', {
+        name: currentTemplate.name,
+        hasTemplateUrl: !!currentTemplate.template_url,
+        hasPreview: !!currentTemplate.preview,
+        urlType: pdfUrl?.startsWith('data:') ? 'data-url' : pdfUrl?.startsWith('blob:') ? 'blob-url' : 'http-url',
+        urlLength: pdfUrl?.length
+      });
+      
+      if (!pdfUrl) {
+        throw new Error('No PDF data available. Please upload the PDF file again.');
+      }
+      
+      // Handle data URLs (base64 encoded PDFs)
+      if (pdfUrl.startsWith('data:application/pdf')) {
+        console.log('Loading PDF from data URL');
+        // Convert data URL to blob for PDF.js
+        const response = await fetch(pdfUrl);
+        const blob = await response.blob();
+        await loadPDF(blob);
+      } 
+      // Handle blob URLs (temporary URLs)
+      else if (pdfUrl.startsWith('blob:')) {
+        console.log('Loading PDF from blob URL');
+        // Try to load directly, but this might fail for expired blobs
+        try {
+          await loadPDF(pdfUrl);
+        } catch (blobError) {
+          console.error('Blob URL expired:', blobError);
+          throw new Error('PDF file is no longer available. Please upload the PDF file again.');
+        }
+      }
+      // Handle HTTP URLs
+      else {
+        console.log('Loading PDF from HTTP URL');
         await loadPDF(pdfUrl);
-        await renderAllPages({ scale: 1.5 });
-        
-        const textElements = await extractTextElements();
-        const editableTexts: EditableText[] = textElements.map((text, index) => ({
-          id: `text-${index}`,
-          text: text.text,
-          x: text.x,
-          y: text.y,
-          width: text.width,
-          height: text.height,
-          fontSize: text.fontSize,
-          pageNumber: text.pageNumber,
-          originalText: text.text,
-          isEdited: false
-        }));
-        
-        setEditableTexts(editableTexts);
-        
-        // Load original PDF bytes for editing
+      }
+      
+      console.log('PDF loaded successfully, rendering pages...');
+      await renderAllPages({ scale: 1.5 });
+      
+      const textElements = await extractTextElements();
+      console.log('Text elements extracted:', textElements.length);
+      
+      const editableTexts: EditableText[] = textElements.map((text, index) => ({
+        id: `text-${index}`,
+        text: text.text,
+        x: text.x,
+        y: text.y,
+        width: text.width,
+        height: text.height,
+        fontSize: text.fontSize,
+        pageNumber: text.pageNumber,
+        originalText: text.text,
+        isEdited: false
+      }));
+      
+      setEditableTexts(editableTexts);
+      
+      // Load original PDF bytes for editing
+      if (pdfUrl.startsWith('data:application/pdf')) {
+        // Convert data URL to bytes
         const response = await fetch(pdfUrl);
         const arrayBuffer = await response.arrayBuffer();
         setOriginalPdfBytes(new Uint8Array(arrayBuffer));
-        
-        toast({
-          title: "PDF loaded successfully",
-          description: `Ready to edit ${textElements.length} text elements`
-        });
+      } else {
+        // Load from URL
+        const response = await fetch(pdfUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        setOriginalPdfBytes(new Uint8Array(arrayBuffer));
       }
+      
+      toast({
+        title: "PDF loaded successfully",
+        description: `Ready to edit ${textElements.length} text elements`
+      });
     } catch (error) {
       console.error('Error loading PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setLoadingError(errorMessage);
+      
       toast({
         title: "Error loading PDF",
-        description: "Please try uploading the PDF again",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -172,7 +225,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   };
 
   const handleTextClick = (x: number, y: number) => {
-    // Find text element at clicked position
     const clickedText = editableTexts
       .filter(text => text.pageNumber === currentPage)
       .find(text => 
@@ -208,7 +260,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
       if (!page) continue;
 
       for (const edit of pageEdits) {
-        // Cover original text with white rectangle
         page.drawRectangle({
           x: edit.x,
           y: page.getHeight() - edit.y - edit.height,
@@ -217,7 +268,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
           color: rgb(1, 1, 1),
         });
 
-        // Draw new text
         page.drawText(edit.text, {
           x: edit.x,
           y: page.getHeight() - edit.y - edit.height / 2,
@@ -307,6 +357,51 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
 
   const hasChanges = editableTexts.some(text => text.isEdited);
 
+  // Show error state if loading failed
+  if (loadingError && !isLoading && !isProcessing) {
+    return (
+      <div className="h-screen w-full flex flex-col">
+        <PDFEditorToolbar
+          onBack={onCancel}
+          onUploadNew={() => setCurrentTemplate(null)}
+          onSave={() => {}}
+          onDownload={() => {}}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          zoom={1}
+        />
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center max-w-md p-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h2 className="text-xl font-semibold mb-3 text-gray-900">Failed to Load PDF</h2>
+            <p className="text-gray-600 mb-6">{loadingError}</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setLoadingError(null);
+                  if (currentTemplate) {
+                    loadExistingPDF();
+                  }
+                }}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => setCurrentTemplate(null)}
+                className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+              >
+                Upload New PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentTemplate) {
     return (
       <div className="h-screen w-full flex flex-col">
@@ -327,12 +422,14 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     );
   }
 
-  if (isLoading) {
+  if (isLoading || isProcessing) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading PDF...</p>
+          <p className="text-gray-600">
+            {isProcessing ? 'Processing PDF...' : 'Loading PDF...'}
+          </p>
         </div>
       </div>
     );
@@ -363,7 +460,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                 onTextClick={handleTextClick}
               />
 
-              {/* Text overlays */}
               {editableTexts
                 .filter(text => text.pageNumber === currentPage)
                 .map(text => (
@@ -382,7 +478,6 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
         </div>
       </div>
 
-      {/* Page Navigation */}
       {numPages > 1 && (
         <div className="bg-white border-t p-4 flex justify-center">
           <div className="flex items-center gap-2">

@@ -1,4 +1,3 @@
-
 import { Template } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,14 +24,26 @@ export const useTemplateActions = ({ templates, setTemplates, fileToDataUrl }: U
         const dataUrl = await fileToDataUrl(template.file);
         console.log('Data URL created successfully, length:', dataUrl.length);
         
-        // Ensure all image fields are populated with the data URL for maximum compatibility
-        processedTemplate.preview = dataUrl;
-        processedTemplate.template_url = dataUrl;
-        processedTemplate.thumbnail_url = dataUrl;
+        // For PDF files, ensure we mark them properly and store complete data
+        if (template.file.type === 'application/pdf') {
+          processedTemplate.preview = dataUrl;
+          processedTemplate.template_url = dataUrl; // Critical: store the full PDF data
+          processedTemplate.thumbnail_url = dataUrl;
+          processedTemplate.category = 'pdf';
+          processedTemplate.type = 'application/pdf';
+          processedTemplate.isPdf = true;
+          
+          console.log('PDF template processed with full data URL for editing capability');
+        } else {
+          // For non-PDF files, use existing logic
+          processedTemplate.preview = dataUrl;
+          processedTemplate.template_url = dataUrl;
+          processedTemplate.thumbnail_url = dataUrl;
+        }
         
         // Store file metadata
         processedTemplate.fileSize = template.file.size;
-        processedTemplate.type = template.file.type;
+        processedTemplate.file_type = template.file.type;
         
         console.log('Template processed with complete data URL setup for editing');
       }
@@ -44,7 +55,8 @@ export const useTemplateActions = ({ templates, setTemplates, fileToDataUrl }: U
           name: processedTemplate.name,
           hasPreview: !!processedTemplate.preview,
           hasTemplateUrl: !!processedTemplate.template_url,
-          previewStart: processedTemplate.preview?.substring(0, 30) + '...'
+          isPdf: processedTemplate.isPdf || processedTemplate.type === 'application/pdf',
+          previewStart: processedTemplate.preview?.substring(0, 50) + '...'
         });
         return newTemplates;
       });
