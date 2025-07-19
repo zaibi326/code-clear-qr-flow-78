@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Template } from '@/types/template';
 import { TemplateLibrary } from './TemplateLibrary';
@@ -40,11 +39,6 @@ export const TemplateManagerContent: React.FC<TemplateManagerContentProps> = ({
   };
 
   const handlePDFEditorSave = (updatedTemplate: Template) => {
-    // Update the template in the list
-    const updatedTemplates = templates.map(t => 
-      t.id === updatedTemplate.id ? updatedTemplate : t
-    );
-    
     // Call the parent's edit handler
     onTemplateEdit(updatedTemplate);
     

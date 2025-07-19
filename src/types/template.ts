@@ -1,4 +1,3 @@
-
 // Extend Template type for new properties (snake_case to match DB)
 export interface QRPosition {
   x: number;
@@ -29,6 +28,8 @@ export interface TemplateCustomization {
   backgroundColor: string;
   elements: CanvasElement[];
   version: string;
+  editedTexts?: any[]; // For PDF editor text edits
+  totalEdits?: number; // For PDF editor statistics
 }
 
 export interface Template {

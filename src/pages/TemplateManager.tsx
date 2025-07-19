@@ -230,6 +230,55 @@ const TemplateManager = () => {
     setActiveTab('upload');
   };
 
+  const handleTemplateUpload = async (file: File) => {
+    try {
+      const fileUrl = URL.createObjectURL(file);
+      const newTemplate: Template = {
+        id: `template-${Date.now()}`,
+        name: file.name,
+        template_url: fileUrl,
+        preview: fileUrl,
+        thumbnail_url: '',
+        category: file.type === 'application/pdf' ? 'pdf' : 'image',
+        tags: [file.type === 'application/pdf' ? 'pdf' : 'image'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        file
+      };
+      
+      setTemplates(prev => [...prev, newTemplate]);
+      
+      toast({
+        title: "Template uploaded",
+        description: `${file.name} has been uploaded successfully`
+      });
+    } catch (error) {
+      console.error('Upload failed:', error);
+      toast({
+        title: "Upload failed",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleTemplateDuplicate = (template: Template) => {
+    const duplicatedTemplate: Template = {
+      ...template,
+      id: `template-${Date.now()}-copy`,
+      name: `${template.name} (Copy)`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    setTemplates(prev => [...prev, duplicatedTemplate]);
+    
+    toast({
+      title: "Template duplicated",
+      description: `${template.name} has been duplicated successfully`
+    });
+  };
+
   // Don't render until templates are loaded
   if (!isLoaded) {
     return <LoadingScreen />;
