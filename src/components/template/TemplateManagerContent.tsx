@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Template } from '@/types/template';
 import { TemplateLibrary } from './TemplateLibrary';
 import { TemplateUploader } from './TemplateUploader';
-import { CanvaPDFEditor } from './pdf/CanvaPDFEditor';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Edit3 } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 
 interface TemplateManagerContentProps {
   templates: Template[];
@@ -30,45 +30,6 @@ export const TemplateManagerContent: React.FC<TemplateManagerContentProps> = ({
   onTemplateDuplicate,
   onUploadNew
 }) => {
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [showPDFEditor, setShowPDFEditor] = useState(false);
-
-  const handlePDFEdit = (template: Template) => {
-    setEditingTemplate(template);
-    setShowPDFEditor(true);
-  };
-
-  const handlePDFEditorSave = (updatedTemplate: Template) => {
-    // Call the parent's edit handler
-    onTemplateEdit(updatedTemplate);
-    
-    // Close the PDF editor
-    setShowPDFEditor(false);
-    setEditingTemplate(null);
-  };
-
-  const handlePDFEditorCancel = () => {
-    setShowPDFEditor(false);
-    setEditingTemplate(null);
-  };
-
-  const isPDFTemplate = (template: Template): boolean => {
-    return template.template_url?.toLowerCase().includes('.pdf') ||
-           template.preview?.includes('application/pdf') ||
-           template.category === 'pdf';
-  };
-
-  // Show PDF editor if editing a PDF template
-  if (showPDFEditor && editingTemplate) {
-    return (
-      <CanvaPDFEditor
-        template={editingTemplate}
-        onSave={handlePDFEditorSave}
-        onCancel={handlePDFEditorCancel}
-      />
-    );
-  }
-
   return (
     <div className="h-full flex flex-col">
       <div className="border-b bg-white">
@@ -77,14 +38,10 @@ export const TemplateManagerContent: React.FC<TemplateManagerContentProps> = ({
             <div>
               <h1 className="text-2xl font-bold">Template Manager</h1>
               <p className="text-gray-600">
-                Manage your templates and create stunning designs with our PDF editor
+                Manage your templates and edit PDFs with our Canva-style editor
               </p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => setShowPDFEditor(true)}>
-                <Edit3 className="w-4 h-4 mr-2" />
-                New PDF Editor
-              </Button>
               <Button onClick={onUploadNew}>
                 <Plus className="w-4 h-4 mr-2" />
                 Upload Template
@@ -113,16 +70,9 @@ export const TemplateManagerContent: React.FC<TemplateManagerContentProps> = ({
             <TemplateLibrary
               templates={templates}
               onTemplateSelect={onTemplateSelect}
-              onTemplateEdit={(template) => {
-                if (isPDFTemplate(template)) {
-                  handlePDFEdit(template);
-                } else {
-                  onTemplateEdit(template);
-                }
-              }}
+              onTemplateEdit={onTemplateEdit}
               onTemplateDelete={onTemplateDelete}
               onTemplateDuplicate={onTemplateDuplicate}
-              isPDFTemplate={isPDFTemplate}
             />
           </TabsContent>
           

@@ -2,161 +2,101 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  MousePointer, 
-  Type, 
-  Image, 
-  Square,
+  ArrowLeft, 
+  Download, 
+  Save, 
   ZoomIn, 
   ZoomOut, 
-  ChevronLeft, 
-  ChevronRight,
-  Save,
-  Download,
-  X
+  Upload,
+  AlertCircle 
 } from 'lucide-react';
-import { Template } from '@/types/template';
 
 interface PDFEditorToolbarProps {
-  currentTemplate: Template;
-  activeTool: 'select' | 'text' | 'image' | 'shape';
-  onToolChange: (tool: 'select' | 'text' | 'image' | 'shape') => void;
+  templateName?: string;
   zoom: number;
-  onZoomChange: (zoom: number) => void;
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
   onSave: () => void;
-  onExport: () => void;
-  onCancel: () => void;
+  onDownload: () => void;
+  onBack: () => void;
+  onUploadNew: () => void;
+  isProcessing?: boolean;
+  hasChanges?: boolean;
 }
 
 export const PDFEditorToolbar: React.FC<PDFEditorToolbarProps> = ({
-  currentTemplate,
-  activeTool,
-  onToolChange,
+  templateName,
   zoom,
-  onZoomChange,
-  currentPage,
-  totalPages,
-  onPageChange,
+  onZoomIn,
+  onZoomOut,
   onSave,
-  onExport,
-  onCancel
+  onDownload,
+  onBack,
+  onUploadNew,
+  isProcessing = false,
+  hasChanges = false
 }) => {
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-      {/* Left section - Template info and tools */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <h1 className="text-lg font-semibold text-gray-900">
-            {currentTemplate.name}
-          </h1>
-          <span className="text-sm text-gray-500">PDF Editor</span>
-        </div>
+    <div className="bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
         
-        <div className="w-px h-6 bg-gray-300" />
-        
-        {/* Tools */}
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={activeTool === 'select' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onToolChange('select')}
-          >
-            <MousePointer className="w-4 h-4 mr-1" />
-            Select
-          </Button>
-          <Button
-            variant={activeTool === 'text' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onToolChange('text')}
-          >
-            <Type className="w-4 h-4 mr-1" />
-            Text
-          </Button>
-          <Button
-            variant={activeTool === 'image' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onToolChange('image')}
-          >
-            <Image className="w-4 h-4 mr-1" />
-            Image
-          </Button>
-          <Button
-            variant={activeTool === 'shape' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onToolChange('shape')}
-          >
-            <Square className="w-4 h-4 mr-1" />
-            Shape
-          </Button>
-        </div>
+        {templateName && (
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold truncate max-w-xs">
+              {templateName}
+            </h1>
+            {hasChanges && (
+              <div className="flex items-center gap-1 text-orange-600">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm">Unsaved changes</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Center section - Page navigation and zoom */}
-      <div className="flex items-center space-x-4">
-        {/* Page Navigation */}
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage <= 1}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-medium">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage >= totalPages}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-300" />
-
+      
+      <div className="flex items-center gap-2">
         {/* Zoom Controls */}
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onZoomChange(Math.max(0.25, zoom - 0.25))}
-            disabled={zoom <= 0.25}
-          >
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <Button variant="ghost" size="sm" onClick={onZoomOut}>
             <ZoomOut className="w-4 h-4" />
           </Button>
-          <span className="text-sm font-medium min-w-[60px] text-center">
+          <span className="text-sm font-medium min-w-[60px] text-center px-2">
             {Math.round(zoom * 100)}%
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onZoomChange(Math.min(3, zoom + 0.25))}
-            disabled={zoom >= 3}
-          >
+          <Button variant="ghost" size="sm" onClick={onZoomIn}>
             <ZoomIn className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-
-      {/* Right section - Actions */}
-      <div className="flex items-center space-x-2">
-        <Button variant="outline" onClick={onSave}>
-          <Save className="w-4 h-4 mr-1" />
-          Save
+        
+        {/* Action Buttons */}
+        <Button variant="outline" size="sm" onClick={onUploadNew}>
+          <Upload className="w-4 h-4 mr-2" />
+          New PDF
         </Button>
-        <Button onClick={onExport}>
-          <Download className="w-4 h-4 mr-1" />
-          Export
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onDownload} 
+          disabled={isProcessing}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download
         </Button>
-        <Button variant="outline" onClick={onCancel}>
-          <X className="w-4 h-4 mr-1" />
-          Close
+        
+        <Button 
+          size="sm" 
+          onClick={onSave} 
+          disabled={isProcessing || !hasChanges}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {isProcessing ? 'Saving...' : 'Save'}
         </Button>
       </div>
     </div>
