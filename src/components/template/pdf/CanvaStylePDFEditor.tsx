@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Template } from '@/types/template';
 import { usePDFRenderer } from '@/hooks/usePDFRenderer';
@@ -81,17 +82,20 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
       // Handle data URLs (base64 encoded PDFs)
       if (pdfUrl.startsWith('data:application/pdf')) {
         console.log('Loading PDF from data URL');
-        // Convert data URL to blob for PDF.js
+        // Convert data URL to blob, then to File for PDF.js
         const response = await fetch(pdfUrl);
         const blob = await response.blob();
-        await loadPDF(blob);
+        const file = new File([blob], currentTemplate.name || 'document.pdf', { type: 'application/pdf' });
+        await loadPDF(file);
       } 
       // Handle blob URLs (temporary URLs)
       else if (pdfUrl.startsWith('blob:')) {
         console.log('Loading PDF from blob URL');
-        // Try to load directly, but this might fail for expired blobs
         try {
-          await loadPDF(pdfUrl);
+          const response = await fetch(pdfUrl);
+          const blob = await response.blob();
+          const file = new File([blob], currentTemplate.name || 'document.pdf', { type: 'application/pdf' });
+          await loadPDF(file);
         } catch (blobError) {
           console.error('Blob URL expired:', blobError);
           throw new Error('PDF file is no longer available. Please upload the PDF file again.');
@@ -100,7 +104,10 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
       // Handle HTTP URLs
       else {
         console.log('Loading PDF from HTTP URL');
-        await loadPDF(pdfUrl);
+        const response = await fetch(pdfUrl);
+        const blob = await response.blob();
+        const file = new File([blob], currentTemplate.name || 'document.pdf', { type: 'application/pdf' });
+        await loadPDF(file);
       }
       
       console.log('PDF loaded successfully, rendering pages...');

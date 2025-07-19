@@ -1,3 +1,4 @@
+
 // Extend Template type for new properties (snake_case to match DB)
 export interface QRPosition {
   x: number;
@@ -64,4 +65,5 @@ export interface Template {
   user_id?: string;
   created_at?: string;
   updated_at?: string;
+  isPdf?: boolean; // Add the missing isPdf property
 }
