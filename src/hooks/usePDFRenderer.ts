@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -54,8 +55,14 @@ interface PDFDocumentProxy {
 // Simplified PDF.js worker configuration
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // Use the worker file from public directory
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    // In development, use the CDN worker
+    // In production, the worker will be available as a static asset
+    const isProduction = import.meta.env.PROD;
+    if (isProduction) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    } else {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+    }
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };

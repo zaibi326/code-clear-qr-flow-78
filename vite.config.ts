@@ -21,7 +21,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   // Configure PDF.js worker handling
-  assetsInclude: ['**/*.worker.js'],
   optimizeDeps: {
     include: ['pdfjs-dist']
   },
