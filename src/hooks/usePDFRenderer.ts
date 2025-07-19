@@ -51,30 +51,12 @@ interface PDFDocumentProxy {
   getMetadata: () => Promise<any>;
 }
 
-// Configure PDF.js worker with a more reliable approach
+// Simplified PDF.js worker configuration
 const configurePDFWorker = () => {
-  if (typeof window !== 'undefined') {
-    // Try to use the worker from the installed package first
-    try {
-      // This approach works better in Vite environments
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.js',
-        import.meta.url
-      ).toString();
-      console.log('PDF.js worker configured from local package');
-    } catch (error) {
-      console.warn('Failed to configure local worker, trying CDN fallback:', error);
-      
-      // Fallback to CDN with better error handling
-      const workerUrls = [
-        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
-        `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
-        `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
-      ];
-      
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
-      console.log('PDF.js worker configured from CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-    }
+  if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    // Use the worker file from public directory
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };
 
@@ -121,23 +103,19 @@ export const usePDFRenderer = () => {
 
       console.log('Creating PDF document...');
       
-      // Enhanced PDF loading configuration
+      // Simplified PDF loading configuration
       const loadingTask = pdfjsLib.getDocument({
         data,
         useSystemFonts: true,
         disableFontFace: false,
         verbosity: 0,
-        // Disable worker features that might cause issues
-        isEvalSupported: false,
-        useWorkerFetch: false,
-        // Add timeout and retry logic
         maxImageSize: 1024 * 1024,
         cMapPacked: true
       });
 
       // Add timeout handling
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('PDF loading timeout')), 30000);
+        setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
       });
 
       const doc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
@@ -161,12 +139,10 @@ export const usePDFRenderer = () => {
       let errorMessage = 'Failed to load PDF';
       
       if (err instanceof Error) {
-        if (err.message.includes('worker') || err.message.includes('Worker')) {
-          errorMessage = 'PDF viewer initialization failed. The PDF.js worker could not be loaded. This might be due to network restrictions.';
+        if (err.message.includes('timeout')) {
+          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else if (err.message.includes('fetch')) {
           errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
-        } else if (err.message.includes('timeout')) {
-          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else {
           errorMessage = err.message;
         }

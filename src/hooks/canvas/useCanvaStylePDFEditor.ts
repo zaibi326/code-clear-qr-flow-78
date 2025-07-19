@@ -98,23 +98,12 @@ interface PDFDocumentProxy {
   getMetadata?: () => Promise<any>;
 }
 
-// Configure PDF.js worker with better compatibility
+// Simplified PDF.js worker configuration
 const configurePDFWorker = () => {
-  if (typeof window !== 'undefined') {
-    try {
-      // Use local worker from the installed package
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.js',
-        import.meta.url
-      ).toString();
-      console.log('PDF.js worker configured from local package');
-    } catch (error) {
-      console.warn('Failed to configure local worker, using CDN fallback:', error);
-      
-      // Fallback to CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-      console.log('PDF.js worker configured from CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-    }
+  if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    // Use the worker file from public directory
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };
 
@@ -135,6 +124,26 @@ export const useCanvaStylePDFEditor = () => {
   
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const saveHistoryState = useCallback(() => {
+    const state = {
+      textElements: new Map(textElements),
+      shapes: new Map(shapes),
+      images: new Map(images),
+      qrCodes: new Map(qrCodes)
+    };
+    
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(state);
+    
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(prev => prev + 1);
+    }
+    
+    setHistory(newHistory);
+  }, [textElements, shapes, images, qrCodes, history, historyIndex]);
 
   // Generate layers from all elements with zIndex
   const layers: Layer[] = [
@@ -176,26 +185,6 @@ export const useCanvaStylePDFEditor = () => {
     }))
   ];
 
-  const saveHistoryState = useCallback(() => {
-    const state = {
-      textElements: new Map(textElements),
-      shapes: new Map(shapes),
-      images: new Map(images),
-      qrCodes: new Map(qrCodes)
-    };
-    
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(state);
-    
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    } else {
-      setHistoryIndex(prev => prev + 1);
-    }
-    
-    setHistory(newHistory);
-  }, [textElements, shapes, images, qrCodes, history, historyIndex]);
-
   const loadPDF = useCallback(async (file: File) => {
     setIsLoading(true);
     console.log('Starting PDF load process...');
@@ -218,16 +207,12 @@ export const useCanvaStylePDFEditor = () => {
       // Configure worker before loading PDF
       configurePDFWorker();
 
-      console.log('Creating PDF document with enhanced configuration...');
+      console.log('Creating PDF document with simplified configuration...');
       const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
         verbosity: 0,
-        // Better configuration for worker issues
-        isEvalSupported: false,
-        useWorkerFetch: false,
         maxImageSize: 1024 * 1024,
         cMapPacked: true,
-        // Disable problematic features
         disableFontFace: false,
         useSystemFonts: true
       });
@@ -340,12 +325,10 @@ export const useCanvaStylePDFEditor = () => {
       let errorMessage = 'Failed to load PDF';
       
       if (error instanceof Error) {
-        if (error.message.includes('worker') || error.message.includes('Worker')) {
-          errorMessage = 'PDF viewer initialization failed. Please try refreshing the page or use a different PDF file.';
+        if (error.message.includes('timeout')) {
+          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else if (error.message.includes('fetch')) {
           errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
-        } else if (error.message.includes('timeout')) {
-          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else {
           errorMessage = error.message;
         }
