@@ -91,20 +91,23 @@ interface ExportOptions {
   includeAnnotations?: boolean;
 }
 
-// Configure PDF.js worker with fallback options
+// Configure PDF.js worker with better compatibility
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined') {
-    // Try multiple CDN options for better reliability
-    const workerUrls = [
-      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
-      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
-      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
-    ];
-    
-    // Use the first available worker URL
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
-    
-    console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    try {
+      // Use local worker from the installed package
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.js',
+        import.meta.url
+      ).toString();
+      console.log('PDF.js worker configured from local package');
+    } catch (error) {
+      console.warn('Failed to configure local worker, using CDN fallback:', error);
+      
+      // Fallback to CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      console.log('PDF.js worker configured from CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    }
   }
 };
 
@@ -208,14 +211,26 @@ export const useCanvaStylePDFEditor = () => {
       // Configure worker before loading PDF
       configurePDFWorker();
 
+      console.log('Creating PDF document with enhanced configuration...');
       const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
         verbosity: 0,
-        // Add additional options to help with worker loading
+        // Better configuration for worker issues
         isEvalSupported: false,
-        useWorkerFetch: false
+        useWorkerFetch: false,
+        maxImageSize: 1024 * 1024,
+        cMapPacked: true,
+        // Disable problematic features
+        disableFontFace: false,
+        useSystemFonts: true
       });
-      const pdfDoc = await loadingTask.promise;
+
+      // Add timeout for PDF loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
+      });
+
+      const pdfDoc = await Promise.race([loadingTask.promise, timeoutPromise]);
       setPdfDocument(pdfDoc);
 
       const pages: PDFPageData[] = [];
@@ -319,9 +334,11 @@ export const useCanvaStylePDFEditor = () => {
       
       if (error instanceof Error) {
         if (error.message.includes('worker') || error.message.includes('Worker')) {
-          errorMessage = 'PDF viewer initialization failed. Please refresh the page and try again.';
+          errorMessage = 'PDF viewer initialization failed. Please try refreshing the page or use a different PDF file.';
         } else if (error.message.includes('fetch')) {
           errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else {
           errorMessage = error.message;
         }
