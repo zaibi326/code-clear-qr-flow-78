@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Template } from '@/types/template';
@@ -34,6 +33,12 @@ const ClearQRPDFEditor = React.lazy(() =>
   }))
 );
 
+const CanvaPDFEditor = React.lazy(() => 
+  import('@/components/template/pdf/CanvaPDFEditor').then(module => ({
+    default: module.CanvaPDFEditor
+  }))
+);
+
 // Loading fallback for editor components
 const EditorLoadingFallback = () => (
   <div className="h-screen w-full flex items-center justify-center bg-gray-50">
@@ -66,7 +71,7 @@ const TemplateManager = () => {
   
   const [activeTab, setActiveTab] = useState('library');
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf' | 'enhanced-pdf' | 'clearqr-pdf'>('canvas');
+  const [editingMode, setEditingMode] = useState<'canvas' | 'pdf' | 'enhanced-pdf' | 'clearqr-pdf' | 'canva-pdf'>('canvas');
 
   const { templates, setTemplates, isLoaded, fileToDataUrl } = useTemplateStorage();
   
@@ -99,6 +104,11 @@ const TemplateManager = () => {
       return true;
     }
     
+    // Check category
+    if (template.category === 'pdf') {
+      return true;
+    }
+    
     return false;
   };
 
@@ -120,10 +130,10 @@ const TemplateManager = () => {
       
       if (template) {
         setEditingTemplate(template);
-        // Improved PDF detection - Use ClearQR PDF Editor for best experience
+        // Improved PDF detection - Use Canva PDF Editor for best experience
         if (isPDFTemplate(template)) {
-          setEditingMode('clearqr-pdf'); // Use new ClearQR PDF editor
-          console.log('Using ClearQR PDF editor for template:', template.name);
+          setEditingMode('canva-pdf'); // Use new Canva PDF editor
+          console.log('Using Canva PDF editor for template:', template.name);
         } else {
           setEditingMode('canvas');
           console.log('Using canvas editor for template:', template.name);
@@ -181,8 +191,8 @@ const TemplateManager = () => {
     
     // Set editing mode based on improved PDF detection
     if (isPDF) {
-      setEditingMode('clearqr-pdf'); // Use new ClearQR PDF editor
-      console.log('Using ClearQR PDF editor for template:', template.name);
+      setEditingMode('canva-pdf'); // Use new Canva PDF editor
+      console.log('Using Canva PDF editor for template:', template.name);
     } else {
       setEditingMode('canvas');
       console.log('Using canvas editor for template:', template.name);
@@ -227,7 +237,20 @@ const TemplateManager = () => {
 
   // Show template editor if editing - Full screen editor with lazy loading
   if (editingTemplate) {
-    if (editingMode === 'clearqr-pdf') {
+    if (editingMode === 'canva-pdf') {
+      console.log('Rendering Canva PDF editor for:', editingTemplate.name);
+      return (
+        <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
+          <Suspense fallback={<EditorLoadingFallback />}>
+            <CanvaPDFEditor
+              template={editingTemplate}
+              onSave={handleTemplateCustomizationSave}
+              onCancel={handleTemplateCustomizationCancel}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      );
+    } else if (editingMode === 'clearqr-pdf') {
       console.log('Rendering ClearQR PDF editor for:', editingTemplate.name);
       return (
         <ErrorBoundary fallback={<EditorErrorFallback onBack={handleTemplateCustomizationCancel} />}>
