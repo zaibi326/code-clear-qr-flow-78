@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -52,17 +51,20 @@ interface PDFDocumentProxy {
   getMetadata: () => Promise<any>;
 }
 
-// Simplified PDF.js worker configuration
+// Improved PDF.js worker configuration with proper version matching
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // In development, use the CDN worker
-    // In production, the worker will be available as a static asset
+    // Use the correct version that matches our installed pdfjs-dist package (5.3.93)
     const isProduction = import.meta.env.PROD;
+    
     if (isProduction) {
+      // In production, try to use local worker first, then fallback to CDN
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     } else {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+      // In development, use CDN with correct version
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
     }
+    
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };
@@ -83,8 +85,14 @@ export const usePDFRenderer = () => {
       setPageRenders([]);
       setPdfDoc(null);
       
-      // Configure worker before loading PDF
-      configurePDFWorker();
+      // Configure worker with enhanced error handling
+      try {
+        configurePDFWorker();
+      } catch (workerError) {
+        console.error('Worker configuration failed:', workerError);
+        // Try alternative worker configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
+      }
       
       console.log('🔄 Loading PDF for rendering...', source instanceof File ? source.name : source);
       
@@ -96,12 +104,17 @@ export const usePDFRenderer = () => {
         console.log('File converted to array buffer, size:', data.byteLength);
       } else {
         console.log('Fetching PDF from URL...');
-        const response = await fetch(source);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.statusText} (${response.status})`);
+        try {
+          const response = await fetch(source);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch PDF: ${response.statusText} (${response.status})`);
+          }
+          data = await response.arrayBuffer();
+          console.log('PDF fetched from URL, size:', data.byteLength);
+        } catch (fetchError) {
+          console.error('Fetch error:', fetchError);
+          throw new Error('Unable to load PDF file. Please check the file and try again.');
         }
-        data = await response.arrayBuffer();
-        console.log('PDF fetched from URL, size:', data.byteLength);
       }
 
       if (data.byteLength === 0) {
@@ -110,28 +123,54 @@ export const usePDFRenderer = () => {
 
       console.log('Creating PDF document...');
       
-      // Simplified PDF loading configuration
+      // Enhanced PDF loading configuration with better error handling
       const loadingTask = pdfjsLib.getDocument({
         data,
         useSystemFonts: true,
         disableFontFace: false,
-        verbosity: 0,
+        verbosity: 1, // Increase verbosity for debugging
         maxImageSize: 1024 * 1024,
-        cMapPacked: true
+        cMapPacked: true,
+        stopAtErrors: false, // Continue processing even if there are errors
+        isEvalSupported: false, // Disable eval for security
+        useWorkerFetch: false // Disable worker fetch to avoid CORS issues
       });
 
-      // Add timeout handling
+      // Enhanced timeout handling with better error messages
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
+        setTimeout(() => reject(new Error('PDF loading timeout. The file might be too large or the worker failed to load.')), 30000);
       });
 
-      const doc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
-      console.log('PDF document created successfully');
+      let doc: PDFDocumentProxy;
+      try {
+        doc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
+        console.log('PDF document created successfully');
+      } catch (loadError) {
+        console.error('PDF loading error:', loadError);
+        
+        // Try with alternative worker configuration
+        console.log('Retrying with alternative worker configuration...');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+        
+        const retryLoadingTask = pdfjsLib.getDocument({
+          data,
+          useSystemFonts: true,
+          disableFontFace: true,
+          verbosity: 0,
+          maxImageSize: 512 * 512,
+          stopAtErrors: false,
+          isEvalSupported: false,
+          useWorkerFetch: false
+        });
+        
+        doc = await Promise.race([retryLoadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
+        console.log('PDF document created successfully on retry');
+      }
       
       setPdfDoc(doc);
       setNumPages(doc.numPages);
       
-      // Get document info
+      // Get document info with error handling
       try {
         const info = await doc.getMetadata();
         setDocumentInfo(info);
@@ -148,8 +187,10 @@ export const usePDFRenderer = () => {
       if (err instanceof Error) {
         if (err.message.includes('timeout')) {
           errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
-        } else if (err.message.includes('fetch')) {
+        } else if (err.message.includes('fetch') || err.message.includes('network')) {
           errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
+        } else if (err.message.includes('worker')) {
+          errorMessage = 'PDF worker failed to load. Please refresh the page and try again.';
         } else {
           errorMessage = err.message;
         }

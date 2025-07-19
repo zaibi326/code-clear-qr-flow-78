@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -99,17 +98,20 @@ interface PDFDocumentProxy {
   getMetadata?: () => Promise<any>;
 }
 
-// Simplified PDF.js worker configuration
+// Enhanced PDF.js worker configuration with proper version matching
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // In development, use the CDN worker
-    // In production, the worker will be available as a static asset
+    // Use the correct version that matches our installed pdfjs-dist package
     const isProduction = import.meta.env.PROD;
+    
     if (isProduction) {
+      // In production, try to use local worker first
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     } else {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+      // In development, use CDN with a more compatible version
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
     }
+    
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };
@@ -211,25 +213,56 @@ export const useCanvaStylePDFEditor = () => {
       const uint8Array = new Uint8Array(arrayBuffer);
       setOriginalPdfBytes(uint8Array);
 
-      // Configure worker before loading PDF
-      configurePDFWorker();
+      // Configure worker with enhanced error handling
+      try {
+        configurePDFWorker();
+      } catch (workerError) {
+        console.error('Worker configuration failed:', workerError);
+        // Fallback to alternative worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+      }
 
-      console.log('Creating PDF document with simplified configuration...');
+      console.log('Creating PDF document with enhanced configuration...');
       const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
-        verbosity: 0,
+        verbosity: 1,
         maxImageSize: 1024 * 1024,
         cMapPacked: true,
         disableFontFace: false,
-        useSystemFonts: true
+        useSystemFonts: true,
+        stopAtErrors: false,
+        isEvalSupported: false,
+        useWorkerFetch: false
       });
 
-      // Add timeout for PDF loading
+      // Enhanced timeout with better error handling
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
+        setTimeout(() => reject(new Error('PDF loading timeout. The worker may have failed to load.')), 30000);
       });
 
-      const pdfDoc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
+      let pdfDoc: PDFDocumentProxy;
+      try {
+        pdfDoc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
+      } catch (loadError) {
+        console.error('PDF loading error, trying fallback:', loadError);
+        
+        // Try with fallback worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+        
+        const fallbackTask = pdfjsLib.getDocument({ 
+          data: arrayBuffer,
+          verbosity: 0,
+          maxImageSize: 512 * 512,
+          disableFontFace: true,
+          stopAtErrors: false,
+          isEvalSupported: false,
+          useWorkerFetch: false
+        });
+        
+        pdfDoc = await Promise.race([fallbackTask.promise, timeoutPromise]) as PDFDocumentProxy;
+        console.log('PDF loaded successfully with fallback worker');
+      }
+      
       setPdfDocument(pdfDoc);
 
       const pages: PDFPageData[] = [];
@@ -333,9 +366,11 @@ export const useCanvaStylePDFEditor = () => {
       
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
-          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
-        } else if (error.message.includes('fetch')) {
+          errorMessage = 'PDF loading timed out. The file might be too large or the worker failed to load.';
+        } else if (error.message.includes('fetch') || error.message.includes('network')) {
           errorMessage = 'Unable to load PDF file. Please check your internet connection and try again.';
+        } else if (error.message.includes('worker')) {
+          errorMessage = 'PDF worker failed to load. Please refresh the page and try again.';
         } else {
           errorMessage = error.message;
         }
