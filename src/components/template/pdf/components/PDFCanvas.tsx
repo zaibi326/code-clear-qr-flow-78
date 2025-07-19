@@ -59,8 +59,7 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
       style={{
         width: pageRender.width * zoom,
         height: pageRender.height * zoom,
-        maxWidth: '100%',
-        height: 'auto'
+        maxWidth: '100%'
       }}
     />
   );

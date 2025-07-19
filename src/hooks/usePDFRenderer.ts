@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
-interface PDFPageRender {
+export interface PDFPageRender {
   canvas: HTMLCanvasElement;
   textLayer?: HTMLDivElement;
   width: number;
