@@ -44,6 +44,13 @@ interface ConvertToImagesOptions {
   quality?: number;
 }
 
+// Type for PDF.js document
+interface PDFDocumentProxy {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<any>;
+  getMetadata: () => Promise<any>;
+}
+
 // Configure PDF.js worker with a more reliable approach
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined') {
@@ -78,7 +85,7 @@ export const usePDFRenderer = () => {
   const [numPages, setNumPages] = useState(0);
   const [documentInfo, setDocumentInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
 
   const loadPDF = useCallback(async (source: File | string) => {
     try {
@@ -133,7 +140,7 @@ export const usePDFRenderer = () => {
         setTimeout(() => reject(new Error('PDF loading timeout')), 30000);
       });
 
-      const doc = await Promise.race([loadingTask.promise, timeoutPromise]);
+      const doc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
       console.log('PDF document created successfully');
       
       setPdfDoc(doc);

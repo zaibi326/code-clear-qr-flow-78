@@ -91,6 +91,13 @@ interface ExportOptions {
   includeAnnotations?: boolean;
 }
 
+// Type for PDF.js document
+interface PDFDocumentProxy {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<any>;
+  getMetadata?: () => Promise<any>;
+}
+
 // Configure PDF.js worker with better compatibility
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined') {
@@ -112,7 +119,7 @@ const configurePDFWorker = () => {
 };
 
 export const useCanvaStylePDFEditor = () => {
-  const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
   const [originalPdfBytes, setOriginalPdfBytes] = useState<Uint8Array | null>(null);
   const [pdfPages, setPdfPages] = useState<PDFPageData[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -230,7 +237,7 @@ export const useCanvaStylePDFEditor = () => {
         setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
       });
 
-      const pdfDoc = await Promise.race([loadingTask.promise, timeoutPromise]);
+      const pdfDoc = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
       setPdfDocument(pdfDoc);
 
       const pages: PDFPageData[] = [];
