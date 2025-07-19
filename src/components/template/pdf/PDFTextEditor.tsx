@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +10,10 @@ import {
   Save,
   Upload,
   Type,
-  Edit3,
   MousePointer,
   Maximize2,
-  Move
+  Move,
+  AlertCircle
 } from 'lucide-react';
 import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
 import { EditableTextBlock } from './EditableTextBlock';
@@ -54,11 +55,12 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   hideFileUpload = false
 }) => {
   const [zoom, setZoom] = useState(1);
-  const [selectedFile, setSelectedFile] = useState<File | null>(template?.file || null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editMode, setEditMode] = useState<EditMode>('select');
   const [isPanning, setIsPanning] = useState(false);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   const {
     pdfDocument,
@@ -66,6 +68,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     currentPage,
     setCurrentPage,
     isLoading,
+    error,
     editedTextBlocks,
     loadPDF,
     updateTextBlock,
@@ -74,37 +77,112 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     exportPDF
   } = usePDFTextEditor();
 
-  // Auto-load PDF from template
-  useEffect(() => {
-    if (template?.file && template.file.type === 'application/pdf') {
-      loadPDF(template.file);
-      setSelectedFile(template.file);
+  // Convert template data to File object for loading
+  const convertTemplateToFile = async (template: Template): Promise<File | null> => {
+    try {
+      if (template.file && template.file instanceof File) {
+        return template.file;
+      }
+
+      let blob: Blob;
+      const fileName = template.name || 'document.pdf';
+
+      if (template.preview && template.preview.startsWith('data:application/pdf')) {
+        console.log('Converting data URL to file');
+        const response = await fetch(template.preview);
+        blob = await response.blob();
+      } else if (template.template_url && template.template_url.startsWith('data:application/pdf')) {
+        console.log('Converting template_url data to file');
+        const response = await fetch(template.template_url);
+        blob = await response.blob();
+      } else if (template.template_url && template.template_url.startsWith('blob:')) {
+        console.log('Converting blob URL to file');
+        const response = await fetch(template.template_url);
+        blob = await response.blob();
+      } else {
+        console.error('No valid PDF data found in template');
+        return null;
+      }
+
+      return new File([blob], fileName, { type: 'application/pdf' });
+    } catch (error) {
+      console.error('Error converting template to file:', error);
+      return null;
     }
-  }, [template, loadPDF]);
+  };
+
+  // Auto-load PDF from template with better error handling
+  useEffect(() => {
+    const loadTemplateFile = async () => {
+      if (template && !selectedFile && !isLoading) {
+        console.log('Loading PDF from template:', template.name);
+        setLoadError(null);
+        
+        try {
+          const file = await convertTemplateToFile(template);
+          if (file) {
+            console.log('Template converted to file successfully:', file.name, file.size);
+            setSelectedFile(file);
+            await loadPDF(file);
+          } else {
+            const errorMsg = 'Could not convert template to file. The PDF data may be corrupted.';
+            setLoadError(errorMsg);
+            toast({
+              title: 'PDF Load Error',
+              description: errorMsg,
+              variant: 'destructive'
+            });
+          }
+        } catch (error) {
+          console.error('Error loading template:', error);
+          const errorMsg = 'Failed to load PDF template. Please try re-uploading the file.';
+          setLoadError(errorMsg);
+          toast({
+            title: 'PDF Load Error',
+            description: errorMsg,
+            variant: 'destructive'
+          });
+        }
+      }
+    };
+
+    loadTemplateFile();
+  }, [template, loadPDF, selectedFile, isLoading]);
 
   // Auto-enable text editing mode when PDF is loaded
   useEffect(() => {
-    if (pdfPages.length > 0 && !isLoading) {
+    if (pdfPages.length > 0 && !isLoading && !error) {
       setEditMode('select');
+      setLoadError(null);
       
       toast({
         title: 'PDF Loaded Successfully',
-        description: 'Clean layout preserved! No text duplication - all text is editable and positioned accurately.',
+        description: 'Click on any text to edit it, or use "Add Text" to create new text.',
       });
     }
-  }, [pdfPages.length, isLoading]);
+  }, [pdfPages.length, isLoading, error]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please select a PDF file.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       setSelectedFile(file);
-      loadPDF(file);
-    } else {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please select a PDF file.',
-        variant: 'destructive'
-      });
+      setLoadError(null);
+      
+      try {
+        await loadPDF(file);
+      } catch (error) {
+        console.error('Error loading uploaded file:', error);
+        setLoadError('Failed to load the uploaded PDF file.');
+      }
     }
   };
 
@@ -112,6 +190,24 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     const fileInput = document.getElementById('pdf-file-input') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
+    }
+  };
+
+  const handleRetryLoad = async () => {
+    if (template) {
+      setLoadError(null);
+      setSelectedFile(null);
+      
+      try {
+        const file = await convertTemplateToFile(template);
+        if (file) {
+          setSelectedFile(file);
+          await loadPDF(file);
+        }
+      } catch (error) {
+        console.error('Retry failed:', error);
+        setLoadError('Retry failed. Please try uploading the PDF again.');
+      }
     }
   };
 
@@ -165,9 +261,9 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
     const currentPageData = pdfPages[currentPage];
     if (!currentPageData) return [];
 
-    const originalTextBlocks = currentPageData.textBlocks || [];
+    const originalTextBlocks = (currentPageData.textBlocks || []) as PDFTextBlock[];
     const editedBlocks = Array.from(editedTextBlocks.values()).filter(
-      block => block.pageNumber === currentPage + 1
+      (block: PDFTextBlock) => block.pageNumber === currentPage + 1
     );
 
     // Create a map of edited blocks by their ID for quick lookup
@@ -199,6 +295,36 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
   const unifiedTextBlocks = getUnifiedTextBlocks();
   const totalEditedBlocks = editedTextBlocks.size;
 
+  // Show error state if there's a load error or PDF error
+  if (loadError || error) {
+    return (
+      <div className="h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Failed to Load PDF
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            {loadError || error || 'Unable to load PDF file. Please check your internet connection and try again.'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={handleRetryLoad} className="bg-blue-600 hover:bg-blue-700">
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={triggerFileUpload}>
+              Upload New PDF
+            </Button>
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gray-50 flex">
       {/* Hidden file input */}
@@ -218,7 +344,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             PDF Text Editor
           </CardTitle>
           <p className="text-sm text-blue-700">
-            Clean layout with no text duplication
+            Click on text to edit inline - just like Canva
           </p>
         </CardHeader>
         
@@ -285,8 +411,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-600">Processing PDF with clean layout preservation...</p>
-                <p className="text-sm text-gray-500">No text duplication - rendering editable overlay only</p>
+                <p className="text-gray-600">Loading PDF for editing...</p>
+                <p className="text-sm text-gray-500">Setting up Canva-style text editing</p>
               </div>
             </div>
           ) : pdfPages.length === 0 ? (
@@ -297,7 +423,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                   Upload a PDF to Get Started
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Your PDF will be processed with clean layout preservation and no text duplication.
+                  Experience Canva-style PDF editing with inline text editing and easy exports.
                 </p>
                 <Button
                   onClick={triggerFileUpload}
@@ -381,7 +507,7 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
                     Page {currentPage + 1}/{pdfPages.length}
                   </span>
                   <span className="text-xs text-green-600 font-medium">
-                    ✓ Clean
+                    ✓ Ready
                   </span>
                 </div>
               </div>
@@ -391,8 +517,8 @@ export const PDFTextEditor: React.FC<PDFTextEditorProps> = ({
               <div className="text-center p-8">
                 <div className="text-red-500 text-lg mb-4">Error Loading PDF Page</div>
                 <p className="text-gray-600 mb-4">There was an issue loading the PDF page data.</p>
-                <Button variant="outline" onClick={() => window.location.reload()}>
-                  Reload Page
+                <Button variant="outline" onClick={handleRetryLoad}>
+                  Retry Loading
                 </Button>
               </div>
             </div>

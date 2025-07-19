@@ -77,6 +77,21 @@ const TemplateManager = () => {
     return false;
   };
 
+  // Helper function to check if template has valid data for editing
+  const canEditTemplate = (template: Template): boolean => {
+    if (!isPDFTemplate(template)) return true; // Non-PDF templates can always be edited
+    
+    // For PDF templates, check if they have valid data
+    return !!(
+      (template.file && template.file instanceof File) ||
+      (template.preview && template.preview.startsWith('data:application/pdf')) ||
+      (template.template_url && (
+        template.template_url.startsWith('data:application/pdf') ||
+        template.template_url.startsWith('blob:')
+      ))
+    );
+  };
+
   // Handle URL parameters for editing state
   useEffect(() => {
     const editingId = searchParams.get('editing');
@@ -112,14 +127,26 @@ const TemplateManager = () => {
   }, [editingTemplate]);
 
   const handleTemplateEdit = (template: Template) => {
-    console.log('Editing template:', {
+    console.log('Attempting to edit template:', {
       name: template.name,
       isPDF: isPDFTemplate(template),
-      hasTemplateUrl: !!template.template_url,
+      canEdit: canEditTemplate(template),
+      hasFile: !!template.file,
       hasPreview: !!template.preview,
-      urlType: template.template_url?.startsWith('data:') ? 'data-url' : 
-               template.template_url?.startsWith('blob:') ? 'blob-url' : 'http-url'
+      hasTemplateUrl: !!template.template_url,
+      previewType: template.preview?.substring(0, 30),
+      templateUrlType: template.template_url?.substring(0, 30)
     });
+    
+    // Check if template can be edited
+    if (!canEditTemplate(template)) {
+      toast({
+        title: "Cannot Edit Template",
+        description: "This template is missing required data. Please re-upload the file.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const isPDF = isPDFTemplate(template);
     
@@ -129,6 +156,13 @@ const TemplateManager = () => {
     const newSearchParams = new URLSearchParams();
     newSearchParams.set('editing', template.id);
     navigate(`/template-manager?${newSearchParams.toString()}`, { replace: false });
+
+    if (isPDF) {
+      toast({
+        title: "Opening PDF Editor",
+        description: "Loading Canva-style PDF editor with inline text editing...",
+      });
+    }
   };
 
   const handleTemplateCustomizationSave = (customizedTemplate: Template) => {
@@ -152,7 +186,7 @@ const TemplateManager = () => {
     setActiveTab('upload');
   };
 
-  // Template upload handler
+  // Template upload handler with better PDF validation
   const handleTemplateUpload = async (file: File) => {
     try {
       console.log('Processing template upload:', {
@@ -161,15 +195,41 @@ const TemplateManager = () => {
         size: file.size,
         isPDF: file.type === 'application/pdf'
       });
+
+      // Validate file size (limit to 50MB for better performance)
+      if (file.size > 50 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 50MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate file type for PDFs
+      if (file.type === 'application/pdf') {
+        // Quick validation to ensure it's a valid PDF
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const header = String.fromCharCode(...uint8Array.slice(0, 5));
+        
+        if (!header.startsWith('%PDF-')) {
+          toast({
+            title: "Invalid PDF file",
+            description: "The selected file is not a valid PDF",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
       
-      // Convert file to data URL immediately for persistent storage
+      // Convert file to data URL for persistent storage
       const dataUrl = await fileToDataUrl(file);
-      console.log('File converted to data URL, length:', dataUrl.length);
       
       const newTemplate: Template = {
         id: `template-${Date.now()}`,
         name: file.name,
-        template_url: dataUrl, // Use data URL instead of blob URL
+        template_url: dataUrl,
         preview: dataUrl,
         thumbnail_url: dataUrl,
         category: file.type === 'application/pdf' ? 'pdf' : 'image',
@@ -180,20 +240,20 @@ const TemplateManager = () => {
         updated_at: new Date().toISOString(),
         fileSize: file.size,
         isPdf: file.type === 'application/pdf',
-        file
+        file // Keep the original file object for immediate editing
       };
       
       setTemplates(prev => [...prev, newTemplate]);
       
       toast({
-        title: "Template uploaded",
-        description: `${file.name} has been uploaded and is ready for editing`
+        title: "Template uploaded successfully",
+        description: `${file.name} is ready for ${file.type === 'application/pdf' ? 'Canva-style PDF' : ''} editing`
       });
     } catch (error) {
       console.error('Upload failed:', error);
       toast({
         title: "Upload failed",
-        description: "Please try again",
+        description: "Please check the file and try again",
         variant: "destructive"
       });
     }

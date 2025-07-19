@@ -5,15 +5,16 @@ import { PDFDocument } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
 import { usePDFTextOperations } from './usePDFTextOperations';
 
-// Enhanced PDF.js worker configuration with proper version matching
+// Enhanced PDF.js worker configuration
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
     const isProduction = import.meta.env.PROD;
     
     if (isProduction) {
+      // Use local worker in production
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     } else {
-      // Use more compatible version in development
+      // Use compatible CDN version in development
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
     }
     
@@ -54,6 +55,7 @@ export const usePDFTextEditor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editedTextBlocks, setEditedTextBlocks] = useState<Map<string, PDFTextBlock>>(new Map());
+  const [originalPdfBytes, setOriginalPdfBytes] = useState<Uint8Array | null>(null);
   const isLoadingRef = useRef(false);
 
   const { addTextBlock: createTextBlock, exportPDFWithEdits } = usePDFTextOperations();
@@ -64,11 +66,25 @@ export const usePDFTextEditor = () => {
       return;
     }
 
+    // Validate file
+    if (!file || file.type !== 'application/pdf') {
+      const errorMsg = 'Invalid file type. Please select a PDF file.';
+      setError(errorMsg);
+      toast({
+        title: 'Invalid File',
+        description: errorMsg,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     isLoadingRef.current = true;
     setIsLoading(true);
     setError(null);
     
     try {
+      console.log('Loading PDF file:', file.name, 'Size:', file.size);
+      
       // Configure worker with enhanced error handling
       try {
         configurePDFWorker();
@@ -79,13 +95,16 @@ export const usePDFTextEditor = () => {
       }
 
       const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      setOriginalPdfBytes(uint8Array);
       
-      // Load with pdf-lib for editing
+      // Load with pdf-lib for editing capabilities
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       setPdfDocument(pdfDoc);
       
+      // Load with PDF.js for text extraction and rendering
       const loadingTask = pdfjsLib.getDocument({
-        data: arrayBuffer,
+        data: uint8Array,
         verbosity: 1,
         maxImageSize: 1024 * 1024,
         cMapPacked: true,
@@ -96,23 +115,25 @@ export const usePDFTextEditor = () => {
         useWorkerFetch: false
       });
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('PDF loading timeout')), 30000);
+      // Add timeout for PDF loading
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
       });
 
       let pdfDocJS;
       try {
         pdfDocJS = await Promise.race([loadingTask.promise, timeoutPromise]);
+        console.log('PDF loaded successfully with main worker');
       } catch (loadError) {
         console.error('PDF loading error, trying fallback:', loadError);
         
-        // Try with fallback worker
+        // Try with more conservative settings
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
         
         const fallbackTask = pdfjsLib.getDocument({
-          data: arrayBuffer,
+          data: uint8Array,
           verbosity: 0,
-          maxImageSize: 512 * 512,
+          maxImageSize: 512 * 512, 
           disableFontFace: true,
           stopAtErrors: false,
           isEvalSupported: false,
@@ -120,87 +141,119 @@ export const usePDFTextEditor = () => {
         });
         
         pdfDocJS = await Promise.race([fallbackTask.promise, timeoutPromise]);
-        console.log('PDF loaded successfully with fallback worker');
+        console.log('PDF loaded successfully with fallback configuration');
       }
 
       const pages: PDFPageData[] = [];
+      console.log(`Processing ${pdfDocJS.numPages} pages...`);
+
       for (let i = 1; i <= pdfDocJS.numPages; i++) {
-        const page = await pdfDocJS.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
-        
-        // Create canvas for background image (without text)
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        try {
+          const page = await pdfDocJS.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          
+          // Create canvas for background image (rendered without text)
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) {
+            throw new Error('Could not get canvas context');
+          }
+          
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
 
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-          textLayer: null // Disable text rendering in background
-        }).promise;
+          // Render page without text layer for clean background
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+            textLayer: null // This ensures no text is rendered on background
+          }).promise;
 
-        // Extract text content for editable overlay
-        const textContent = await page.getTextContent();
-        const textBlocks: PDFTextBlock[] = [];
+          // Extract text content for editable overlay
+          const textContent = await page.getTextContent();
+          const textBlocks: PDFTextBlock[] = [];
 
-        textContent.items.forEach((item: any, index: number) => {
-          if (item.str && item.str.trim()) {
-            const transform = item.transform;
-            textBlocks.push({
-              id: `text-${i}-${index}`,
-              text: item.str,
-              x: transform[4],
-              y: viewport.height - transform[5] - (item.height || Math.abs(transform[3])),
-              width: item.width || (item.str.length * (Math.abs(transform[0]) || 12)),
-              height: item.height || Math.abs(transform[3]) || 16,
-              fontSize: Math.abs(transform[3]) || 16,
-              fontName: item.fontName || 'Helvetica',
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              textAlign: 'left',
-              color: { r: 0, g: 0, b: 0 },
-              pageNumber: i,
-              isEdited: false
+          if (textContent && textContent.items) {
+            textContent.items.forEach((item: any, index: number) => {
+              if (item.str && item.str.trim() && item.transform) {
+                const transform = item.transform;
+                
+                // Calculate position and size
+                const x = transform[4];
+                const y = viewport.height - transform[5] - (item.height || Math.abs(transform[3]));
+                const width = item.width || (item.str.length * (Math.abs(transform[0]) || 12));
+                const height = item.height || Math.abs(transform[3]) || 16;
+                const fontSize = Math.abs(transform[3]) || 16;
+
+                textBlocks.push({
+                  id: `text-${i}-${index}-${Date.now()}`,
+                  text: item.str,
+                  x: Math.max(0, x),
+                  y: Math.max(0, y),
+                  width: width,
+                  height: height,
+                  fontSize: fontSize,
+                  fontName: item.fontName || 'Helvetica',
+                  fontWeight: 'normal',
+                  fontStyle: 'normal',
+                  textAlign: 'left',
+                  color: { r: 0, g: 0, b: 0 },
+                  pageNumber: i,
+                  isEdited: false
+                });
+              }
             });
           }
-        });
 
-        pages.push({
-          pageNumber: i,
-          width: viewport.width,
-          height: viewport.height,
-          backgroundImage: canvas.toDataURL(),
-          textBlocks
-        });
+          pages.push({
+            pageNumber: i,
+            width: viewport.width,
+            height: viewport.height,
+            backgroundImage: canvas.toDataURL('image/png', 0.9),
+            textBlocks
+          });
+
+          console.log(`Page ${i} processed: ${textBlocks.length} text blocks extracted`);
+        } catch (pageError) {
+          console.error(`Error processing page ${i}:`, pageError);
+          // Continue with other pages even if one fails
+        }
+      }
+
+      if (pages.length === 0) {
+        throw new Error('No pages could be processed from the PDF');
       }
 
       setPdfPages(pages);
       setCurrentPage(0);
       setEditedTextBlocks(new Map());
       
+      console.log(`PDF loaded successfully: ${pages.length} pages, ${pages.reduce((sum, p) => sum + p.textBlocks.length, 0)} total text blocks`);
+      
       toast({
         title: 'PDF Loaded Successfully',
-        description: `Loaded ${pages.length} pages for editing.`,
+        description: `Loaded ${pages.length} pages with ${pages.reduce((sum, p) => sum + p.textBlocks.length, 0)} editable text elements.`,
       });
 
     } catch (error) {
       console.error('Error loading PDF:', error);
-      let errorMessage = 'Failed to load PDF';
+      let errorMessage = 'Failed to load PDF file.';
       
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
-          errorMessage = 'PDF loading timed out. The file might be too large or the worker failed to load.';
+          errorMessage = 'PDF loading timed out. The file might be too large or corrupted.';
         } else if (error.message.includes('worker')) {
-          errorMessage = 'PDF worker failed to load. Please refresh the page and try again.';
+          errorMessage = 'PDF processing failed. Please try refreshing the page.';
+        } else if (error.message.includes('Invalid PDF')) {
+          errorMessage = 'The file appears to be corrupted or is not a valid PDF.';
         } else {
-          errorMessage = error.message;
+          errorMessage = `PDF loading failed: ${error.message}`;
         }
       }
       
       setError(errorMessage);
       toast({
-        title: 'Error Loading PDF',
+        title: 'PDF Loading Failed',
         description: errorMessage,
         variant: 'destructive'
       });
@@ -254,6 +307,7 @@ export const usePDFTextEditor = () => {
     const originalBlock = findOriginalTextBlock(id);
     
     if (originalBlock) {
+      // Mark original text as deleted (empty text)
       setEditedTextBlocks(prev => {
         const newMap = new Map(prev);
         newMap.set(id, {
@@ -265,6 +319,7 @@ export const usePDFTextEditor = () => {
         return newMap;
       });
     } else {
+      // Remove completely new text blocks
       setEditedTextBlocks(prev => {
         const newMap = new Map(prev);
         newMap.delete(id);
@@ -274,9 +329,9 @@ export const usePDFTextEditor = () => {
   }, []);
 
   const exportPDF = useCallback(async () => {
-    if (!pdfDocument || !pdfPages.length) {
+    if (!pdfDocument || !originalPdfBytes || !pdfPages.length) {
       toast({
-        title: 'No PDF to export',
+        title: 'Nothing to Export',
         description: 'Please load a PDF first.',
         variant: 'destructive'
       });
@@ -286,8 +341,7 @@ export const usePDFTextEditor = () => {
     try {
       console.log('Exporting PDF with text edits...');
       
-      const pdfBytes = await pdfDocument.save();
-      const modifiedPdfBytes = await exportPDFWithEdits(pdfBytes, editedTextBlocks);
+      const modifiedPdfBytes = await exportPDFWithEdits(originalPdfBytes, editedTextBlocks);
       
       const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -295,7 +349,9 @@ export const usePDFTextEditor = () => {
       const link = document.createElement('a');
       link.href = url;
       link.download = 'edited-document.pdf';
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       
       URL.revokeObjectURL(url);
       
@@ -311,7 +367,7 @@ export const usePDFTextEditor = () => {
         variant: 'destructive'
       });
     }
-  }, [pdfDocument, pdfPages, editedTextBlocks, exportPDFWithEdits]);
+  }, [pdfDocument, originalPdfBytes, pdfPages, editedTextBlocks, exportPDFWithEdits]);
 
   return {
     pdfDocument,

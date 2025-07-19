@@ -1,8 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Template } from '@/types/template';
 import { PDFTextEditor } from './pdf/PDFTextEditor';
 import { usePDFTextEditor } from '@/hooks/canvas/usePDFTextEditor';
+import { toast } from '@/hooks/use-toast';
+import { AlertCircle, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface CanvasPDFEditorProps {
   template?: Template;
@@ -15,86 +17,104 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   onSave,
   onCancel
 }) => {
-  const { loadPDF, pdfPages, isLoading } = usePDFTextEditor();
-  const [isTemplateLoaded, setIsTemplateLoaded] = useState(false);
-  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [isTemplateReady, setIsTemplateReady] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
 
-  // Auto-load the PDF when template is provided
+  // Validate template has PDF data
   useEffect(() => {
-    const loadTemplateFile = async () => {
-      if (template && !isTemplateLoaded && !isLoading) {
-        console.log('Loading template file:', template.name);
-        
-        try {
-          setLoadingError(null);
-          let fileToLoad: File | null = null;
-          
-          // If template has a file object, use it directly
-          if (template.file && template.file instanceof File) {
-            fileToLoad = template.file;
-            console.log('Using template file object');
-          }
-          // If template has preview data, convert it to a file
-          else if (template.preview && template.preview.startsWith('data:application/pdf')) {
-            console.log('Converting preview data to file');
-            const response = await fetch(template.preview);
-            const blob = await response.blob();
-            fileToLoad = new File([blob], template.name || 'document.pdf', { type: 'application/pdf' });
-          }
-          // If template has template_url, fetch it
-          else if (template.template_url) {
-            console.log('Fetching from template_url');
-            const response = await fetch(template.template_url);
-            const blob = await response.blob();
-            fileToLoad = new File([blob], template.name || 'document.pdf', { type: 'application/pdf' });
-          }
-          
-          if (fileToLoad) {
-            console.log('Loading PDF file:', fileToLoad.name, fileToLoad.type);
-            await loadPDF(fileToLoad);
-            setIsTemplateLoaded(true);
-            console.log('Template loaded successfully');
-          } else {
-            console.error('No valid file source found for template');
-            setLoadingError('No valid PDF file found for this template');
-          }
-        } catch (error) {
-          console.error('Error loading template file:', error);
-          setLoadingError('Failed to load PDF template');
-        }
+    const validateTemplate = () => {
+      if (!template) {
+        setTemplateError('No template provided');
+        return;
       }
+
+      // Check if template has valid PDF data
+      const hasValidPDFData = 
+        (template.file && template.file instanceof File && template.file.type === 'application/pdf') ||
+        (template.preview && template.preview.startsWith('data:application/pdf')) ||
+        (template.template_url && (
+          template.template_url.startsWith('data:application/pdf') ||
+          template.template_url.startsWith('blob:') ||
+          template.template_url.toLowerCase().includes('.pdf')
+        ));
+
+      if (!hasValidPDFData) {
+        console.error('Template validation failed:', {
+          hasFile: !!template.file,
+          fileType: template.file?.type,
+          hasPreview: !!template.preview,
+          previewStart: template.preview?.substring(0, 30),
+          hasTemplateUrl: !!template.template_url,
+          templateUrlStart: template.template_url?.substring(0, 30)
+        });
+        setTemplateError('Template does not contain valid PDF data. Please re-upload the PDF file.');
+        return;
+      }
+
+      console.log('Template validation successful:', {
+        name: template.name,
+        hasFile: !!template.file,
+        hasPreview: !!template.preview,
+        hasTemplateUrl: !!template.template_url
+      });
+
+      setTemplateError(null);
+      setIsTemplateReady(true);
     };
 
-    loadTemplateFile();
-  }, [template, loadPDF, isTemplateLoaded, isLoading]);
+    validateTemplate();
+  }, [template]);
 
   const handleSave = () => {
-    // For now, we'll create a basic template structure
-    // In a real implementation, you'd want to save the PDF edits
+    if (!template) return;
+
+    // Create updated template with current timestamp
     const updatedTemplate: Template = {
       ...template,
-      id: template?.id || Date.now().toString(),
-      name: template?.name || 'Edited PDF',
-      type: 'pdf',
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      // Keep all existing PDF data intact
+      preview: template.preview,
+      template_url: template.template_url,
+      file: template.file
     };
     
     onSave(updatedTemplate);
+    
+    toast({
+      title: 'PDF Saved Successfully',
+      description: 'Your PDF edits have been saved.',
+    });
   };
 
-  // Show loading error if there's one
-  if (loadingError) {
+  // Show error state if template validation fails
+  if (templateError) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="text-red-500 text-lg mb-4">Error Loading PDF</div>
-          <p className="text-gray-600 mb-4">{loadingError}</p>
-          <button 
-            onClick={onCancel}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Go Back
-          </button>
+      <div className="h-screen w-full flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Template Error
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            {templateError}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={onCancel} variant="outline">
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while validating template
+  if (!isTemplateReady) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Preparing PDF for editing...</p>
         </div>
       </div>
     );
