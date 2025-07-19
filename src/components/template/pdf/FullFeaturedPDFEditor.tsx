@@ -192,7 +192,7 @@ export const FullFeaturedPDFEditor: React.FC<FullFeaturedPDFEditorProps> = ({
                 onToolChange={handleToolChange}
                 onAddAnnotation={(type, x, y) => {
                   if (type === 'shape') {
-                    addShape(currentPage, 'rectangle', x, y);
+                    addShape();
                   }
                 }}
               />
