@@ -36,11 +36,7 @@ const NextGenCTA = () => {
   return <section className="py-32 relative overflow-hidden">
       {/* Dynamic Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-20 left-20 w-20 h-20 bg-cyan-500/30 rounded-full animate-pulse"></div>
-          <div className="absolute top-40 right-32 w-16 h-16 bg-purple-500/30 rounded-full animate-bounce"></div>
-          <div className="absolute bottom-32 left-1/3 w-24 h-24 bg-blue-500/30 rounded-full animate-ping"></div>
-        </div>
+        
         
         {/* Particle Network */}
         
