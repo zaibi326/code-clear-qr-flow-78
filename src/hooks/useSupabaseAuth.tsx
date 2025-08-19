@@ -201,8 +201,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       console.log('useAuth: Attempting sign in for:', email);
+      
+      // First test database connection
+      try {
+        await supabase.from('user_roles').select('count', { count: 'exact', head: true });
+        console.log('useAuth: Database connection verified');
+      } catch (dbError) {
+        console.error('useAuth: Database connection failed:', dbError);
+        return { 
+          error: { 
+            message: 'Unable to connect to the authentication service. Please check your internet connection and try again.' 
+          } 
+        };
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -216,7 +231,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           code: error.name
         });
         
-        return { error };
+        // Provide more user-friendly error messages
+        let friendlyMessage = error.message;
+        if (error.message?.includes('Invalid login credentials')) {
+          friendlyMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message?.includes('Email not confirmed')) {
+          friendlyMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (error.message?.includes('Too many requests')) {
+          friendlyMessage = 'Too many login attempts. Please wait a few minutes and try again.';
+        } else if (error.message?.includes('Network error') || error.message?.includes('Failed to fetch')) {
+          friendlyMessage = 'Network connection error. Please check your internet connection and try again.';
+        }
+        
+        return { error: { ...error, message: friendlyMessage } };
       }
       
       if (data.user) {
@@ -224,11 +251,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error('useAuth: Unexpected sign in error:', error);
+      
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (error.message?.includes('fetch')) {
+        errorMessage = 'Unable to connect to the authentication service. Please check your internet connection and try again.';
+      }
+      
       return { 
         error: {
-          message: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
+          message: errorMessage
         }
       };
     } finally {
