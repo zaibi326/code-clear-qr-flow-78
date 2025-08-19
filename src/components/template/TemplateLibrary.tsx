@@ -50,9 +50,13 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   }, [templates, searchTerm, selectedCategory]);
 
   const isPDFTemplate = (template: Template): boolean => {
-    return template.template_url?.toLowerCase().includes('.pdf') ||
+    return template.file?.type === 'application/pdf' ||
+           template.type === 'application/pdf' ||
+           template.file_type === 'application/pdf' ||
+           template.template_url?.toLowerCase().includes('.pdf') ||
            template.preview?.includes('application/pdf') ||
-           template.category === 'pdf';
+           template.category === 'pdf' ||
+           template.isPdf === true;
   };
 
   const getTemplateIcon = (template: Template) => {
@@ -168,10 +172,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                           size="sm"
                           variant="secondary"
                           onClick={() => onTemplateEdit(template)}
-                          className="bg-white text-gray-900 hover:bg-gray-100"
+                          className="bg-blue-600 text-white hover:bg-blue-700 border-0"
                         >
                           <Edit className="w-4 h-4 mr-1" />
-                          Edit
+                          {isPDFTemplate(template) ? 'Edit PDF' : 'Edit'}
                         </Button>
                       </div>
                     </div>

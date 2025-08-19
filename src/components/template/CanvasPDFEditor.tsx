@@ -68,10 +68,12 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
   const handleSave = () => {
     if (!template) return;
 
+    console.log('Saving PDF template changes...');
+    
     // Create updated template with current timestamp
     const updatedTemplate: Template = {
       ...template,
-      updatedAt: new Date(),
+      updated_at: new Date().toISOString(),
       // Keep all existing PDF data intact
       preview: template.preview,
       template_url: template.template_url,
@@ -81,8 +83,8 @@ export const CanvasPDFEditor: React.FC<CanvasPDFEditorProps> = ({
     onSave(updatedTemplate);
     
     toast({
-      title: 'PDF Saved Successfully',
-      description: 'Your PDF edits have been saved.',
+      title: 'PDF Template Saved',
+      description: 'Your PDF template edits have been saved successfully.',
     });
   };
 

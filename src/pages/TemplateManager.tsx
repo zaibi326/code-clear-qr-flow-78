@@ -84,10 +84,14 @@ const TemplateManager = () => {
     // For PDF templates, check if they have valid data
     return !!(
       (template.file && template.file instanceof File) ||
-      (template.preview && template.preview.startsWith('data:application/pdf')) ||
+      (template.preview && (
+        template.preview.startsWith('data:application/pdf') ||
+        template.preview.startsWith('blob:')
+      )) ||
       (template.template_url && (
         template.template_url.startsWith('data:application/pdf') ||
-        template.template_url.startsWith('blob:')
+        template.template_url.startsWith('blob:') ||
+        template.template_url.toLowerCase().includes('.pdf')
       ))
     );
   };
@@ -166,11 +170,21 @@ const TemplateManager = () => {
   };
 
   const handleTemplateCustomizationSave = (customizedTemplate: Template) => {
+    console.log('Saving customized template:', customizedTemplate.name);
+    
     setTemplates(prev => {
       const updatedTemplates = prev.map(t => 
-        t.id === customizedTemplate.id ? customizedTemplate : t
+        t.id === customizedTemplate.id ? {
+          ...customizedTemplate,
+          updated_at: new Date().toISOString()
+        } : t
       );
       return updatedTemplates;
+    });
+    
+    toast({
+      title: "Template saved successfully",
+      description: `${customizedTemplate.name} has been updated with your changes.`,
     });
     
     handleTemplateCustomizationCancel();
