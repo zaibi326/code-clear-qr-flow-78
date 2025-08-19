@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Canvas, FabricObject, IText, Rect, Circle, FabricImage } from 'fabric';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { toast } from '@/hooks/use-toast';
 
 interface PDFPage {
@@ -45,6 +46,7 @@ export const usePDFEditor = () => {
   const loadPDF = useCallback(async (file: File) => {
     try {
       const arrayBuffer = await file.arrayBuffer();
+      try { pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string; } catch {}
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const pages: PDFPage[] = [];
 

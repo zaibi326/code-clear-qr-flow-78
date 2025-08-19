@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
 
@@ -101,17 +102,8 @@ interface PDFDocumentProxy {
 // Enhanced PDF.js worker configuration with proper version matching
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // Use the correct version that matches our installed pdfjs-dist package
-    const isProduction = import.meta.env.PROD;
-    
-    if (isProduction) {
-      // In production, try to use local worker first
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    } else {
-      // In development, use CDN with a more compatible version
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
-    }
-    
+    // Always use bundled worker to avoid CORS/CDN issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };

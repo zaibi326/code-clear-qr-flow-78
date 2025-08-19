@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, ZoomIn, ZoomOut, Save, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -90,6 +91,7 @@ export const FloatingInputPDFEditor: React.FC<FloatingInputPDFEditorProps> = ({
 
   const loadPDFDocument = async (data: Uint8Array) => {
     try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
       const loadingTask = pdfjsLib.getDocument({ data });
       const pdfDocument = await loadingTask.promise;
       

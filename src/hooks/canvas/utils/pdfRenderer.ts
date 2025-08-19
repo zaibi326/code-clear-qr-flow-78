@@ -1,8 +1,9 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
-// Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Set PDF.js worker (use bundled worker to avoid CORS/CDN issues)
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
 
 export const renderPDFToImage = async (pdfDataUrl: string): Promise<string> => {
   return new Promise(async (resolve, reject) => {

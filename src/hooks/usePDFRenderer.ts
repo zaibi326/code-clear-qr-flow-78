@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 export interface PDFPageRender {
   canvas: HTMLCanvasElement;
@@ -54,17 +55,8 @@ interface PDFDocumentProxy {
 // Improved PDF.js worker configuration with proper version matching
 const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // Use the correct version that matches our installed pdfjs-dist package (5.3.93)
-    const isProduction = import.meta.env.PROD;
-    
-    if (isProduction) {
-      // In production, try to use local worker first, then fallback to CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    } else {
-      // In development, use CDN with correct version
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
-    }
-    
+    // Always use the bundled worker to avoid CORS/CDN issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
 };
@@ -90,8 +82,8 @@ export const usePDFRenderer = () => {
         configurePDFWorker();
       } catch (workerError) {
         console.error('Worker configuration failed:', workerError);
-        // Try alternative worker configuration
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.11.47/pdf.worker.min.js';
+        // Use bundled worker as fallback
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
       }
       
       console.log('🔄 Loading PDF for rendering...', source instanceof File ? source.name : source);
@@ -150,7 +142,7 @@ export const usePDFRenderer = () => {
         
         // Try with alternative worker configuration
         console.log('Retrying with alternative worker configuration...');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
         
         const retryLoadingTask = pdfjsLib.getDocument({
           data,

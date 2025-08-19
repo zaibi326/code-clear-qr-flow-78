@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument } from 'pdf-lib';
 import { toast } from '@/hooks/use-toast';
 import { usePDFTextOperations } from './usePDFTextOperations';
@@ -10,13 +11,8 @@ const configurePDFWorker = () => {
   if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
     const isProduction = import.meta.env.PROD;
     
-    if (isProduction) {
-      // Use local worker in production
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    } else {
-      // Use compatible CDN version in development
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
-    }
+    // Always use the bundled worker to avoid CORS/CDN issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
     
     console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
   }
@@ -90,8 +86,8 @@ export const usePDFTextEditor = () => {
         configurePDFWorker();
       } catch (workerError) {
         console.error('Worker configuration failed:', workerError);
-        // Fallback configuration
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+        // Fallback configuration to bundled worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
       }
 
       const arrayBuffer = await file.arrayBuffer();
@@ -128,7 +124,7 @@ export const usePDFTextEditor = () => {
         console.error('PDF loading error, trying fallback:', loadError);
         
         // Try with more conservative settings
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc as unknown as string;
         
         const fallbackTask = pdfjsLib.getDocument({
           data: uint8Array,
