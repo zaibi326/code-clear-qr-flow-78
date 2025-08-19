@@ -29,7 +29,8 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
     canvas.width = pageRender.width * zoom;
     canvas.height = pageRender.height * zoom;
 
-    // Clear and scale context
+    // Reset transform, clear and scale context
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(zoom, zoom);
 
