@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { PDFPageRender } from '@/hooks/usePDFRenderer';
+import type { PDFPageRender } from '@/hooks/usePDFRenderer';
 
 interface PDFCanvasProps {
   pageRender: PDFPageRender;
@@ -111,7 +111,7 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
       {/* Primary drawing surface (on top so clicks work consistently) */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 cursor-pointer z-10"
+        className="absolute inset-0 cursor-pointer z-0"
         onClick={handleCanvasClick}
         style={{
           width: '100%',
