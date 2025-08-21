@@ -58,6 +58,18 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
     }
   }, [currentTemplate]);
 
+  // Trigger rendering after PDF is loaded and numPages is available
+  useEffect(() => {
+    if (numPages > 0 && !isLoading && pageRenders.length === 0) {
+      console.log('PDF loaded with pages, triggering render...');
+      renderAllPages({ scale: 1.5 }).then(() => {
+        console.log('Pages rendered successfully');
+      }).catch(error => {
+        console.error('Error rendering pages:', error);
+      });
+    }
+  }, [numPages, isLoading, pageRenders.length, renderAllPages]);
+
   const loadExistingPDF = async () => {
     if (!currentTemplate) return;
     

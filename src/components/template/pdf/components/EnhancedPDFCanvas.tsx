@@ -405,7 +405,7 @@ export const EnhancedPDFCanvas: React.FC<EnhancedPDFCanvasProps> = ({
                       }
                     }
                   }}
-                  className="absolute inset-0 w-full h-full opacity-30"
+                  className="absolute inset-0 w-full h-full opacity-100"
                   style={{ width: '100%', height: '100%' }}
                 />
               )}

@@ -25,12 +25,15 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
       if (pageRender?.canvas) {
         const url = pageRender.canvas.toDataURL('image/png');
         setFallbackSrc(url);
+        setIsLoaded(true);
       } else {
         setFallbackSrc(null);
+        setIsLoaded(false);
       }
     } catch (e) {
       // If toDataURL fails for any reason, just skip fallback
       setFallbackSrc(null);
+      setIsLoaded(false);
       console.warn('PDFCanvas fallback image generation failed:', e);
     }
   }, [pageRender, zoom]);
@@ -97,8 +100,8 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
         maxWidth: '100%',
       }}
     >
-      {/* Fallback image to avoid blank screen while canvas draws */}
-      {!isLoaded && fallbackSrc && (
+      {/* Always show PDF content via image to ensure visibility */}
+      {fallbackSrc && (
         <img
           src={fallbackSrc}
           alt="PDF page"
