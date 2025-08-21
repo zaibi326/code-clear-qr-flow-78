@@ -105,7 +105,7 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
         <img
           src={fallbackSrc}
           alt="PDF page"
-          className="absolute inset-0"
+          className="absolute inset-0 pointer-events-none z-0"
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           draggable={false}
         />
@@ -114,7 +114,7 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
       {/* Primary drawing surface (on top so clicks work consistently) */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 cursor-pointer z-0"
+        className="absolute inset-0 cursor-pointer z-10"
         onClick={handleCanvasClick}
         style={{
           width: '100%',
