@@ -17,30 +17,63 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+
+  // Prepare fallback image from the provided page canvas
+  useEffect(() => {
+    try {
+      if (pageRender?.canvas) {
+        const url = pageRender.canvas.toDataURL('image/png');
+        setFallbackSrc(url);
+      } else {
+        setFallbackSrc(null);
+      }
+    } catch (e) {
+      // If toDataURL fails for any reason, just skip fallback
+      setFallbackSrc(null);
+      console.warn('PDFCanvas fallback image generation failed:', e);
+    }
+  }, [pageRender, zoom]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !pageRender) return;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      setIsLoaded(false);
+      return;
+    }
 
-    // Set canvas dimensions
-    canvas.width = pageRender.width * zoom;
-    canvas.height = pageRender.height * zoom;
+    // Ensure we have sane dimensions
+    const targetWidth = (pageRender.width || pageRender.canvas?.width || 800) * zoom;
+    const targetHeight = (pageRender.height || pageRender.canvas?.height || 1000) * zoom;
+
+    // Set canvas pixel dimensions
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     // Reset transform, clear and scale context
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(zoom, zoom);
 
-    // Draw the PDF page
-    ctx.drawImage(pageRender.canvas, 0, 0);
-    setIsLoaded(true);
+    // Draw the original PDF page canvas
+    try {
+      if (pageRender.canvas) {
+        ctx.drawImage(pageRender.canvas, 0, 0);
+        setIsLoaded(true);
+      } else {
+        setIsLoaded(false);
+      }
+    } catch (e) {
+      console.error('PDFCanvas draw failed:', e);
+      setIsLoaded(false);
+    }
   }, [pageRender, zoom]);
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!onTextClick || !isLoaded) return;
+    if (!onTextClick) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -52,16 +85,40 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
     onTextClick(x, y);
   };
 
+  const displayWidth = pageRender.width * zoom;
+  const displayHeight = pageRender.height * zoom;
+
   return (
-    <canvas
-      ref={canvasRef}
-      className={`cursor-pointer ${className}`}
-      onClick={handleCanvasClick}
+    <div
+      className={`relative ${className}`}
       style={{
-        width: pageRender.width * zoom,
-        height: pageRender.height * zoom,
-        maxWidth: '100%'
+        width: displayWidth,
+        height: displayHeight,
+        maxWidth: '100%',
       }}
-    />
+    >
+      {/* Fallback image to avoid blank screen while canvas draws */}
+      {!isLoaded && fallbackSrc && (
+        <img
+          src={fallbackSrc}
+          alt="PDF page"
+          className="absolute inset-0"
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          draggable={false}
+        />
+      )}
+
+      {/* Primary drawing surface (on top so clicks work consistently) */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 cursor-pointer z-10"
+        onClick={handleCanvasClick}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block'
+        }}
+      />
+    </div>
   );
 };
