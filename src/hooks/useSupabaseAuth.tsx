@@ -278,13 +278,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            email_confirm: false // Skip email confirmation for easier testing
+          }
         }
       });
       
       if (error) {
         console.error('useAuth: Sign up error:', error);
-        return { error };
+        
+        // Handle specific signup errors
+        let friendlyMessage = error.message;
+        if (error.message?.includes('User already registered')) {
+          friendlyMessage = 'An account with this email already exists. Please try signing in instead.';
+        } else if (error.message?.includes('Password')) {
+          friendlyMessage = 'Password must be at least 8 characters long.';
+        } else if (error.message?.includes('Invalid email')) {
+          friendlyMessage = 'Please enter a valid email address.';
+        }
+        
+        return { error: { ...error, message: friendlyMessage } };
       }
       
       return { error: null };
@@ -307,7 +321,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           emailRedirectTo: redirectUrl,
           data: {
             name: fullName,
-            company: company || ''
+            company: company || '',
+            email_confirm: false // Skip email confirmation for easier testing
           }
         }
       });

@@ -80,9 +80,10 @@ const Register = () => {
       if (success) {
         toast({
           title: "Registration successful!",
-          description: "Please check your email to verify your account.",
+          description: "Welcome to ClearQR.io! You can now sign in.",
         });
-        navigate('/login');
+        // Redirect to login with email pre-filled
+        navigate(`/login?email=${encodeURIComponent(formData.email)}`);
       } else {
         toast({
           title: "Registration failed",
@@ -90,11 +91,15 @@ const Register = () => {
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+      
+      // Show specific error message if available
+      const errorMessage = error?.message || "An unexpected error occurred. Please try again.";
+      
       toast({
         title: "Registration failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }

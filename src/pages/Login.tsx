@@ -29,6 +29,15 @@ const Login = () => {
     }
   }, [user, navigate]);
 
+  // Pre-fill email if coming from registration
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    if (emailParam) {
+      setFormData(prev => ({ ...prev, email: emailParam }));
+    }
+  }, []);
+
   const validateForm = () => {
     const newErrors = { email: '', password: '' };
     let isValid = true;
@@ -209,6 +218,21 @@ const Login = () => {
                   Create Account
                 </Link>
               </p>
+            </div>
+
+            {/* Test Account Section */}
+            <div className="text-center border-t border-white/20 pt-4">
+              <p className="text-sm text-gray-400 mb-3">Quick Test Account</p>
+              <Button 
+                type="button"
+                onClick={() => {
+                  setFormData({ email: 'test@clearqr.io', password: 'test123456' });
+                }}
+                variant="outline" 
+                className="w-full bg-green-500/20 border-green-500/30 text-green-300 hover:bg-green-500/30"
+              >
+                Use Test Account
+              </Button>
             </div>
 
             <div className="text-center">
