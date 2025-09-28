@@ -143,6 +143,13 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
       
       setEditableTexts(editableTexts);
       
+      // Show success toast
+      toast({
+        title: "PDF Ready for Editing! ✅",
+        description: `Found ${editableTexts.length} editable text elements. Click on any text to start editing like in Canva!`,
+        duration: 4000
+      });
+      
       // Load original PDF bytes for editing
       if (pdfUrl.startsWith('data:application/pdf')) {
         // Convert data URL to bytes
@@ -244,20 +251,36 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   };
 
   const handleTextClick = (x: number, y: number) => {
-    // Adjust click coordinates for current zoom to match unscaled text positions
-    const unscaledX = x / zoom;
-    const unscaledY = y / zoom;
-
-    const clickedText = editableTexts
-      .filter(text => text.pageNumber === currentPage)
-      .find(text => 
-        unscaledX >= text.x && unscaledX <= text.x + text.width &&
-        unscaledY >= text.y && unscaledY <= text.y + text.height
-      );
+    console.log('🎯 Click at:', { x, y, zoom });
+    
+    // Click coordinates are already in the correct space from canvas
+    const currentPageTexts = editableTexts.filter(text => text.pageNumber === currentPage);
+    console.log('📝 Available texts on page:', currentPageTexts.length);
+    
+    // Find the clicked text with some tolerance for easier clicking
+    const tolerance = 5;
+    const clickedText = currentPageTexts.find(text => {
+      const inBounds = x >= (text.x - tolerance) && 
+                      x <= (text.x + text.width + tolerance) &&
+                      y >= (text.y - tolerance) && 
+                      y <= (text.y + text.height + tolerance);
+      
+      if (inBounds) {
+        console.log('✅ Found clickable text:', text.text.substring(0, 20));
+      }
+      return inBounds;
+    });
     
     if (clickedText) {
+      console.log('🎯 Selecting text:', clickedText.text.substring(0, 30));
       setSelectedTextId(clickedText.id);
+      toast({
+        title: "Text Selected", 
+        description: "Double-click to edit this text",
+        duration: 2000
+      });
     } else {
+      console.log('❌ No text found at click position');
       setSelectedTextId(null);
     }
   };
@@ -483,6 +506,7 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                 onTextClick={handleTextClick}
               />
 
+              {/* Text overlay elements */}
               {editableTexts
                 .filter(text => text.pageNumber === currentPage)
                 .map(text => (
@@ -495,6 +519,28 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
                     onSelect={() => setSelectedTextId(text.id)}
                     onDeselect={() => setSelectedTextId(null)}
                   />
+                ))}
+              
+              {/* Debug overlay - shows clickable text areas */}
+              {editableTexts
+                .filter(text => text.pageNumber === currentPage)
+                .map(text => (
+                  <div
+                    key={`debug-${text.id}`}
+                    className="absolute border border-red-300 border-opacity-30 bg-red-100 bg-opacity-10 pointer-events-none"
+                    style={{
+                      left: text.x * zoom,
+                      top: text.y * zoom,
+                      width: text.width * zoom,
+                      height: text.height * zoom,
+                      fontSize: '10px',
+                      color: 'red',
+                      zIndex: 1
+                    }}
+                    title={text.text}
+                  >
+                    <span className="text-xs opacity-60">📝</span>
+                  </div>
                 ))}
             </div>
           )}

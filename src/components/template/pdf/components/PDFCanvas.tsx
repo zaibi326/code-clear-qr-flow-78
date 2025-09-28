@@ -82,8 +82,21 @@ export const PDFCanvas: React.FC<PDFCanvasProps> = ({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / zoom;
-    const y = (event.clientY - rect.top) / zoom;
+    // Get coordinates in the original PDF coordinate space
+    const x = (event.clientX - rect.left) * (pageRender.width / rect.width);
+    const y = (event.clientY - rect.top) * (pageRender.height / rect.height);
+
+    console.log('🖱️ Canvas click:', { 
+      clientX: event.clientX, 
+      clientY: event.clientY, 
+      rectLeft: rect.left, 
+      rectTop: rect.top,
+      calculatedX: x, 
+      calculatedY: y,
+      zoom,
+      canvasSize: { width: rect.width, height: rect.height },
+      pageSize: { width: pageRender.width, height: pageRender.height }
+    });
 
     onTextClick(x, y);
   };

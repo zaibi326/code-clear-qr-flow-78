@@ -48,12 +48,14 @@ export const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('📝 Text element clicked:', textElement.text.substring(0, 20));
     onSelect();
+    setIsEditing(true); // Start editing immediately on single click (like Canva)
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsEditing(true);
+    // Already handled by single click
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -79,20 +81,21 @@ export const InlineTextEditor: React.FC<InlineTextEditorProps> = ({
 
   return (
     <div
-      className={`absolute cursor-pointer transition-all ${
-        isSelected ? 'ring-2 ring-blue-500 ring-opacity-75' : ''
-      } ${textElement.isEdited ? 'bg-blue-50 bg-opacity-50' : ''}`}
+      className={`absolute cursor-pointer transition-all border border-transparent hover:border-blue-300 hover:bg-blue-50 hover:bg-opacity-30 ${
+        isSelected ? 'ring-2 ring-blue-500 ring-opacity-75 bg-blue-50 bg-opacity-40' : ''
+      } ${textElement.isEdited ? 'bg-green-50 bg-opacity-50 border-green-300' : ''}`}
       style={{
         left: textElement.x * scale,
         top: textElement.y * scale,
-        width: Math.max(textElement.width * scale, 100),
-        height: textElement.height * scale,
-        fontSize: textElement.fontSize * scale,
-        lineHeight: `${textElement.height * scale}px`,
-        zIndex: isSelected ? 10 : 1
+        width: Math.max(textElement.width * scale, 50),
+        height: Math.max(textElement.height * scale, 20),
+        fontSize: Math.max(textElement.fontSize * scale, 10),
+        lineHeight: `${Math.max(textElement.height * scale, 20)}px`,
+        zIndex: isSelected ? 20 : 5
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      title={`Click to edit: ${textElement.text.substring(0, 50)}...`}
     >
       {isEditing ? (
         <textarea
