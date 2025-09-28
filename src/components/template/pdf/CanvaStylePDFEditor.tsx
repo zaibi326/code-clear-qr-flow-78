@@ -244,11 +244,15 @@ export const CanvaStylePDFEditor: React.FC<CanvaStylePDFEditorProps> = ({
   };
 
   const handleTextClick = (x: number, y: number) => {
+    // Adjust click coordinates for current zoom to match unscaled text positions
+    const unscaledX = x / zoom;
+    const unscaledY = y / zoom;
+
     const clickedText = editableTexts
       .filter(text => text.pageNumber === currentPage)
       .find(text => 
-        x >= text.x && x <= text.x + text.width &&
-        y >= text.y && y <= text.y + text.height
+        unscaledX >= text.x && unscaledX <= text.x + text.width &&
+        unscaledY >= text.y && unscaledY <= text.y + text.height
       );
     
     if (clickedText) {
