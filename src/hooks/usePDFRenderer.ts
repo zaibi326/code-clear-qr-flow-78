@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
@@ -69,7 +69,7 @@ export const usePDFRenderer = () => {
   const [documentInfo, setDocumentInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
-
+  const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const loadPDF = useCallback(async (source: File | string) => {
     try {
       setIsLoading(true);
@@ -160,8 +160,8 @@ export const usePDFRenderer = () => {
       }
       
       setPdfDoc(doc);
+      pdfDocRef.current = doc;
       setNumPages(doc.numPages);
-      
       // Get document info with error handling
       try {
         const info = await doc.getMetadata();
@@ -196,7 +196,8 @@ export const usePDFRenderer = () => {
   }, []);
 
   const renderAllPages = useCallback(async (options: PDFRenderOptions = {}) => {
-    if (!pdfDoc) {
+    const doc = pdfDocRef.current;
+    if (!doc) {
       console.warn('No PDF document loaded');
       return [];
     }
@@ -208,9 +209,9 @@ export const usePDFRenderer = () => {
 
       console.log('🔄 Rendering all pages with scale:', scale);
 
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
         try {
-          const page = await pdfDoc.getPage(pageNum);
+          const page = await doc.getPage(pageNum);
           const viewport = page.getViewport({ scale });
 
           const canvas = document.createElement('canvas');
@@ -238,7 +239,6 @@ export const usePDFRenderer = () => {
             pageNumber: pageNum
           };
 
-          // Add text layer if requested
           if (enableTextLayer) {
             try {
               const textContent = await page.getTextContent();
@@ -277,7 +277,7 @@ export const usePDFRenderer = () => {
           }
 
           renders.push(render);
-          console.log(`✅ Rendered page ${pageNum}/${pdfDoc.numPages}`);
+          console.log(`✅ Rendered page ${pageNum}/${doc.numPages}`);
         } catch (pageError) {
           console.error(`❌ Error rendering page ${pageNum}:`, pageError);
         }
@@ -293,10 +293,11 @@ export const usePDFRenderer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [pdfDoc]);
+  }, []) ;
 
   const extractTextElements = useCallback(async (): Promise<PDFTextElement[]> => {
-    if (!pdfDoc) {
+    const doc = pdfDocRef.current;
+    if (!doc) {
       console.warn('No PDF document loaded for text extraction');
       return [];
     }
@@ -304,11 +305,11 @@ export const usePDFRenderer = () => {
     try {
       const textElements: PDFTextElement[] = [];
 
-      console.log('🔄 Extracting text elements from', pdfDoc.numPages, 'pages');
+      console.log('🔄 Extracting text elements from', doc.numPages, 'pages');
 
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
         try {
-          const page = await pdfDoc.getPage(pageNum);
+          const page = await doc.getPage(pageNum);
           const viewport = page.getViewport({ scale: 1.5 });
           const textContent = await page.getTextContent();
 
@@ -347,16 +348,17 @@ export const usePDFRenderer = () => {
       console.error('❌ Error extracting text elements:', err);
       return [];
     }
-  }, [pdfDoc]);
+  }, []);
 
   const searchInPDF = useCallback(async (searchTerm: string): Promise<PDFSearchResult[]> => {
-    if (!pdfDoc || !searchTerm.trim()) return [];
+    const doc = pdfDocRef.current;
+    if (!doc || !searchTerm.trim()) return [];
 
     try {
       const results: PDFSearchResult[] = [];
 
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
+      for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+        const page = await doc.getPage(pageNum);
         const viewport = page.getViewport({ scale: 1.5 });
         const textContent = await page.getTextContent();
 
@@ -369,7 +371,6 @@ export const usePDFRenderer = () => {
             const width = item.width || (item.str.length * fontSize * 0.6);
             const height = fontSize;
 
-            // Get context from surrounding items
             const contextStart = Math.max(0, index - 2);
             const contextEnd = Math.min(textContent.items.length, index + 3);
             const context = textContent.items
@@ -396,7 +397,7 @@ export const usePDFRenderer = () => {
       console.error('❌ Error searching PDF:', err);
       return [];
     }
-  }, [pdfDoc]);
+  }, []);
 
   const convertToImages = useCallback(async (options: ConvertToImagesOptions = {}): Promise<string[]> => {
     if (!pageRenders || pageRenders.length === 0) {
