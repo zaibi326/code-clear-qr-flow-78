@@ -206,18 +206,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('useAuth: Attempting sign in for:', email);
       
-      // First test database connection
-      try {
-        await supabase.from('user_roles').select('count', { count: 'exact', head: true });
-        console.log('useAuth: Database connection verified');
-      } catch (dbError) {
-        console.error('useAuth: Database connection failed:', dbError);
-        return { 
-          error: { 
-            message: 'Unable to connect to the authentication service. Please check your internet connection and try again.' 
-          } 
-        };
-      }
+      // Proceed directly to sign-in; some tables have RLS that block anon access
+      // Avoid preflight DB checks that can incorrectly block login
+
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
