@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useSupabaseAuth';
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, isLoading, user } = useAuth();
+  const { signIn, signUp, resendConfirmation, isLoading, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +21,7 @@ const Login = () => {
     email: '',
     password: ''
   });
+  const [lastAuthError, setLastAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +73,7 @@ const Login = () => {
     try {
       console.log('Attempting login...');
       const { error } = await signIn(formData.email, formData.password);
+      setLastAuthError(error?.message || null);
       
       if (error) {
         console.log('Login failed:', error);
@@ -94,6 +96,7 @@ const Login = () => {
           }, 3000);
         }
       } else {
+        setLastAuthError(null);
         console.log('Login successful');
         toast({
           title: "Login successful!",
@@ -208,6 +211,29 @@ const Login = () => {
               </Button>
             </form>
 
+            {lastAuthError?.toLowerCase().includes('confirm') && formData.email && (
+              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3 flex items-start space-x-2 mb-4">
+                <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-yellow-200">
+                  <p className="font-medium">Email not confirmed</p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const { error } = await resendConfirmation(formData.email);
+                      if (error) {
+                        toast({ title: "Could not resend", description: error.message || "Please try again.", variant: "destructive" });
+                      } else {
+                        toast({ title: "Confirmation email sent", description: "Please check your inbox.", variant: "default" });
+                      }
+                    }}
+                    className="underline hover:opacity-80"
+                  >
+                    Resend confirmation email
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="text-center">
               <p className="text-sm text-gray-400">
                 Don't have an account?{' '}
@@ -225,8 +251,34 @@ const Login = () => {
               <p className="text-sm text-gray-400 mb-3">Quick Test Account</p>
               <Button 
                 type="button"
-                onClick={() => {
-                  setFormData({ email: 'test@clearqr.io', password: 'test123456' });
+                onClick={async () => {
+                  const email = 'test@clearqr.io';
+                  const password = 'test123456';
+                  setFormData({ email, password });
+                  const attempt = await signIn(email, password);
+                  setLastAuthError(attempt.error?.message || null);
+                  if (attempt.error) {
+                    if (attempt.error.message?.toLowerCase().includes('invalid')) {
+                      const res = await signUp(email, password);
+                      if (!res.error) {
+                        const again = await signIn(email, password);
+                        setLastAuthError(again.error?.message || null);
+                        if (!again.error) {
+                          toast({ title: 'Test account ready', description: 'Signed in successfully.' });
+                          navigate('/dashboard');
+                        } else {
+                          toast({ title: 'Sign in failed', description: again.error.message || 'Please try again.', variant: 'destructive' });
+                        }
+                      } else {
+                        toast({ title: 'Could not create test account', description: res.error.message || 'Please try again.', variant: 'destructive' });
+                      }
+                    } else {
+                      toast({ title: 'Login failed', description: attempt.error.message || 'Please try again.', variant: 'destructive' });
+                    }
+                  } else {
+                    toast({ title: 'Login successful!', description: 'Welcome back.' });
+                    navigate('/dashboard');
+                  }
                 }}
                 variant="outline" 
                 className="w-full bg-green-500/20 border-green-500/30 text-green-300 hover:bg-green-500/30"

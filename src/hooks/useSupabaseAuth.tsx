@@ -16,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   register: (fullName: string, email: string, password: string, company?: string) => Promise<boolean>;
+  resendConfirmation: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<DatabaseUser>) => Promise<void>;
 }
@@ -298,6 +299,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resendConfirmation = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: redirectUrl }
+      });
+      if (error) return { error };
+      return { error: null };
+    } catch (e: any) {
+      return { error: { message: 'Failed to resend confirmation email. Please try again.' } };
+    }
+  };
   const register = async (fullName: string, email: string, password: string, company?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -438,10 +453,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     register,
+    resendConfirmation,
     signOut,
     updateProfile,
   };
-
+  
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
